@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海洋學徒冒險 — CH5-3 海流</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    background:linear-gradient(180deg,#0b3a6b 0%,#14528f 35%,#1c6db4 70%,#2691d9 100%);color:#fff;overflow:hidden}
+  body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.08) 0%,transparent 40%),radial-gradient(circle at 80% 20%,rgba(255,255,255,.06) 0%,transparent 40%);pointer-events:none}
+  .bubble{position:fixed;bottom:-50px;background:rgba(255,255,255,.15);border-radius:50%;animation:rise linear infinite;pointer-events:none}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:.8}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+  #game{height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
+  #hud{padding:12px 20px;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid rgba(255,255,255,.15);font-size:14px}
+  #hud .title{font-weight:bold;font-size:16px}
+  #hud .badges{display:flex;gap:8px}
+  .badge-slot{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .4s}
+  .badge-slot.earned{background:linear-gradient(135deg,#ffd966,#f4a93f);border:2px solid #fff;box-shadow:0 0 14px rgba(255,217,102,.7);animation:pop .6s}
+  @keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+  #scene{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+  .scene-box{width:min(720px,100%);max-height:100%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:20px;backdrop-filter:blur(6px);box-shadow:0 8px 32px rgba(0,0,0,.3);overflow-y:auto}
+  .npc{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+  .npc-avatar{flex-shrink:0;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ffe082,#ffb74d);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .npc-text{flex:1;background:rgba(255,255,255,.95);color:#1a3a5c;padding:14px 18px;border-radius:4px 18px 18px 18px;line-height:1.7;font-size:15px}
+  .npc-text strong{color:#c0392b}
+  .npc-text .name{display:block;font-weight:bold;color:#2980b9;margin-bottom:4px;font-size:13px}
+  .knowledge-card{background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,240,255,.95));color:#1a3a5c;border-radius:14px;padding:18px 20px;margin:12px 0;border-left:6px solid #f39c12;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .knowledge-card h3{color:#d35400;margin-bottom:10px;font-size:17px}
+  .knowledge-card ul{margin-left:18px;line-height:1.9}
+  .knowledge-card li{margin:4px 0;font-size:14.5px}
+  .knowledge-card .hint{margin-top:10px;padding:8px 12px;background:rgba(243,156,18,.15);border-radius:8px;font-size:13.5px;color:#6e3f00}
+  #options{padding:12px 20px 20px;background:rgba(0,0,0,.25);border-top:2px solid rgba(255,255,255,.1)}
+  .question-block{margin-bottom:10px;padding:12px 14px;background:rgba(255,255,255,.1);border-radius:10px;font-size:15px}
+  .question-block .q-num{display:inline-block;background:#f39c12;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;margin-right:8px;font-weight:bold}
+  .opt-list{display:flex;flex-direction:column;gap:8px}
+  .opt-btn{padding:12px 16px;background:rgba(255,255,255,.95);color:#1a3a5c;border:2px solid transparent;border-radius:10px;cursor:pointer;font-size:14.5px;text-align:left;transition:all .2s;font-family:inherit}
+  .opt-btn:hover:not(:disabled){background:#ffd966;transform:translateX(4px)}
+  .opt-btn:disabled{cursor:not-allowed;opacity:.7}
+  .opt-btn.correct{background:#66bb6a;color:#fff;border-color:#2e7d32;animation:shake-y .4s}
+  .opt-btn.wrong{background:#ef5350;color:#fff;border-color:#b71c1c;animation:shake-x .4s}
+  @keyframes shake-y{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px)}75%{transform:translateY(4px)}}
+  @keyframes shake-x{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(6px)}}
+  .feedback{margin-top:8px;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6}
+  .feedback.ok{background:rgba(102,187,106,.25);border-left:4px solid #66bb6a}
+  .feedback.no{background:rgba(239,83,80,.25);border-left:4px solid #ef5350}
+  .next-btn{display:inline-block;margin-top:10px;padding:10px 22px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .2s;font-family:inherit}
+  .next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .splash{position:fixed;inset:0;background:linear-gradient(180deg,rgba(11,58,107,.95),rgba(28,109,180,.95));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center}
+  .splash h1{font-size:36px;margin-bottom:12px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .splash h2{font-size:20px;margin-bottom:18px;opacity:.9}
+  .splash p{max-width:520px;line-height:1.8;margin-bottom:20px;font-size:15px;opacity:.95}
+  .splash .big-emoji{font-size:80px;margin-bottom:14px;animation:bob 2.5s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+
+  /* 行星風系互動圖 */
+  .wind-globe{position:relative;background:linear-gradient(180deg,#0d47a1 0%,#1976d2 50%,#0d47a1 100%);border-radius:12px;padding:14px;margin:12px 0;border:2px solid rgba(255,255,255,.3)}
+  .wind-row{display:flex;align-items:center;padding:10px 12px;margin:6px 0;border-radius:8px;cursor:pointer;transition:all .2s;color:#fff;font-size:14px;background:rgba(255,255,255,.08)}
+  .wind-row:hover{background:rgba(255,255,255,.18);transform:translateX(4px)}
+  .wind-row.active{background:rgba(255,217,102,.25);border:2px solid #ffd966}
+  .wind-row .lat{flex:0 0 80px;font-weight:bold}
+  .wind-row .arrow{flex:0 0 60px;font-size:22px;text-align:center}
+  .wind-info{padding:10px 12px;margin-top:8px;background:rgba(0,0,0,.25);border-radius:8px;font-size:13.5px;line-height:1.7;min-height:50px}
+
+  /* 黑潮季節切換 */
+  .season-tabs{display:flex;gap:8px;margin:12px 0}
+  .season-tab{flex:1;padding:10px;background:rgba(255,255,255,.1);border:2px solid transparent;border-radius:10px;cursor:pointer;text-align:center;color:#fff;font-size:14px;transition:all .2s}
+  .season-tab.active{background:rgba(255,217,102,.25);border-color:#ffd966}
+  .tw-map{background:linear-gradient(135deg,#01579b,#0277bd);border-radius:12px;padding:18px;color:#fff;font-size:13.5px;line-height:1.8;min-height:140px}
+  .tw-map .label{display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.2);margin:2px}
+
+  @media (max-width:600px){
+    .splash h1{font-size:26px}.splash .big-emoji{font-size:60px}
+    #hud{font-size:12px;padding:10px}.badge-slot{width:30px;height:30px;font-size:16px}
+  }
+</style>
+</head>
+<body>
+<div class="bubble" style="left:10%;width:18px;height:18px;animation-duration:14s"></div>
+<div class="bubble" style="left:30%;width:12px;height:12px;animation-duration:10s;animation-delay:2s"></div>
+<div class="bubble" style="left:55%;width:22px;height:22px;animation-duration:16s;animation-delay:5s"></div>
+<div class="bubble" style="left:75%;width:10px;height:10px;animation-duration:9s;animation-delay:1s"></div>
+<div class="bubble" style="left:88%;width:16px;height:16px;animation-duration:12s;animation-delay:3s"></div>
+
+<div id="splash" class="splash">
+  <div class="big-emoji">🌀</div>
+  <h1>海洋學徒冒險</h1>
+  <h2>第五章・第三話：海中的高速公路 — 海流</h2>
+  <p>海流是海水長時間往特定方向的流動。<br>它影響漁產、運輸、甚至氣候。<br>本話 <strong>2 個關卡</strong>，了解海流如何形成，以及臺灣附近的黑潮。</p>
+  <div style="margin-bottom:14px;">
+    <label style="display:block;margin-bottom:6px;font-size:14px;">請輸入你的名字：</label>
+    <input id="player-name" type="text" placeholder="例如：座號5號 王小明" style="padding:8px 14px;border-radius:20px;border:none;font-size:14px;width:280px;font-family:inherit;">
+  </div>
+  <div>
+    <button class="next-btn" onclick="startGame(false)">🌀 啟航！</button>
+    <button class="next-btn" id="resume-btn" style="display:none;background:linear-gradient(135deg,#26a69a,#00897b);margin-left:8px;" onclick="startGame(true)">📂 繼續上次</button>
+  </div>
+</div>
+
+<div id="ending" class="splash" style="display:none">
+  <div class="big-emoji">🏆</div>
+  <h1>恭喜結業！</h1>
+  <h2>你已掌握「海流」單元</h2>
+  <p id="ending-summary"></p>
+  <div>
+    <button class="next-btn" onclick="exportResult()">📥 匯出成績</button>
+    <button class="next-btn" style="background:linear-gradient(135deg,#7e57c2,#5e35b1);margin-left:8px" onclick="resetAll()">🔄 重新挑戰</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="hud">
+    <div class="title">🚢 探海號・<span id="stage-title">準備啟航</span></div>
+    <div class="badges">
+      <div class="badge-slot" id="badge-0">🌬️</div>
+      <div class="badge-slot" id="badge-1">🐟</div>
+    </div>
+  </div>
+  <main id="scene"></main>
+  <div id="options"></div>
+</div>
+
+<script>
+const STAGES=[
+  // ----- 5-3.1 表面海流的成因 -----
+  {
+    id:'5-3.1', title:'5-3.1 表面海流的成因', badgeIdx:0, badgeEmoji:'🌬️',
+    badgeName:'行星風系勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'👨‍🔬', name:'艾克曼博士',
+        text:'我在 1902 年提出：海水會被風吹動，但受到地球自轉的影響，並不會跟風完全同方向 —— 這就是「科氏力」的效應！讓我們看看全球的風帶如何驅動海流。'},
+      {type:'wind-globe-game'},
+      {type:'knowledge', title:'🌬️ 知識卡：表面海流的兩大驅動力',
+        body:`<ul>
+          <li><strong>① 風力</strong>：表面海水主要由風吹動，最主要的風來自<strong>行星風系</strong>。</li>
+          <li><strong>② 科氏力</strong>：因地球自轉產生的「視」力，使北半球海流偏向<strong>右側</strong>、南半球偏向<strong>左側</strong>。</li>
+          <li>結果：北半球大洋低中緯形成<strong>順時針</strong>環流；南半球形成<strong>逆時針</strong>環流。</li>
+          <li><strong>行星風系</strong>（赤道 → 極區）：
+            <ul style="margin-top:4px;">
+              <li>0°~30°：<strong>信風</strong>（北半球東北、南半球東南）</li>
+              <li>30°~60°：<strong>西風帶</strong></li>
+              <li>60°~90°：<strong>極地東風</strong></li>
+            </ul>
+          </li>
+          <li>海流方向會比風向<strong>偏右（北半球）</strong>，是「風 + 科氏力」共同作用的結果。</li>
+        </ul>
+        <div class="hint">💡 純粹只有風時，海流方向應與風完全一致；但實際觀察到的海流會偏離風向，這就是科氏力存在的證據。</div>`
+      },
+      {type:'question', q:'下列何者「不是」表面海流的主要成因？',
+        options:[
+          {text:'月球引潮力', correct:true, explain:'✅ 月球引潮力造成潮汐，不是表面海流的主要動力。'},
+          {text:'風吹海面', correct:false, explain:'❌ 這是最主要的動力。'},
+          {text:'科氏力', correct:false, explain:'❌ 科氏力改變海流方向。'}
+        ]
+      },
+      {type:'question', q:'北半球大洋的表面環流呈現什麼旋轉方向？',
+        options:[
+          {text:'順時針', correct:true, explain:'✅ 受信風（東北信風）與西風帶共同驅動，再加上科氏力向右偏轉。'},
+          {text:'逆時針', correct:false, explain:'❌ 那是南半球。'},
+          {text:'呈直線往北', correct:false, explain:'❌ 沒有大洋邊界，海流會形成環流。'}
+        ]
+      },
+      {type:'question', q:'在北半球，實際觀測到的海流方向與風向相比如何？',
+        options:[
+          {text:'海流方向會比風向「偏右」', correct:true, explain:'✅ 風 + 科氏力共同作用 → 海流偏向右側。'},
+          {text:'完全一致', correct:false, explain:'❌ 若沒有科氏力才會一致。'},
+          {text:'完全相反', correct:false, explain:'❌ 完全相反不合理。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-3.2 臺灣附近的表面海流 -----
+  {
+    id:'5-3.2', title:'5-3.2 臺灣附近的表面海流', badgeIdx:1, badgeEmoji:'🐟',
+    badgeName:'黑潮獵人勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'🐟', name:'漁夫長',
+        text:'每年 4 ~ 6 月，黑鮪魚會「乘著黑潮」洄游到臺灣東部海域 —— 這是我們漁民最重要的季節！我帶你看看臺灣周圍的海流。'},
+      {type:'season-game'},
+      {type:'knowledge', title:'🐟 知識卡：黑潮與臺灣海峽',
+        body:`<ul>
+          <li><strong>黑潮</strong>：北太平洋西側強大的<strong>暖流</strong>，源自北赤道洋流轉向北。
+            <ul style="margin-top:4px;">
+              <li>流速可達<strong>每秒 1~2 公尺</strong>，是北太平洋最快的表面海流。</li>
+              <li>水色<strong>深藍</strong>（因高溫、高鹽、懸浮物少、反射率低）。</li>
+              <li>主流經臺灣東部海域北上，影響日本暖海一帶氣候。</li>
+            </ul>
+          </li>
+          <li><strong>臺灣海峽的季節變化</strong>：
+            <ul style="margin-top:4px;">
+              <li><strong>夏季</strong>：受西南風影響，黑潮支流自<strong>南海北上</strong>進入海峽；海峽水溫差小。</li>
+              <li><strong>冬季</strong>：受東北季風推動，中國沿岸冷水<strong>從北向南流</strong>進入海峽，貼緊亞洲大陸南行（科氏力使其偏右壓向中國沿岸）。</li>
+            </ul>
+          </li>
+          <li><strong>對人類的影響</strong>：漁業（黑鮪、鯖鮪洄游路線）、運輸（順流可省油料與時間）、潛在發電（黑潮發電試驗）。</li>
+        </ul>`
+      },
+      {type:'question', q:'下列關於黑潮的敘述，何者「錯誤」？',
+        options:[
+          {text:'黑潮是北太平洋的冷流，由北極往南流', correct:true, explain:'✅ 黑潮是「暖流」，源自赤道往北流，方向相反。'},
+          {text:'黑潮流速可達秒速 1~2 公尺', correct:false, explain:'❌ 這是正確敘述。'},
+          {text:'黑潮帶來高溫高鹽的海水', correct:false, explain:'❌ 這是正確敘述。'}
+        ]
+      },
+      {type:'question', q:'冬季臺灣海峽的主要海流方向是？',
+        options:[
+          {text:'由北向南，貼近中國大陸沿岸南下', correct:true,
+            explain:'✅ 東北季風推動中國沿岸冷水南下，受科氏力影響偏右壓向中國沿岸。'},
+          {text:'由南向北', correct:false, explain:'❌ 那是夏季的狀況。'},
+          {text:'完全沒有流動', correct:false, explain:'❌ 海峽終年有海流。'}
+        ]
+      },
+      {type:'question', q:'為什麼每年 4~6 月黑鮪魚會洄游到臺灣東部海域？',
+        options:[
+          {text:'黑潮北上的暖流帶來豐富洄游路徑與餌料', correct:true,
+            explain:'✅ 黑鮪魚跟隨暖流洄游、覓食、繁殖。'},
+          {text:'臺灣東部海域水溫最低', correct:false, explain:'❌ 黑潮帶來的是高溫海水。'},
+          {text:'潮汐推動黑鮪魚北上', correct:false, explain:'❌ 是海流而非潮汐。'}
+        ]
+      }
+    ]
+  }
+];
+
+const STORAGE_KEY='marineRPG_5-3';
+let state={playerName:'',stageIdx:0,stepIdx:0,correctCount:0,totalQuestions:0,stageStats:[],startedAt:null,finishedAt:null};
+const sceneEl=document.getElementById('scene'), optionsEl=document.getElementById('options'), stageTitleEl=document.getElementById('stage-title');
+
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
+function loadState(){try{const s=localStorage.getItem(STORAGE_KEY);if(s)return JSON.parse(s)}catch(e){}return null}
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=loadState();
+  if(saved&&!saved.finishedAt){
+    const btn=document.getElementById('resume-btn');btn.style.display='inline-block';
+    btn.title=`上次進度：${saved.playerName||'匿名'} — 關卡 ${saved.stageIdx+1}`;
+  }
+});
+
+function startGame(resume){
+  if(resume){const saved=loadState();if(saved)state=saved;}
+  else{
+    state.playerName=(document.getElementById('player-name').value.trim())||'匿名學徒';
+    state.stageStats=STAGES.map(s=>({id:s.id,title:s.title,correct:0,total:0}));
+    state.startedAt=new Date().toISOString();state.stageIdx=0;state.stepIdx=0;
+    state.correctCount=0;state.totalQuestions=0;state.finishedAt=null;
+  }
+  document.getElementById('splash').style.display='none';
+  document.getElementById('ending').style.display='none';
+  state.stageStats.forEach((st,i)=>{if(st.total>0&&i<state.stageIdx)earnBadge(STAGES[i].badgeIdx)});
+  saveState();renderStep();
+}
+function resetAll(){if(!confirm('確定要清除所有進度，重新挑戰嗎？'))return;try{localStorage.removeItem(STORAGE_KEY)}catch(e){}location.reload()}
+function exportResult(){
+  const lines=['=== 海洋學徒冒險・成績單 ===','章節：CH5-3 海流','學生：'+(state.playerName||'匿名'),
+    '開始：'+(state.startedAt||''),'完成：'+(state.finishedAt||''),
+    '總分：'+state.correctCount+' / '+state.totalQuestions,'','--- 各關得分 ---'];
+  state.stageStats.forEach(s=>lines.push(s.title+'：'+s.correct+' / '+s.total));
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`海洋RPG_5-3_${(state.playerName||'匿名').replace(/[\\/:*?"<>|]/g,'_')}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderStep(){
+  const stage=STAGES[state.stageIdx];
+  if(!stage){showEnding();return}
+  stageTitleEl.textContent=stage.title+'（'+'★'.repeat(stage.difficulty)+'）';
+  const step=stage.steps[state.stepIdx];
+  if(!step){earnBadge(stage.badgeIdx);showStageClear(stage);return}
+  sceneEl.innerHTML='';optionsEl.innerHTML='';
+  const map={narrate:renderNarrate,knowledge:renderKnowledge,question:renderQuestion,
+    'wind-globe-game':renderWindGlobeGame,'season-game':renderSeasonGame};
+  if(map[step.type])map[step.type](step,stage);
+}
+function nextStep(){state.stepIdx++;saveState();renderStep()}
+
+function renderNarrate(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="npc"><div class="npc-avatar">${step.avatar}</div>
+    <div class="npc-text"><span class="name">${step.name}</span>${step.text}</div></div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+function renderKnowledge(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card"><h3>${step.title}</h3>${step.body}</div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">我懂了 ➤</button>`;
+}
+function renderQuestion(step,stage){
+  const box=document.createElement('div');box.className='scene-box';
+  const qNum=stage.steps.filter((s,i)=>s.type==='question'&&i<=state.stepIdx).length;
+  const qTotal=stage.steps.filter(s=>s.type==='question').length;
+  box.innerHTML=`<div class="question-block"><span class="q-num">Q${qNum}/${qTotal}</span>${step.q}</div>
+    <div class="opt-list" id="opts"></div><div id="fb"></div>`;
+  sceneEl.appendChild(box);
+  const opts=box.querySelector('#opts'),fb=box.querySelector('#fb');
+  step.options.forEach((opt,idx)=>{
+    const b=document.createElement('button');b.className='opt-btn';
+    b.textContent=`${String.fromCharCode(65+idx)}. ${opt.text}`;
+    b.onclick=()=>{
+      [...opts.children].forEach(x=>x.disabled=true);
+      state.totalQuestions++;state.stageStats[state.stageIdx].total++;
+      if(opt.correct){
+        b.classList.add('correct');state.correctCount++;state.stageStats[state.stageIdx].correct++;
+        fb.innerHTML=`<div class="feedback ok">${opt.explain}</div><button class="next-btn" onclick="nextStep()">下一題 ➤</button>`;
+      }else{
+        b.classList.add('wrong');const ci=step.options.findIndex(o=>o.correct);
+        opts.children[ci].classList.add('correct');
+        fb.innerHTML=`<div class="feedback no">${opt.explain}<br><br>✅ <strong>正確答案：</strong>${step.options[ci].text}<br>${step.options[ci].explain.replace('✅ ','')}</div>
+          <button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+      saveState();
+    };
+    opts.appendChild(b);
+  });
+  optionsEl.innerHTML='';
+}
+
+// 互動 1：行星風系
+function renderWindGlobeGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  const zones=[
+    {id:'p1',lat:'90°~60°N',arrow:'↙',name:'極地東風帶',info:'高緯地面氣流向赤道方向流動，受科氏力偏右 → 東風。'},
+    {id:'p2',lat:'60°~30°N',arrow:'↗',name:'西風帶',info:'地面氣流由副熱帶高壓向極區流動，偏右 → 西風（由西向東）。驅動北太平洋暖流。'},
+    {id:'p3',lat:'30°~0°',arrow:'↙',name:'東北信風帶',info:'地面氣流由副熱帶高壓向赤道，偏右 → 東北信風。驅動北赤道洋流由東向西。'},
+    {id:'p4',lat:'0°~30°S',arrow:'↖',name:'東南信風帶',info:'南半球偏左，地面風為東南信風。'},
+    {id:'p5',lat:'30°~60°S',arrow:'↘',name:'(南)西風帶',info:'南半球西風帶，環繞南極大陸，是西風漂流的動力。'}
+  ];
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#26a69a;">
+    <h3 style="color:#00695c;">🌍 互動：點地球各緯度看風帶</h3>
+    <div class="wind-globe" id="wg"></div>
+    <div class="wind-info" id="wi">點上方任一緯度帶查看 →</div>
+  </div>`;
+  sceneEl.appendChild(box);
+  const wg=document.getElementById('wg');
+  const seen=new Set();
+  zones.forEach(z=>{
+    const r=document.createElement('div');r.className='wind-row';
+    r.innerHTML=`<span class="lat">${z.lat}</span><span class="arrow">${z.arrow}</span><span>${z.name}</span>`;
+    r.onclick=()=>{
+      document.querySelectorAll('.wind-row').forEach(x=>x.classList.remove('active'));
+      r.classList.add('active');
+      document.getElementById('wi').innerHTML='📌 <strong>'+z.name+'</strong><br>'+z.info;
+      seen.add(z.id);
+      if(seen.size===zones.length){
+        optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+    };
+    wg.appendChild(r);
+  });
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">看完 5 個風帶後解鎖 →</button>`;
+}
+
+// 互動 2：季節切換
+function renderSeasonGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#0288d1;">
+    <h3 style="color:#01579b;">🌏 互動：切換臺灣海峽的季節</h3>
+    <p style="font-size:14px;">點下方標籤，看夏冬兩季臺灣周圍海流的差異。</p>
+    <div class="season-tabs">
+      <div class="season-tab" id="t-summer">☀️ 夏季</div>
+      <div class="season-tab" id="t-winter">❄️ 冬季</div>
+    </div>
+    <div class="tw-map" id="map">點上方季節按鈕 →</div>
+  </div>`;
+  sceneEl.appendChild(box);
+  const seen={summer:false,winter:false};
+  const summerHtml=`<strong>☀️ 夏季（西南風）</strong><br><br>
+    <span class="label">🌬️ 西南季風</span>
+    <span class="label">⬆️ 黑潮支流從南海北上</span>
+    <span class="label">⬆️ 海峽主流向北</span><br><br>
+    <small>受西南風影響，南海暖水北上進入臺灣海峽，海峽兩岸水溫差較小。黑潮主流仍在臺灣東部海域北上。</small>`;
+  const winterHtml=`<strong>❄️ 冬季（東北季風）</strong><br><br>
+    <span class="label">🌬️ 東北季風強</span>
+    <span class="label">⬇️ 中國沿岸流南下</span>
+    <span class="label">⬇️ 緊貼中國大陸南行</span><br><br>
+    <small>東北季風推動中國沿岸冷水南下，配合科氏力向右偏轉，使海峽西側水位較高（壓向中國沿岸）。黑潮仍經臺灣東部北上。</small>`;
+  document.getElementById('t-summer').onclick=()=>{
+    document.querySelectorAll('.season-tab').forEach(x=>x.classList.remove('active'));
+    document.getElementById('t-summer').classList.add('active');
+    document.getElementById('map').innerHTML=summerHtml;seen.summer=true;check();
+  };
+  document.getElementById('t-winter').onclick=()=>{
+    document.querySelectorAll('.season-tab').forEach(x=>x.classList.remove('active'));
+    document.getElementById('t-winter').classList.add('active');
+    document.getElementById('map').innerHTML=winterHtml;seen.winter=true;check();
+  };
+  function check(){
+    if(seen.summer&&seen.winter){
+      optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+    }
+  }
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">兩個季節都看後解鎖 →</button>`;
+}
+
+function earnBadge(idx){const el=document.getElementById('badge-'+idx);if(el)el.classList.add('earned')}
+function showStageClear(stage){
+  const stat=state.stageStats[state.stageIdx];
+  const isLast=state.stageIdx===STAGES.length-1;
+  const box=document.createElement('div');box.className='scene-box';box.style.textAlign='center';
+  box.innerHTML=`<div style="font-size:72px;margin:10px 0;">${stage.badgeEmoji}</div>
+    <h2 style="margin-bottom:10px;">獲得「${stage.badgeName}」！</h2>
+    <p style="font-size:15px;line-height:1.8;">本關完成：<strong>${stage.title}</strong><br>
+    答對 <strong style="color:#ffd966;font-size:22px;">${stat.correct} / ${stat.total}</strong> 題</p>`;
+  sceneEl.innerHTML='';sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="goNextStage()">${isLast?'🏆 查看結業證書':'⛵ 前往下一關'}</button>`;
+}
+function goNextStage(){state.stageIdx++;state.stepIdx=0;saveState();renderStep()}
+function showEnding(){
+  state.finishedAt=new Date().toISOString();saveState();
+  document.getElementById('ending').style.display='flex';
+  const sum=state.stageStats.map(s=>`<div style="margin:6px 0;">${s.title}：${s.correct} / ${s.total}</div>`).join('');
+  document.getElementById('ending-summary').innerHTML=`總答對 <strong style="color:#ffd966;font-size:28px;">${state.correctCount} / ${state.totalQuestions}</strong> 題<br><br>
+    <div style="text-align:left;max-width:340px;margin:0 auto;background:rgba(0,0,0,.2);padding:14px 18px;border-radius:10px;">${sum}</div>`;
+}
+</script>
+</body>
+</html>

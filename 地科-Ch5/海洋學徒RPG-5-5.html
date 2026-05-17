@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海洋學徒冒險 — CH5-5 大氣與海洋的交互作用</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    background:linear-gradient(180deg,#0b3a6b 0%,#14528f 35%,#1c6db4 70%,#2691d9 100%);color:#fff;overflow:hidden}
+  body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.08) 0%,transparent 40%),radial-gradient(circle at 80% 20%,rgba(255,255,255,.06) 0%,transparent 40%);pointer-events:none}
+  .bubble{position:fixed;bottom:-50px;background:rgba(255,255,255,.15);border-radius:50%;animation:rise linear infinite;pointer-events:none}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:.8}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+  #game{height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
+  #hud{padding:12px 20px;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid rgba(255,255,255,.15);font-size:14px}
+  #hud .title{font-weight:bold;font-size:16px}
+  #hud .badges{display:flex;gap:8px}
+  .badge-slot{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .4s}
+  .badge-slot.earned{background:linear-gradient(135deg,#ffd966,#f4a93f);border:2px solid #fff;box-shadow:0 0 14px rgba(255,217,102,.7);animation:pop .6s}
+  @keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+  #scene{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+  .scene-box{width:min(720px,100%);max-height:100%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:20px;backdrop-filter:blur(6px);box-shadow:0 8px 32px rgba(0,0,0,.3);overflow-y:auto}
+  .npc{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+  .npc-avatar{flex-shrink:0;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ffe082,#ffb74d);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .npc-text{flex:1;background:rgba(255,255,255,.95);color:#1a3a5c;padding:14px 18px;border-radius:4px 18px 18px 18px;line-height:1.7;font-size:15px}
+  .npc-text strong{color:#c0392b}
+  .npc-text .name{display:block;font-weight:bold;color:#2980b9;margin-bottom:4px;font-size:13px}
+  .knowledge-card{background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,240,255,.95));color:#1a3a5c;border-radius:14px;padding:18px 20px;margin:12px 0;border-left:6px solid #f39c12;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .knowledge-card h3{color:#d35400;margin-bottom:10px;font-size:17px}
+  .knowledge-card ul{margin-left:18px;line-height:1.9}
+  .knowledge-card li{margin:4px 0;font-size:14.5px}
+  .knowledge-card .hint{margin-top:10px;padding:8px 12px;background:rgba(243,156,18,.15);border-radius:8px;font-size:13.5px;color:#6e3f00}
+  #options{padding:12px 20px 20px;background:rgba(0,0,0,.25);border-top:2px solid rgba(255,255,255,.1)}
+  .question-block{margin-bottom:10px;padding:12px 14px;background:rgba(255,255,255,.1);border-radius:10px;font-size:15px}
+  .question-block .q-num{display:inline-block;background:#f39c12;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;margin-right:8px;font-weight:bold}
+  .opt-list{display:flex;flex-direction:column;gap:8px}
+  .opt-btn{padding:12px 16px;background:rgba(255,255,255,.95);color:#1a3a5c;border:2px solid transparent;border-radius:10px;cursor:pointer;font-size:14.5px;text-align:left;transition:all .2s;font-family:inherit}
+  .opt-btn:hover:not(:disabled){background:#ffd966;transform:translateX(4px)}
+  .opt-btn:disabled{cursor:not-allowed;opacity:.7}
+  .opt-btn.correct{background:#66bb6a;color:#fff;border-color:#2e7d32;animation:shake-y .4s}
+  .opt-btn.wrong{background:#ef5350;color:#fff;border-color:#b71c1c;animation:shake-x .4s}
+  @keyframes shake-y{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px)}75%{transform:translateY(4px)}}
+  @keyframes shake-x{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(6px)}}
+  .feedback{margin-top:8px;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6}
+  .feedback.ok{background:rgba(102,187,106,.25);border-left:4px solid #66bb6a}
+  .feedback.no{background:rgba(239,83,80,.25);border-left:4px solid #ef5350}
+  .next-btn{display:inline-block;margin-top:10px;padding:10px 22px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .2s;font-family:inherit}
+  .next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .splash{position:fixed;inset:0;background:linear-gradient(180deg,rgba(11,58,107,.95),rgba(28,109,180,.95));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center}
+  .splash h1{font-size:36px;margin-bottom:12px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .splash h2{font-size:20px;margin-bottom:18px;opacity:.9}
+  .splash p{max-width:520px;line-height:1.8;margin-bottom:20px;font-size:15px;opacity:.95}
+  .splash .big-emoji{font-size:80px;margin-bottom:14px;animation:bob 2.5s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+
+  /* 能量平衡示意 */
+  .energy-globe{position:relative;height:180px;background:linear-gradient(180deg,#1a237e,#283593,#1a237e);border-radius:12px;margin:12px 0;border:2px solid rgba(255,255,255,.3);overflow:hidden}
+  .lat-band{position:absolute;left:0;right:0;height:60px;display:flex;align-items:center;justify-content:space-around;color:#fff;font-size:12px;font-weight:bold;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  .lat-high{top:0;background:linear-gradient(180deg,rgba(13,71,161,.5),rgba(13,71,161,.2))}
+  .lat-mid{top:60px;background:linear-gradient(180deg,rgba(0,150,136,.4),rgba(255,193,7,.3))}
+  .lat-low{top:120px;background:linear-gradient(180deg,rgba(255,152,0,.5),rgba(229,57,53,.5))}
+  .flow-arrow{position:absolute;font-size:24px;animation:flow 3s ease-in-out infinite}
+  @keyframes flow{0%,100%{opacity:.5;transform:translateY(0)}50%{opacity:1;transform:translateY(-5px)}}
+
+  /* 聖嬰切換 */
+  .enso-tabs{display:flex;gap:6px;margin:12px 0}
+  .enso-tab{flex:1;padding:10px 8px;background:rgba(255,255,255,.1);border:2px solid transparent;border-radius:10px;cursor:pointer;text-align:center;color:#fff;font-size:13.5px;transition:all .2s}
+  .enso-tab:hover{background:rgba(255,255,255,.18)}
+  .enso-tab.active{background:rgba(255,217,102,.25);border-color:#ffd966}
+  .pacific{position:relative;height:160px;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.3);margin:8px 0;display:flex}
+  .pac-west,.pac-east{flex:1;position:relative;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7);font-size:12px}
+  .pac-west{padding:8px}
+  .pac-east{padding:8px;text-align:right}
+  .pac-label{position:absolute;bottom:6px;font-weight:bold;font-size:11px;padding:2px 6px;background:rgba(0,0,0,.5);border-radius:4px}
+  .pac-label.l{left:6px}
+  .pac-label.r{right:6px}
+  .thermocline{position:absolute;bottom:0;left:0;right:0;height:50%;background:linear-gradient(180deg,transparent,rgba(0,0,50,.4));transition:all .6s}
+  .pac-info{padding:12px 14px;background:rgba(255,255,255,.95);color:#1a3a5c;border-radius:10px;font-size:13.5px;line-height:1.7;margin-top:8px}
+
+  @media (max-width:600px){.splash h1{font-size:26px}.splash .big-emoji{font-size:60px}#hud{font-size:12px;padding:10px}.badge-slot{width:30px;height:30px;font-size:16px}}
+</style>
+</head>
+<body>
+<div class="bubble" style="left:10%;width:18px;height:18px;animation-duration:14s"></div>
+<div class="bubble" style="left:30%;width:12px;height:12px;animation-duration:10s;animation-delay:2s"></div>
+<div class="bubble" style="left:55%;width:22px;height:22px;animation-duration:16s;animation-delay:5s"></div>
+<div class="bubble" style="left:75%;width:10px;height:10px;animation-duration:9s;animation-delay:1s"></div>
+<div class="bubble" style="left:88%;width:16px;height:16px;animation-duration:12s;animation-delay:3s"></div>
+
+<div id="splash" class="splash">
+  <div class="big-emoji">🌬️</div>
+  <h1>海洋學徒冒險</h1>
+  <h2>第五章・第五話：天與海的舞蹈 — 大氣與海洋的交互作用</h2>
+  <p>大氣與海洋每天交換熱、水氣、動量。<br>當這場舞步「亂掉」時，全球氣候都會跟著震動 —— 那就是「聖嬰現象」。<br>
+    本話 <strong>2 個關卡</strong>，畢業在望！</p>
+  <div style="margin-bottom:14px;">
+    <label style="display:block;margin-bottom:6px;font-size:14px;">請輸入你的名字：</label>
+    <input id="player-name" type="text" placeholder="例如：座號5號 王小明" style="padding:8px 14px;border-radius:20px;border:none;font-size:14px;width:280px;font-family:inherit;">
+  </div>
+  <div>
+    <button class="next-btn" onclick="startGame(false)">🌬️ 出發！</button>
+    <button class="next-btn" id="resume-btn" style="display:none;background:linear-gradient(135deg,#26a69a,#00897b);margin-left:8px;" onclick="startGame(true)">📂 繼續上次</button>
+  </div>
+</div>
+
+<div id="ending" class="splash" style="display:none">
+  <div class="big-emoji">🎓</div>
+  <h1>恭喜全章結業！</h1>
+  <h2>你已掌握「大氣與海洋的交互作用」</h2>
+  <p id="ending-summary"></p>
+  <div>
+    <button class="next-btn" onclick="exportResult()">📥 匯出成績</button>
+    <button class="next-btn" style="background:linear-gradient(135deg,#7e57c2,#5e35b1);margin-left:8px" onclick="resetAll()">🔄 重新挑戰</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="hud">
+    <div class="title">🚢 探海號・<span id="stage-title">準備啟航</span></div>
+    <div class="badges">
+      <div class="badge-slot" id="badge-0">⚖️</div>
+      <div class="badge-slot" id="badge-1">👶</div>
+    </div>
+  </div>
+  <main id="scene"></main>
+  <div id="options"></div>
+</div>
+
+<script>
+const STAGES=[
+  // ----- 5-5.1 海氣能量傳輸 -----
+  {
+    id:'5-5.1', title:'5-5.1 海氣能量傳輸', badgeIdx:0, badgeEmoji:'⚖️',
+    badgeName:'熱量平衡勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'☀️', name:'氣候學家',
+        text:'地球上低緯度日照強、高緯度日照弱。若沒有「搬運工」 ── 大氣與海洋 ── 把熱量從赤道送到極區，赤道會越來越熱、極區越來越冷！'},
+      {type:'energy-game'},
+      {type:'knowledge', title:'⚖️ 知識卡：海氣能量平衡',
+        body:`<ul>
+          <li><strong>低緯度</strong>：吸收太陽輻射 &gt; 放出長波輻射 → <strong>能量盈餘</strong>。</li>
+          <li><strong>高緯度</strong>：吸收 &lt; 放出 → <strong>能量虧損</strong>。</li>
+          <li>需要靠「熱力 + 動力」方式達到全球平衡：
+            <ul style="margin-top:4px;">
+              <li><strong>熱力平衡</strong>：水蒸發在低緯吸熱 → 大氣環流帶水氣到高緯 → 凝結放熱補充。</li>
+              <li><strong>動力平衡</strong>：表面洋流（如黑潮、墨西哥灣流）把熱海水送到高緯。</li>
+            </ul>
+          </li>
+          <li>因此地表赤道沒有持續升溫、極區沒有持續降溫，氣候才得以穩定。</li>
+        </ul>
+        <div class="hint">💡 大氣的水蒸氣凝結（潛熱釋放）+ 表面洋流，是地球冷暖區之間最重要的「熱量輸送高速公路」。</div>`
+      },
+      {type:'question', q:'低緯度為什麼會「能量盈餘」？',
+        options:[
+          {text:'吸收的太陽輻射比放出的長波輻射多', correct:true,
+            explain:'✅ 日照強、入射輻射量大，但放出量受限於溫度，總體盈餘。'},
+          {text:'低緯度地表反射率最高', correct:false, explain:'❌ 反而較低。'},
+          {text:'低緯度沒有海洋', correct:false, explain:'❌ 反而海洋面積大。'}
+        ]
+      },
+      {type:'question', q:'下列哪一個是「熱力平衡」的機制？',
+        options:[
+          {text:'低緯水蒸發 → 凝結成雲 → 高緯放出潛熱', correct:true,
+            explain:'✅ 大氣環流配合水的三態變化，輸送潛熱。'},
+          {text:'地震釋放熱量', correct:false, explain:'❌ 與全球熱量平衡無關。'},
+          {text:'人類燃燒化石燃料', correct:false, explain:'❌ 那是擾動，不是自然平衡機制。'}
+        ]
+      },
+      {type:'question', q:'表面洋流在全球能量平衡中扮演什麼角色？',
+        options:[
+          {text:'把低緯的暖海水輸送到高緯，把高緯的冷水帶回低緯', correct:true,
+            explain:'✅ 海流是動力平衡的主力。'},
+          {text:'只在表面流動，與能量無關', correct:false, explain:'❌ 表面海水帶有大量熱量。'},
+          {text:'反而加大冷暖差', correct:false, explain:'❌ 海流是「縮小」南北溫差的機制。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-5.2 聖嬰現象 -----
+  {
+    id:'5-5.2', title:'5-5.2 聖嬰現象', badgeIdx:1, badgeEmoji:'👶',
+    badgeName:'ENSO 偵探勳章', difficulty:3,
+    steps:[
+      {type:'narrate', avatar:'🐟', name:'秘魯漁夫',
+        text:'我們的祖先發現，每隔幾年 12 月聖誕節前後，海水會異常變暖、漁產大減。他們以為是「上帝送的小男孩」 —— 西班牙文 El Niño！這現象其實牽動全球氣候。'},
+      {type:'enso-game'},
+      {type:'knowledge', title:'👶 知識卡：聖嬰、反聖嬰與 ENSO',
+        body:`<ul>
+          <li><strong>正常狀態</strong>（沃克環流）：
+            <ul style="margin-top:4px;">
+              <li>赤道東風（信風）強 → 表面暖水堆積在西太平洋（印尼、菲律賓）</li>
+              <li>東太平洋（秘魯外海）海水<strong>湧升</strong> → 表層冷、斜溫層淺、營養鹽豐富、漁產多</li>
+              <li>西太平洋暖海面 → 對流旺盛、多雨；東太平洋冷海面 → 高壓乾燥</li>
+            </ul>
+          </li>
+          <li><strong>聖嬰</strong>（El Niño，海水異常增溫 ≥ 0.5℃，連續 5 個月以上）：
+            <ul style="margin-top:4px;">
+              <li>赤道東風減弱 → 西太暖水東移 → 東太平洋變暖、斜溫層加深</li>
+              <li>東太平洋湧升弱、漁產減少；秘魯沿岸多雨 → 水災</li>
+              <li>西太平洋（印尼、澳洲北部）少雨 → 旱災</li>
+            </ul>
+          </li>
+          <li><strong>反聖嬰</strong>（La Niña，西班牙文「女嬰」）：正常狀態的「加強版」，赤道東風更強，東太平洋更冷。</li>
+          <li><strong>南方振盪（Southern Oscillation）</strong>：達爾文港（澳）與大溪地之間的海面氣壓「來回擺盪」。</li>
+          <li><strong>ENSO</strong> = El Niño + Southern Oscillation，是<strong>海氣交互作用</strong>的代表現象。</li>
+        </ul>
+        <div class="hint">💡 1969 年氣象學家畢雅可尼（Bjerknes）提出聖嬰與南方振盪是「同一件事的兩面」，被合稱為 ENSO。</div>`
+      },
+      {type:'question', q:'在「正常狀態」下，赤道太平洋的氣候特徵是？',
+        options:[
+          {text:'西側暖、多雨；東側冷、乾燥（湧升流帶來漁產）', correct:true,
+            explain:'✅ 東風驅動暖水到西側，東側冷水湧升，形成沃克環流。'},
+          {text:'兩側溫度相同、降水均勻', correct:false, explain:'❌ 兩側差異明顯。'},
+          {text:'東側暖、西側冷', correct:false, explain:'❌ 方向顛倒了。'}
+        ]
+      },
+      {type:'question', q:'聖嬰現象發生時，最主要的特徵是什麼？',
+        options:[
+          {text:'赤道東風減弱，西太暖水東移，東太平洋海溫異常偏高', correct:true,
+            explain:'✅ 這是聖嬰最核心的物理過程。'},
+          {text:'赤道東風變強', correct:false, explain:'❌ 那是反聖嬰。'},
+          {text:'地球自轉變慢', correct:false, explain:'❌ 不是聖嬰的成因。'}
+        ]
+      },
+      {type:'question', q:'聖嬰現象期間，西太平洋（印尼、澳洲北部）容易出現什麼天氣型態？',
+        options:[
+          {text:'氣壓升高、少雨、容易乾旱', correct:true,
+            explain:'✅ 暖水東移後，西太平洋變冷海面，對流減弱、降水減少。'},
+          {text:'多雨、容易水災', correct:false, explain:'❌ 那是東太平洋（秘魯沿岸）的狀況。'},
+          {text:'颱風頻繁', correct:false, explain:'❌ 不是聖嬰的主要影響。'}
+        ]
+      },
+      {type:'question', q:'下列關於「ENSO」的敘述何者「錯誤」？',
+        options:[
+          {text:'ENSO 只發生在大西洋', correct:true,
+            explain:'✅ 錯！ENSO 是發生在「赤道太平洋」的現象。'},
+          {text:'ENSO = El Niño + Southern Oscillation', correct:false,
+            explain:'❌ 這是正確敘述。'},
+          {text:'ENSO 反映了海洋與大氣的交互作用', correct:false,
+            explain:'❌ 這是正確敘述。'}
+        ]
+      },
+      {type:'question', q:'【綜合題】反聖嬰現象（La Niña）期間，最可能出現的狀況是？',
+        options:[
+          {text:'赤道東風更強，東太平洋變得比平常更冷、湧升更明顯', correct:true,
+            explain:'✅ 反聖嬰是正常狀態的「加強版」。'},
+          {text:'赤道東風減弱，東太海水變暖', correct:false, explain:'❌ 那是聖嬰。'},
+          {text:'全球氣候完全不受影響', correct:false, explain:'❌ 反聖嬰也會造成全球氣候異常。'}
+        ]
+      }
+    ]
+  }
+];
+
+const STORAGE_KEY='marineRPG_5-5';
+let state={playerName:'',stageIdx:0,stepIdx:0,correctCount:0,totalQuestions:0,stageStats:[],startedAt:null,finishedAt:null};
+const sceneEl=document.getElementById('scene'), optionsEl=document.getElementById('options'), stageTitleEl=document.getElementById('stage-title');
+
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
+function loadState(){try{const s=localStorage.getItem(STORAGE_KEY);if(s)return JSON.parse(s)}catch(e){}return null}
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=loadState();
+  if(saved&&!saved.finishedAt){
+    const btn=document.getElementById('resume-btn');btn.style.display='inline-block';
+    btn.title=`上次進度：${saved.playerName||'匿名'} — 關卡 ${saved.stageIdx+1}`;
+  }
+});
+function startGame(resume){
+  if(resume){const saved=loadState();if(saved)state=saved;}
+  else{
+    state.playerName=(document.getElementById('player-name').value.trim())||'匿名學徒';
+    state.stageStats=STAGES.map(s=>({id:s.id,title:s.title,correct:0,total:0}));
+    state.startedAt=new Date().toISOString();state.stageIdx=0;state.stepIdx=0;
+    state.correctCount=0;state.totalQuestions=0;state.finishedAt=null;
+  }
+  document.getElementById('splash').style.display='none';
+  document.getElementById('ending').style.display='none';
+  state.stageStats.forEach((st,i)=>{if(st.total>0&&i<state.stageIdx)earnBadge(STAGES[i].badgeIdx)});
+  saveState();renderStep();
+}
+function resetAll(){if(!confirm('確定要清除所有進度，重新挑戰嗎？'))return;try{localStorage.removeItem(STORAGE_KEY)}catch(e){}location.reload()}
+function exportResult(){
+  const lines=['=== 海洋學徒冒險・成績單 ===','章節：CH5-5 大氣與海洋的交互作用',
+    '學生：'+(state.playerName||'匿名'),'開始：'+(state.startedAt||''),
+    '完成：'+(state.finishedAt||''),'總分：'+state.correctCount+' / '+state.totalQuestions,
+    '','--- 各關得分 ---'];
+  state.stageStats.forEach(s=>lines.push(s.title+'：'+s.correct+' / '+s.total));
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;
+  a.download=`海洋RPG_5-5_${(state.playerName||'匿名').replace(/[\\/:*?"<>|]/g,'_')}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderStep(){
+  const stage=STAGES[state.stageIdx];
+  if(!stage){showEnding();return}
+  stageTitleEl.textContent=stage.title+'（'+'★'.repeat(stage.difficulty)+'）';
+  const step=stage.steps[state.stepIdx];
+  if(!step){earnBadge(stage.badgeIdx);showStageClear(stage);return}
+  sceneEl.innerHTML='';optionsEl.innerHTML='';
+  const map={narrate:renderNarrate,knowledge:renderKnowledge,question:renderQuestion,
+    'energy-game':renderEnergyGame,'enso-game':renderEnsoGame};
+  if(map[step.type])map[step.type](step,stage);
+}
+function nextStep(){state.stepIdx++;saveState();renderStep()}
+
+function renderNarrate(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="npc"><div class="npc-avatar">${step.avatar}</div>
+    <div class="npc-text"><span class="name">${step.name}</span>${step.text}</div></div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+function renderKnowledge(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card"><h3>${step.title}</h3>${step.body}</div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">我懂了 ➤</button>`;
+}
+function renderQuestion(step,stage){
+  const box=document.createElement('div');box.className='scene-box';
+  const qNum=stage.steps.filter((s,i)=>s.type==='question'&&i<=state.stepIdx).length;
+  const qTotal=stage.steps.filter(s=>s.type==='question').length;
+  box.innerHTML=`<div class="question-block"><span class="q-num">Q${qNum}/${qTotal}</span>${step.q}</div>
+    <div class="opt-list" id="opts"></div><div id="fb"></div>`;
+  sceneEl.appendChild(box);
+  const opts=box.querySelector('#opts'),fb=box.querySelector('#fb');
+  step.options.forEach((opt,idx)=>{
+    const b=document.createElement('button');b.className='opt-btn';
+    b.textContent=`${String.fromCharCode(65+idx)}. ${opt.text}`;
+    b.onclick=()=>{
+      [...opts.children].forEach(x=>x.disabled=true);
+      state.totalQuestions++;state.stageStats[state.stageIdx].total++;
+      if(opt.correct){
+        b.classList.add('correct');state.correctCount++;state.stageStats[state.stageIdx].correct++;
+        fb.innerHTML=`<div class="feedback ok">${opt.explain}</div><button class="next-btn" onclick="nextStep()">下一題 ➤</button>`;
+      }else{
+        b.classList.add('wrong');const ci=step.options.findIndex(o=>o.correct);
+        opts.children[ci].classList.add('correct');
+        fb.innerHTML=`<div class="feedback no">${opt.explain}<br><br>✅ <strong>正確答案：</strong>${step.options[ci].text}<br>${step.options[ci].explain.replace('✅ ','')}</div>
+          <button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+      saveState();
+    };
+    opts.appendChild(b);
+  });
+  optionsEl.innerHTML='';
+}
+
+// 互動 1：能量平衡
+function renderEnergyGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#e64a19;">
+    <h3 style="color:#bf360c;">🌡️ 互動：地球的「熱量輸送帶」</h3>
+    <p style="font-size:14px;">下方示意三個緯度帶。沒有海氣輸送的話，低緯會越來越熱、高緯越來越冷。</p>
+    <div class="energy-globe">
+      <div class="lat-band lat-high">❄️ 高緯（能量虧損）<span>📤 放出 > 吸收</span></div>
+      <div class="lat-band lat-mid">🌤️ 中緯（過渡帶）<span>↔️ 輸送</span></div>
+      <div class="lat-band lat-low">☀️ 低緯（能量盈餘）<span>📥 吸收 > 放出</span></div>
+      <div class="flow-arrow" style="top:90px;left:30%;">⬆️</div>
+      <div class="flow-arrow" style="top:90px;left:60%;animation-delay:1s;">⬆️</div>
+      <div class="flow-arrow" style="top:30px;left:75%;animation-delay:1.5s;">⬇️</div>
+    </div>
+    <p style="font-size:13.5px;margin-top:10px;padding:10px;background:rgba(255,255,255,.1);border-radius:8px;line-height:1.7;">
+      <strong>兩條輸送機制：</strong><br>
+      🌫️ <strong>大氣熱力輸送</strong>：低緯水蒸發吸熱 → 大氣環流帶到高緯 → 凝結放熱<br>
+      🌊 <strong>海洋動力輸送</strong>：表面洋流（如黑潮、墨西哥灣流）把暖水帶到高緯
+    </p>
+  </div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+
+// 互動 2：ENSO 切換
+function renderEnsoGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#c62828;">
+    <h3 style="color:#b71c1c;">🌎 互動：切換赤道太平洋的三種狀態</h3>
+    <div class="enso-tabs">
+      <div class="enso-tab" id="t-normal">🌤️ 正常狀態</div>
+      <div class="enso-tab" id="t-elnino">👶 聖嬰（El Niño）</div>
+      <div class="enso-tab" id="t-lanina">👧 反聖嬰（La Niña）</div>
+    </div>
+    <div class="pacific" id="pac"></div>
+    <div class="pac-info" id="info">請點上方任一狀態 →</div>
+  </div>`;
+  sceneEl.appendChild(box);
+  const states={
+    normal:{
+      west:'#ef5350', east:'#42a5f5',
+      thermoEast:'40%',
+      label:'☁️ 印尼／菲律賓<br>暖海面・多雨',
+      labelE:'🌵 秘魯沿岸<br>冷海面・乾燥',
+      arrow:'⬅️ 強東風（信風）',
+      info:'<strong>🌤️ 正常狀態（沃克環流）</strong><br>東風強 → 暖水堆積在西太、冷水湧升於東太。<br>• 西太：對流旺、多雨<br>• 東太：高壓、乾燥；湧升流帶來營養鹽 → 漁產豐富'
+    },
+    elnino:{
+      west:'#42a5f5', east:'#ef5350',
+      thermoEast:'10%',
+      label:'🌵 印尼／澳北<br>變冷海面・<strong>旱災</strong>',
+      labelE:'☔ 秘魯沿岸<br>變暖海面・<strong>水災</strong>',
+      arrow:'➡️ 東風減弱',
+      info:'<strong>👶 聖嬰現象</strong><br>赤道東風減弱 → 西太暖水東移 → 東太海溫異常偏高、斜溫層加深。<br>• 東太湧升弱 → <strong>漁產大減</strong>、秘魯多雨水災<br>• 西太冷化 → 印尼、澳北乾旱'
+    },
+    lanina:{
+      west:'#d32f2f', east:'#1976d2',
+      thermoEast:'55%',
+      label:'☁️☁️ 印尼<br>更熱更濕',
+      labelE:'❄️ 秘魯沿岸<br>更冷更乾',
+      arrow:'⬅️⬅️ 東風更強',
+      info:'<strong>👧 反聖嬰現象</strong><br>赤道東風比正常更強 → 暖水更集中在西太、東太海水更冷、湧升更明顯。<br>• 西太：對流更旺、洪水<br>• 東太：更乾旱、漁產豐'
+    }
+  };
+  const seen=new Set();
+  const draw=key=>{
+    const s=states[key];
+    const pac=document.getElementById('pac');
+    pac.innerHTML=`
+      <div class="pac-west" style="background:linear-gradient(180deg,${s.west},#01579b);">
+        <div>${s.label}</div>
+        <div class="pac-label l">西太平洋</div>
+      </div>
+      <div class="pac-east" style="background:linear-gradient(180deg,${s.east},#01579b);">
+        <div>${s.labelE}</div>
+        <div class="thermocline" style="height:${s.thermoEast}"></div>
+        <div class="pac-label r">東太平洋</div>
+      </div>
+      <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;padding:4px 12px;border-radius:14px;font-size:13px;font-weight:bold;">${s.arrow}</div>`;
+    document.getElementById('info').innerHTML=s.info;
+    seen.add(key);
+    if(seen.size===3){
+      optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+    }
+  };
+  document.getElementById('t-normal').onclick=()=>{document.querySelectorAll('.enso-tab').forEach(x=>x.classList.remove('active'));document.getElementById('t-normal').classList.add('active');draw('normal')};
+  document.getElementById('t-elnino').onclick=()=>{document.querySelectorAll('.enso-tab').forEach(x=>x.classList.remove('active'));document.getElementById('t-elnino').classList.add('active');draw('elnino')};
+  document.getElementById('t-lanina').onclick=()=>{document.querySelectorAll('.enso-tab').forEach(x=>x.classList.remove('active'));document.getElementById('t-lanina').classList.add('active');draw('lanina')};
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">看完三種狀態後解鎖 →</button>`;
+}
+
+function earnBadge(idx){const el=document.getElementById('badge-'+idx);if(el)el.classList.add('earned')}
+function showStageClear(stage){
+  const stat=state.stageStats[state.stageIdx];
+  const isLast=state.stageIdx===STAGES.length-1;
+  const box=document.createElement('div');box.className='scene-box';box.style.textAlign='center';
+  box.innerHTML=`<div style="font-size:72px;margin:10px 0;">${stage.badgeEmoji}</div>
+    <h2 style="margin-bottom:10px;">獲得「${stage.badgeName}」！</h2>
+    <p style="font-size:15px;line-height:1.8;">本關完成：<strong>${stage.title}</strong><br>
+    答對 <strong style="color:#ffd966;font-size:22px;">${stat.correct} / ${stat.total}</strong> 題</p>`;
+  sceneEl.innerHTML='';sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="goNextStage()">${isLast?'🎓 全章結業！':'⛵ 前往下一關'}</button>`;
+}
+function goNextStage(){state.stageIdx++;state.stepIdx=0;saveState();renderStep()}
+function showEnding(){
+  state.finishedAt=new Date().toISOString();saveState();
+  document.getElementById('ending').style.display='flex';
+  const sum=state.stageStats.map(s=>`<div style="margin:6px 0;">${s.title}：${s.correct} / ${s.total}</div>`).join('');
+  document.getElementById('ending-summary').innerHTML=`總答對 <strong style="color:#ffd966;font-size:28px;">${state.correctCount} / ${state.totalQuestions}</strong> 題<br><br>
+    <div style="text-align:left;max-width:340px;margin:0 auto;background:rgba(0,0,0,.2);padding:14px 18px;border-radius:10px;">${sum}</div>`;
+}
+</script>
+</body>
+</html>

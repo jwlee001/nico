@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海洋學徒冒險 — CH5-4 潮汐</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    background:linear-gradient(180deg,#0b3a6b 0%,#14528f 35%,#1c6db4 70%,#2691d9 100%);color:#fff;overflow:hidden}
+  body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.08) 0%,transparent 40%),radial-gradient(circle at 80% 20%,rgba(255,255,255,.06) 0%,transparent 40%);pointer-events:none}
+  .bubble{position:fixed;bottom:-50px;background:rgba(255,255,255,.15);border-radius:50%;animation:rise linear infinite;pointer-events:none}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:.8}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+  #game{height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
+  #hud{padding:12px 20px;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid rgba(255,255,255,.15);font-size:14px}
+  #hud .title{font-weight:bold;font-size:16px}
+  #hud .badges{display:flex;gap:6px}
+  .badge-slot{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .4s}
+  .badge-slot.earned{background:linear-gradient(135deg,#ffd966,#f4a93f);border:2px solid #fff;box-shadow:0 0 14px rgba(255,217,102,.7);animation:pop .6s}
+  @keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+  #scene{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+  .scene-box{width:min(720px,100%);max-height:100%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:20px;backdrop-filter:blur(6px);box-shadow:0 8px 32px rgba(0,0,0,.3);overflow-y:auto}
+  .npc{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+  .npc-avatar{flex-shrink:0;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ffe082,#ffb74d);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .npc-text{flex:1;background:rgba(255,255,255,.95);color:#1a3a5c;padding:14px 18px;border-radius:4px 18px 18px 18px;line-height:1.7;font-size:15px}
+  .npc-text strong{color:#c0392b}
+  .npc-text .name{display:block;font-weight:bold;color:#2980b9;margin-bottom:4px;font-size:13px}
+  .knowledge-card{background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,240,255,.95));color:#1a3a5c;border-radius:14px;padding:18px 20px;margin:12px 0;border-left:6px solid #f39c12;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .knowledge-card h3{color:#d35400;margin-bottom:10px;font-size:17px}
+  .knowledge-card ul{margin-left:18px;line-height:1.9}
+  .knowledge-card li{margin:4px 0;font-size:14.5px}
+  .knowledge-card .hint{margin-top:10px;padding:8px 12px;background:rgba(243,156,18,.15);border-radius:8px;font-size:13.5px;color:#6e3f00}
+  #options{padding:12px 20px 20px;background:rgba(0,0,0,.25);border-top:2px solid rgba(255,255,255,.1)}
+  .question-block{margin-bottom:10px;padding:12px 14px;background:rgba(255,255,255,.1);border-radius:10px;font-size:15px}
+  .question-block .q-num{display:inline-block;background:#f39c12;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;margin-right:8px;font-weight:bold}
+  .opt-list{display:flex;flex-direction:column;gap:8px}
+  .opt-btn{padding:12px 16px;background:rgba(255,255,255,.95);color:#1a3a5c;border:2px solid transparent;border-radius:10px;cursor:pointer;font-size:14.5px;text-align:left;transition:all .2s;font-family:inherit}
+  .opt-btn:hover:not(:disabled){background:#ffd966;transform:translateX(4px)}
+  .opt-btn:disabled{cursor:not-allowed;opacity:.7}
+  .opt-btn.correct{background:#66bb6a;color:#fff;border-color:#2e7d32;animation:shake-y .4s}
+  .opt-btn.wrong{background:#ef5350;color:#fff;border-color:#b71c1c;animation:shake-x .4s}
+  @keyframes shake-y{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px)}75%{transform:translateY(4px)}}
+  @keyframes shake-x{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(6px)}}
+  .feedback{margin-top:8px;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6}
+  .feedback.ok{background:rgba(102,187,106,.25);border-left:4px solid #66bb6a}
+  .feedback.no{background:rgba(239,83,80,.25);border-left:4px solid #ef5350}
+  .next-btn{display:inline-block;margin-top:10px;padding:10px 22px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .2s;font-family:inherit}
+  .next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .splash{position:fixed;inset:0;background:linear-gradient(180deg,rgba(11,58,107,.95),rgba(28,109,180,.95));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center}
+  .splash h1{font-size:36px;margin-bottom:12px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .splash h2{font-size:20px;margin-bottom:18px;opacity:.9}
+  .splash p{max-width:520px;line-height:1.8;margin-bottom:20px;font-size:15px;opacity:.95}
+  .splash .big-emoji{font-size:80px;margin-bottom:14px;animation:bob 2.5s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+
+  /* 引潮力示意 */
+  .tide-stage{position:relative;height:200px;background:radial-gradient(ellipse at center,#0d47a1 30%,#01579b 70%,#0b3a6b 100%);border-radius:12px;margin:14px 0;border:2px solid rgba(255,255,255,.3);overflow:hidden}
+  .earth{position:absolute;top:50%;left:50%;width:100px;height:100px;margin:-50px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#66bb6a,#1b5e20);box-shadow:0 0 30px rgba(102,187,106,.5);font-size:36px;display:flex;align-items:center;justify-content:center}
+  .tide-bulge{position:absolute;top:50%;left:50%;width:160px;height:120px;margin:-60px -80px;border-radius:50%;background:rgba(79,195,247,.3);border:2px solid rgba(79,195,247,.6);transition:transform .5s}
+  .moon{position:absolute;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff,#bbb);box-shadow:0 0 12px #fff;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .6s}
+  .sun-icon{position:absolute;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,#fff176,#f57c00);box-shadow:0 0 20px #ffeb3b;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .6s}
+  .pos-btn{padding:6px 12px;background:rgba(255,255,255,.95);color:#1a3a5c;border-radius:18px;cursor:pointer;font-size:13px;border:2px solid transparent;font-family:inherit}
+  .pos-btn.active{background:#ffd966;border-color:#f57f17}
+
+  /* 月相選擇 */
+  .phase-row{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;justify-content:center}
+  .phase-btn{padding:10px 14px;background:rgba(255,255,255,.1);border:2px solid transparent;border-radius:10px;cursor:pointer;text-align:center;color:#fff;font-size:13px;transition:all .2s;min-width:90px}
+  .phase-btn:hover{background:rgba(255,255,255,.2)}
+  .phase-btn.active{background:rgba(255,217,102,.25);border-color:#ffd966}
+  .phase-btn .pe{font-size:30px;display:block;margin-bottom:4px}
+
+  /* 潮差比較條 */
+  .tide-range-row{display:flex;align-items:center;gap:10px;margin:8px 0;padding:6px 10px;background:rgba(255,255,255,.08);border-radius:8px;font-size:13px}
+  .tide-range-row .name{flex:0 0 100px;font-weight:bold}
+  .tide-range-row .bar-bg{flex:1;height:18px;background:rgba(255,255,255,.15);border-radius:9px;overflow:hidden;position:relative}
+  .tide-range-row .bar{height:100%;background:linear-gradient(90deg,#4fc3f7,#0d47a1);border-radius:9px;transition:width .8s}
+  .tide-range-row .val{flex:0 0 70px;text-align:right;font-weight:bold;color:#ffd966}
+
+  /* 配對遊戲 */
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .match-cell{padding:10px 14px;background:rgba(255,255,255,.95);color:#1a3a5c;border:2px solid transparent;border-radius:10px;cursor:pointer;font-size:13.5px;text-align:left;font-family:inherit;transition:all .2s}
+  .match-cell:hover:not(:disabled){background:#ffd966}
+  .match-cell.picked{background:#fff59d;border-color:#f57c00}
+  .match-cell.matched{background:#66bb6a;color:#fff;border-color:#2e7d32;cursor:default}
+  .match-cell:disabled{cursor:default;opacity:.6}
+
+  @media (max-width:600px){.splash h1{font-size:26px}.splash .big-emoji{font-size:60px}#hud{font-size:12px;padding:10px}.badge-slot{width:28px;height:28px;font-size:14px}.match-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bubble" style="left:10%;width:18px;height:18px;animation-duration:14s"></div>
+<div class="bubble" style="left:30%;width:12px;height:12px;animation-duration:10s;animation-delay:2s"></div>
+<div class="bubble" style="left:55%;width:22px;height:22px;animation-duration:16s;animation-delay:5s"></div>
+<div class="bubble" style="left:75%;width:10px;height:10px;animation-duration:9s;animation-delay:1s"></div>
+<div class="bubble" style="left:88%;width:16px;height:16px;animation-duration:12s;animation-delay:3s"></div>
+
+<div id="splash" class="splash">
+  <div class="big-emoji">🌙</div>
+  <h1>海洋學徒冒險</h1>
+  <h2>第五章・第四話：月光下的呼吸 — 潮汐</h2>
+  <p>潮汐讓沙灘一天兩次「呼吸」。<br>它與月球、太陽密切相關，也深深影響漁業、港口、生態。<br>
+    本話 <strong>5 個關卡</strong>，揭開潮汐的祕密。</p>
+  <div style="margin-bottom:14px;">
+    <label style="display:block;margin-bottom:6px;font-size:14px;">請輸入你的名字：</label>
+    <input id="player-name" type="text" placeholder="例如：座號5號 王小明" style="padding:8px 14px;border-radius:20px;border:none;font-size:14px;width:280px;font-family:inherit;">
+  </div>
+  <div>
+    <button class="next-btn" onclick="startGame(false)">🌙 出發！</button>
+    <button class="next-btn" id="resume-btn" style="display:none;background:linear-gradient(135deg,#26a69a,#00897b);margin-left:8px;" onclick="startGame(true)">📂 繼續上次</button>
+  </div>
+</div>
+
+<div id="ending" class="splash" style="display:none">
+  <div class="big-emoji">🏆</div>
+  <h1>恭喜結業！</h1>
+  <h2>你已掌握「潮汐」單元</h2>
+  <p id="ending-summary"></p>
+  <div>
+    <button class="next-btn" onclick="exportResult()">📥 匯出成績</button>
+    <button class="next-btn" style="background:linear-gradient(135deg,#7e57c2,#5e35b1);margin-left:8px" onclick="resetAll()">🔄 重新挑戰</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="hud">
+    <div class="title">🚢 探海號・<span id="stage-title">準備啟航</span></div>
+    <div class="badges">
+      <div class="badge-slot" id="badge-0">🌙</div>
+      <div class="badge-slot" id="badge-1">☀️</div>
+      <div class="badge-slot" id="badge-2">🏝️</div>
+      <div class="badge-slot" id="badge-3">⚖️</div>
+      <div class="badge-slot" id="badge-4">⚓</div>
+    </div>
+  </div>
+  <main id="scene"></main>
+  <div id="options"></div>
+</div>
+
+<script>
+const STAGES=[
+  // ----- 5-4.1 潮汐日變化與引潮力 -----
+  {
+    id:'5-4.1', title:'5-4.1 潮汐日變化與引潮力', badgeIdx:0, badgeEmoji:'🌙',
+    badgeName:'引潮力勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'🌙', name:'月光使者',
+        text:'潮汐每天兩次漲落，跟我（月亮）關係密切！我來告訴你一個祕密：地球上「正對月亮」與「背對月亮」的兩側「同時」漲潮。為什麼？讓我們看看。'},
+      {type:'moon-game'},
+      {type:'knowledge', title:'🌙 知識卡：潮汐基本概念與引潮力',
+        body:`<ul>
+          <li><strong>潮位變化</strong>：漲潮 → <strong>滿潮（高潮）</strong> → 退潮 → <strong>乾潮（低潮）</strong>。</li>
+          <li><strong>潮差</strong>＝滿潮與乾潮的水位差。</li>
+          <li><strong>潮間帶</strong>：滿潮淹沒、乾潮露出的海岸帶 → 生態豐富。</li>
+          <li><strong>潮汐週期</strong>約 <strong>12 小時 25 分</strong>，每天潮位延遲約 50 分鐘（因月球公轉一日約 12°）。</li>
+          <li><strong>引潮力</strong>＝月球（或太陽）對地球各點的<strong>引力差</strong>，不是引力本身：
+            <ul style="margin-top:4px;">
+              <li>靠近月球側：受引力略大 → 海水被「拉向」月球。</li>
+              <li>背對月球側：受引力略小 → 相對被「甩出去」。</li>
+              <li>因此<strong>地球海面同時有兩個凸起</strong>，每天有 2 次滿潮與 2 次乾潮。</li>
+            </ul>
+          </li>
+          <li>引潮力大小與引力源質量成<strong>一次方正比</strong>，但與<strong>距離三次方反比</strong>！</li>
+          <li>因此：太陽質量遠大於月球，但距離遠 → 太陽引潮力只有月球的 <strong>1/2</strong>。</li>
+        </ul>
+        <div class="hint">💡 引潮力 ∝ 質量 / 距離³，這就是為什麼小小月亮反而主導潮汐。</div>`
+      },
+      {type:'question', q:'下列關於潮汐週期的敘述何者正確？',
+        options:[
+          {text:'約 12 小時 25 分，每日潮位延遲約 50 分鐘', correct:true,
+            explain:'✅ 月球公轉一日約 12°，地球要多轉 50 分鐘才能再對齊月球。'},
+          {text:'剛好 24 小時，每天同時間漲潮', correct:false, explain:'❌ 每天會延遲，因為月球也在動。'},
+          {text:'每月只有一次', correct:false, explain:'❌ 一天就有兩次滿潮。'}
+        ]
+      },
+      {type:'question', q:'為什麼地球上「背對月亮」那一側「也」會漲潮？',
+        options:[
+          {text:'背對側的引力較小，海水相對被「甩出去」，形成另一個凸起', correct:true,
+            explain:'✅ 引潮力是引力「差」，使海面形成雙凸結構。'},
+          {text:'背對側的月光把海水反射回來', correct:false, explain:'❌ 與光無關。'},
+          {text:'地球自轉把海水甩到背面', correct:false, explain:'❌ 自轉無法只甩一側。'}
+        ]
+      },
+      {type:'question', q:'太陽質量比月球大很多，為什麼引潮力卻只有月球的一半？',
+        options:[
+          {text:'引潮力與距離的「三次方」成反比，太陽距離地球太遠', correct:true,
+            explain:'✅ 引潮力 ∝ M/r³，太陽雖大但 r 太大。'},
+          {text:'太陽是氣體，引力較弱', correct:false, explain:'❌ 與物質型態無關。'},
+          {text:'太陽不會引起潮汐', correct:false, explain:'❌ 仍會，只是較弱。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-4.2 潮汐月變化與日地月系統 -----
+  {
+    id:'5-4.2', title:'5-4.2 潮汐月變化與日地月系統', badgeIdx:1, badgeEmoji:'☀️',
+    badgeName:'大小潮勳章', difficulty:3,
+    steps:[
+      {type:'narrate', avatar:'☀️', name:'太陽教授',
+        text:'雖然我引潮力比較小，但加上月亮的話，可以加成也可以抵銷。我們來看看不同月相下的潮差變化。'},
+      {type:'phase-game'},
+      {type:'knowledge', title:'☀️ 知識卡：大潮與小潮',
+        body:`<ul>
+          <li><strong>大潮</strong>（潮差最大）：月、地、日三者「<strong>排成一直線</strong>」時：
+            <ul style="margin-top:4px;">
+              <li>農曆<strong>初一（朔／新月）</strong>：日、月在同一邊</li>
+              <li>農曆<strong>十五（望／滿月）</strong>：日、月在地球兩邊</li>
+              <li>太陽與月亮引潮力<strong>同方向加成</strong> → 潮差最大</li>
+            </ul>
+          </li>
+          <li><strong>小潮</strong>（潮差最小）：月、日相對地球<strong>互相垂直</strong>：
+            <ul style="margin-top:4px;">
+              <li>農曆<strong>初八（上弦月）</strong>、農曆<strong>二十二（下弦月）</strong></li>
+              <li>太陽引潮力<strong>抵銷</strong>部分月球引潮力 → 潮差最小</li>
+            </ul>
+          </li>
+          <li>每月有 2 次大潮（朔、望）和 2 次小潮（上弦、下弦）。</li>
+        </ul>`
+      },
+      {type:'question', q:'下列哪一天的潮差「最大」？',
+        options:[
+          {text:'農曆十五（滿月）', correct:true, explain:'✅ 日月在地球兩側，引潮力疊加 → 大潮。'},
+          {text:'農曆初八（上弦月）', correct:false, explain:'❌ 那是小潮。'},
+          {text:'農曆二十二（下弦月）', correct:false, explain:'❌ 那是小潮。'}
+        ]
+      },
+      {type:'question', q:'小潮發生的條件是？',
+        options:[
+          {text:'太陽、地球、月球連線「互相垂直」（上弦或下弦月）', correct:true,
+            explain:'✅ 引潮力方向垂直，會互相抵銷一部分。'},
+          {text:'太陽、地球、月球連線「成一直線」', correct:false, explain:'❌ 那是大潮。'},
+          {text:'只看月球位置，與太陽無關', correct:false, explain:'❌ 大小潮就是因為太陽的影響。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-4.3 臺灣周圍的潮流 -----
+  {
+    id:'5-4.3', title:'5-4.3 臺灣周圍的潮流', badgeIdx:2, badgeEmoji:'🏝️',
+    badgeName:'臺灣潮流勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'🏝️', name:'海岸觀察員',
+        text:'臺灣是個島，海峽兩端的潮汐時刻不同步，這會造成有趣的「潮流」現象 —— 海水週期性地南北流動。'},
+      {type:'knowledge', title:'🏝️ 知識卡：臺灣海峽的潮流',
+        body:`<ul>
+          <li><strong>潮流</strong>：因漲退潮造成的週期性海水流動，每日往返。</li>
+          <li>臺灣西海岸滿潮時刻：<strong>南、北端較早，中部較晚</strong>。</li>
+          <li><strong>漲潮時</strong>：海水從海峽<strong>南、北兩端</strong>同時湧入海峽中央。</li>
+          <li><strong>退潮時</strong>：海水從海峽中央向南、北兩端流出。</li>
+          <li>潮差大小：海峽中部（如臺中港）較大，南北兩端較小。</li>
+        </ul>
+        <div class="hint">💡 漁業活動（布網、抓蝦）需考慮潮流方向；港口船隻進出也需配合潮流時間。</div>`
+      },
+      {type:'question', q:'臺灣海峽漲潮時，海水的流動方向是？',
+        options:[
+          {text:'從南、北兩端流入海峽中央', correct:true,
+            explain:'✅ 海峽中部滿潮時刻較晚，潮水從兩端先進入。'},
+          {text:'從中央流向南、北兩端', correct:false, explain:'❌ 那是退潮。'},
+          {text:'全部往東流入太平洋', correct:false, explain:'❌ 與外海連接，但不是主要流向。'}
+        ]
+      },
+      {type:'question', q:'下列關於臺灣周圍潮汐的敘述何者正確？',
+        options:[
+          {text:'臺灣海峽中部（如臺中港）潮差較南北兩端大', correct:true,
+            explain:'✅ 海峽中部地形使潮水累積，潮差較大。'},
+          {text:'臺灣東西兩岸滿潮時刻完全同步', correct:false, explain:'❌ 因地形差異，並不同步。'},
+          {text:'臺灣西岸潮汐每天只有 1 次', correct:false, explain:'❌ 每天 2 次（半日潮）。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-4.4 影響潮汐的其他因素 -----
+  {
+    id:'5-4.4', title:'5-4.4 影響潮汐的其他因素', badgeIdx:3, badgeEmoji:'⚖️',
+    badgeName:'地形專家勳章', difficulty:1,
+    steps:[
+      {type:'narrate', avatar:'⚖️', name:'地形學家',
+        text:'同一天的同一時刻，臺中港潮差可以有 4 公尺，外海卻只有 0.5 公尺，加拿大芬地灣甚至有 15 公尺！差別在哪？地形！'},
+      {type:'range-game'},
+      {type:'knowledge', title:'⚖️ 知識卡：地形與摩擦力的影響',
+        body:`<ul>
+          <li>潮汐除了引潮力，還受到：
+            <ul style="margin-top:4px;">
+              <li><strong>海岸地形</strong>：半封閉海域（如芬地灣、臺西中部）會放大潮差。</li>
+              <li><strong>海底摩擦力</strong>：粗糙海底會使潮水推擠到岸邊。</li>
+              <li><strong>緯度與水深</strong>：影響潮波傳播速度。</li>
+            </ul>
+          </li>
+          <li>因此各地潮差差異很大：
+            <ul style="margin-top:4px;">
+              <li>開放大洋：&lt; 1 公尺</li>
+              <li>臺灣西海岸中部：可達 4~5 公尺</li>
+              <li>加拿大<strong>芬地灣</strong>：最大潮差約 <strong>15 公尺</strong>（世界紀錄）</li>
+            </ul>
+          </li>
+          <li>滿乾潮時刻也會因地形而與「月球中天時刻」有差距（海底摩擦力使滿潮位置略前）。</li>
+        </ul>`
+      },
+      {type:'question', q:'為什麼加拿大芬地灣的潮差可以高達 15 公尺？',
+        options:[
+          {text:'灣形狹長、半封閉，地形放大潮差', correct:true,
+            explain:'✅ 地形像「漏斗」把潮水擠壓到內側。'},
+          {text:'位於高緯度，月球引力較強', correct:false, explain:'❌ 引力與緯度無關，與地形有關。'},
+          {text:'是淡水灣，潮汐特別強', correct:false, explain:'❌ 是海灣，與淡水無關。'}
+        ]
+      },
+      {type:'question', q:'下列何處的潮差「最小」？',
+        options:[
+          {text:'開放的大洋海域', correct:true, explain:'✅ 通常 &lt; 1 公尺。'},
+          {text:'臺灣西海岸中部', correct:false, explain:'❌ 潮差可達 4~5 公尺。'},
+          {text:'加拿大芬地灣', correct:false, explain:'❌ 最大潮差約 15 公尺。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-4.5 潮汐與生活 -----
+  {
+    id:'5-4.5', title:'5-4.5 潮汐與生活', badgeIdx:4, badgeEmoji:'⚓',
+    badgeName:'潮汐應用勳章', difficulty:1,
+    steps:[
+      {type:'narrate', avatar:'⚓', name:'港口船長',
+        text:'我們漁民、船長每天都離不開潮汐表！讓我們看看潮汐如何影響生活，然後玩個配對遊戲。'},
+      {type:'life-match-game'},
+      {type:'knowledge', title:'⚓ 知識卡：潮汐與生活',
+        body:`<ul>
+          <li><strong>漁業</strong>：潮流方向影響布網位置、深度；潮間帶可採集貝類、海菜。</li>
+          <li><strong>港口運輸</strong>：港口不宜建在潮差過大的地方，否則退潮時船隻可能擱淺。</li>
+          <li><strong>潮汐發電</strong>：潮差較大的地區可利用「潮水位能 + 潮流動能」發電（如英國、法國的潮汐電廠）。</li>
+          <li><strong>生態系</strong>：潮間帶環境條件變化快，是多樣生物的棲地（招潮蟹、藤壺、海葵）。</li>
+          <li><strong>預報的重要性</strong>：到海邊活動前，應查詢<strong>中央氣象署</strong>的潮汐預報，確保安全。</li>
+        </ul>`
+      },
+      {type:'question', q:'下列哪一種活動「最」需要參考潮汐預報？',
+        options:[
+          {text:'潮間帶採集貝類', correct:true,
+            explain:'✅ 必須在乾潮時段進行，否則會被海水淹沒。'},
+          {text:'在學校操場跑步', correct:false, explain:'❌ 與潮汐無關。'},
+          {text:'去夜市買飲料', correct:false, explain:'❌ 與潮汐無關。'}
+        ]
+      },
+      {type:'question', q:'下列何者「不適合」建造大型港口？',
+        options:[
+          {text:'潮差過大的海岸', correct:true,
+            explain:'✅ 退潮時船會擱淺，漲潮才能進出，效率差。'},
+          {text:'水深穩定的海灣', correct:false, explain:'❌ 反而適合。'},
+          {text:'有防波堤保護的岸邊', correct:false, explain:'❌ 反而適合。'}
+        ]
+      }
+    ]
+  }
+];
+
+const STORAGE_KEY='marineRPG_5-4';
+let state={playerName:'',stageIdx:0,stepIdx:0,correctCount:0,totalQuestions:0,stageStats:[],startedAt:null,finishedAt:null};
+const sceneEl=document.getElementById('scene'), optionsEl=document.getElementById('options'), stageTitleEl=document.getElementById('stage-title');
+
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
+function loadState(){try{const s=localStorage.getItem(STORAGE_KEY);if(s)return JSON.parse(s)}catch(e){}return null}
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=loadState();
+  if(saved&&!saved.finishedAt){
+    const btn=document.getElementById('resume-btn');btn.style.display='inline-block';
+    btn.title=`上次進度：${saved.playerName||'匿名'} — 關卡 ${saved.stageIdx+1}`;
+  }
+});
+function startGame(resume){
+  if(resume){const saved=loadState();if(saved)state=saved;}
+  else{
+    state.playerName=(document.getElementById('player-name').value.trim())||'匿名學徒';
+    state.stageStats=STAGES.map(s=>({id:s.id,title:s.title,correct:0,total:0}));
+    state.startedAt=new Date().toISOString();state.stageIdx=0;state.stepIdx=0;
+    state.correctCount=0;state.totalQuestions=0;state.finishedAt=null;
+  }
+  document.getElementById('splash').style.display='none';
+  document.getElementById('ending').style.display='none';
+  state.stageStats.forEach((st,i)=>{if(st.total>0&&i<state.stageIdx)earnBadge(STAGES[i].badgeIdx)});
+  saveState();renderStep();
+}
+function resetAll(){if(!confirm('確定要清除所有進度，重新挑戰嗎？'))return;try{localStorage.removeItem(STORAGE_KEY)}catch(e){}location.reload()}
+function exportResult(){
+  const lines=['=== 海洋學徒冒險・成績單 ===','章節：CH5-4 潮汐','學生：'+(state.playerName||'匿名'),
+    '開始：'+(state.startedAt||''),'完成：'+(state.finishedAt||''),
+    '總分：'+state.correctCount+' / '+state.totalQuestions,'','--- 各關得分 ---'];
+  state.stageStats.forEach(s=>lines.push(s.title+'：'+s.correct+' / '+s.total));
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;
+  a.download=`海洋RPG_5-4_${(state.playerName||'匿名').replace(/[\\/:*?"<>|]/g,'_')}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderStep(){
+  const stage=STAGES[state.stageIdx];
+  if(!stage){showEnding();return}
+  stageTitleEl.textContent=stage.title+'（'+'★'.repeat(stage.difficulty)+'）';
+  const step=stage.steps[state.stepIdx];
+  if(!step){earnBadge(stage.badgeIdx);showStageClear(stage);return}
+  sceneEl.innerHTML='';optionsEl.innerHTML='';
+  const map={narrate:renderNarrate,knowledge:renderKnowledge,question:renderQuestion,
+    'moon-game':renderMoonGame,'phase-game':renderPhaseGame,
+    'range-game':renderRangeGame,'life-match-game':renderLifeMatchGame};
+  if(map[step.type])map[step.type](step,stage);
+}
+function nextStep(){state.stepIdx++;saveState();renderStep()}
+
+function renderNarrate(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="npc"><div class="npc-avatar">${step.avatar}</div>
+    <div class="npc-text"><span class="name">${step.name}</span>${step.text}</div></div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+function renderKnowledge(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card"><h3>${step.title}</h3>${step.body}</div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">我懂了 ➤</button>`;
+}
+function renderQuestion(step,stage){
+  const box=document.createElement('div');box.className='scene-box';
+  const qNum=stage.steps.filter((s,i)=>s.type==='question'&&i<=state.stepIdx).length;
+  const qTotal=stage.steps.filter(s=>s.type==='question').length;
+  box.innerHTML=`<div class="question-block"><span class="q-num">Q${qNum}/${qTotal}</span>${step.q}</div>
+    <div class="opt-list" id="opts"></div><div id="fb"></div>`;
+  sceneEl.appendChild(box);
+  const opts=box.querySelector('#opts'),fb=box.querySelector('#fb');
+  step.options.forEach((opt,idx)=>{
+    const b=document.createElement('button');b.className='opt-btn';
+    b.textContent=`${String.fromCharCode(65+idx)}. ${opt.text}`;
+    b.onclick=()=>{
+      [...opts.children].forEach(x=>x.disabled=true);
+      state.totalQuestions++;state.stageStats[state.stageIdx].total++;
+      if(opt.correct){
+        b.classList.add('correct');state.correctCount++;state.stageStats[state.stageIdx].correct++;
+        fb.innerHTML=`<div class="feedback ok">${opt.explain}</div><button class="next-btn" onclick="nextStep()">下一題 ➤</button>`;
+      }else{
+        b.classList.add('wrong');const ci=step.options.findIndex(o=>o.correct);
+        opts.children[ci].classList.add('correct');
+        fb.innerHTML=`<div class="feedback no">${opt.explain}<br><br>✅ <strong>正確答案：</strong>${step.options[ci].text}<br>${step.options[ci].explain.replace('✅ ','')}</div>
+          <button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+      saveState();
+    };
+    opts.appendChild(b);
+  });
+  optionsEl.innerHTML='';
+}
+
+// 互動 1：月球位置 → 雙凸海面
+function renderMoonGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#5e35b1;">
+    <h3 style="color:#311b92;">🌍 互動：點按鈕看月球位置如何造成雙凸海面</h3>
+    <div class="tide-stage" id="ts">
+      <div class="tide-bulge" id="bulge" style="transform:rotate(0deg) scaleX(1.4)"></div>
+      <div class="earth">🌍</div>
+      <div class="moon" id="moon" style="top:50%;left:90%;margin:-15px;">🌕</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="pos-btn" id="pe">月在東側</button>
+      <button class="pos-btn" id="pn">月在北側</button>
+      <button class="pos-btn" id="pw">月在西側</button>
+      <button class="pos-btn" id="ps">月在南側</button>
+    </div>
+    <div id="moon-msg" style="margin-top:10px;font-size:14px;padding:10px;background:rgba(255,255,255,.1);border-radius:8px;min-height:60px;">點按鈕看不同方向 →</div>
+  </div>`;
+  sceneEl.appendChild(box);
+  const positions={
+    pe:{rot:0,top:50,left:90,desc:'🌙 月球在地球東側 → 海面凸起朝向「東-西」軸：東側（朝月）、西側（背月）同時有滿潮。'},
+    pn:{rot:-90,top:5,left:50,desc:'🌙 月球在地球北側 → 海面凸起朝向「南-北」軸：南北兩側同時滿潮。'},
+    pw:{rot:180,top:50,left:5,desc:'🌙 月球在地球西側 → 凸起仍沿月-地連線。'},
+    ps:{rot:90,top:90,left:50,desc:'🌙 月球在地球南側 → 凸起沿南北軸。'}
+  };
+  const seen=new Set();
+  Object.entries(positions).forEach(([id,p])=>{
+    document.getElementById(id).onclick=()=>{
+      document.querySelectorAll('.pos-btn').forEach(x=>x.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.getElementById('moon').style.top=p.top+'%';
+      document.getElementById('moon').style.left=p.left+'%';
+      document.getElementById('bulge').style.transform=`rotate(${p.rot}deg) scaleX(1.4)`;
+      document.getElementById('moon-msg').innerHTML=p.desc+'<br><small>無論月球在哪個方向，凸起總是沿「月-地連線」 → 地球上始終有兩個滿潮位置。</small>';
+      seen.add(id);
+      if(seen.size===4){
+        optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+    };
+  });
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">看完 4 個方位後解鎖 →</button>`;
+}
+
+// 互動 2：月相 → 大潮/小潮
+function renderPhaseGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#ef6c00;">
+    <h3 style="color:#bf360c;">🌖 互動：選一個月相看潮差變化</h3>
+    <p style="font-size:14px;">點下方任一月相，看當天的潮差大小。</p>
+    <div class="phase-row">
+      <button class="phase-btn" data-id="新月"><span class="pe">🌑</span>朔（新月）<br><small>初一</small></button>
+      <button class="phase-btn" data-id="上弦"><span class="pe">🌓</span>上弦月<br><small>初八</small></button>
+      <button class="phase-btn" data-id="滿月"><span class="pe">🌕</span>望（滿月）<br><small>十五</small></button>
+      <button class="phase-btn" data-id="下弦"><span class="pe">🌗</span>下弦月<br><small>二十二</small></button>
+    </div>
+    <div id="ph-msg" style="margin-top:10px;font-size:14px;padding:12px;background:rgba(255,255,255,.1);border-radius:8px;min-height:80px;">點月相 →</div>
+  </div>`;
+  sceneEl.appendChild(box);
+  const data={
+    '新月':{type:'大潮',desc:'☀️🌑🌍 日、月在地球同一側，引潮力<strong>同方向疊加</strong> → <strong>大潮</strong>，潮差最大。',color:'#c62828'},
+    '滿月':{type:'大潮',desc:'☀️🌍🌕 日、月在地球兩側，引潮力沿同軸<strong>疊加</strong> → <strong>大潮</strong>，潮差最大。',color:'#c62828'},
+    '上弦':{type:'小潮',desc:'☀️ ⊥ 🌓 日、月與地球連線「互相垂直」 → 引潮力<strong>抵銷部分</strong> → <strong>小潮</strong>，潮差最小。',color:'#1565c0'},
+    '下弦':{type:'小潮',desc:'☀️ ⊥ 🌗 日、月與地球連線「互相垂直」 → 引潮力<strong>抵銷部分</strong> → <strong>小潮</strong>，潮差最小。',color:'#1565c0'}
+  };
+  const seen=new Set();
+  box.querySelectorAll('.phase-btn').forEach(b=>{
+    b.onclick=()=>{
+      box.querySelectorAll('.phase-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      const d=data[b.dataset.id];
+      document.getElementById('ph-msg').innerHTML=`<strong style="color:${d.color};font-size:16px;">${b.dataset.id} → ${d.type}</strong><br><br>${d.desc}`;
+      seen.add(b.dataset.id);
+      if(seen.size===4){optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`}
+    };
+  });
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">看完 4 種月相後解鎖 →</button>`;
+}
+
+// 互動 3：潮差比較
+function renderRangeGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  const places=[
+    {name:'開放大洋',val:0.5,pct:3,note:'潮波能量分散'},
+    {name:'臺灣東岸',val:1.5,pct:10,note:'開放海岸'},
+    {name:'臺灣西岸南端',val:2.5,pct:17,note:'半開放'},
+    {name:'臺中港',val:4.5,pct:30,note:'海峽中部地形放大'},
+    {name:'芬地灣',val:15,pct:100,note:'灣形狹長半封閉，世界紀錄'}
+  ];
+  let html=`<div class="knowledge-card" style="border-left-color:#00897b;">
+    <h3 style="color:#004d40;">📏 互動：不同地點的潮差比較</h3>
+    <p style="font-size:14px;">下方是世界上幾個典型地點的潮差，看看地形差異有多大。</p>`;
+  places.forEach((p,i)=>{
+    html+=`<div class="tide-range-row">
+      <span class="name">${p.name}</span>
+      <span class="bar-bg"><span class="bar" id="bar-${i}" style="width:0"></span></span>
+      <span class="val">${p.val} m</span>
+    </div>
+    <div style="font-size:11.5px;padding-left:110px;opacity:.7;margin-bottom:6px;">${p.note}</div>`;
+  });
+  html+=`</div>`;
+  box.innerHTML=html;
+  sceneEl.appendChild(box);
+  setTimeout(()=>{places.forEach((p,i)=>{document.getElementById('bar-'+i).style.width=p.pct+'%';});},200);
+  setTimeout(()=>{optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;},1200);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">等動畫播完 →</button>`;
+}
+
+// 互動 4：生活配對
+function renderLifeMatchGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  const pairs=[
+    {a:'🦀 採招潮蟹',b:'在乾潮時段到潮間帶'},
+    {a:'🚢 大船進港',b:'選滿潮、水位較高時'},
+    {a:'⚡ 潮汐發電',b:'選潮差大的海域興建'},
+    {a:'🎣 布漁網',b:'依潮流方向決定位置'}
+  ];
+  let html=`<div class="knowledge-card" style="border-left-color:#5e35b1;">
+    <h3 style="color:#311b92;">🔗 互動：把活動與正確做法配對</h3>
+    <p style="font-size:14px;">先點左邊任一項目，再點右邊正確選項。</p>
+    <div class="match-grid" id="mg"></div>
+    <div id="mm" style="margin-top:8px;font-size:13.5px;min-height:30px;"></div>
+  </div>`;
+  box.innerHTML=html;
+  sceneEl.appendChild(box);
+  const mg=document.getElementById('mg');
+  // 隨機排列右側
+  const lefts=pairs.map((p,i)=>({id:i,text:p.a}));
+  const rights=pairs.map((p,i)=>({id:i,text:p.b})).sort(()=>Math.random()-0.5);
+  let leftPicked=null,matched=0;
+  const updateGrid=()=>{
+    mg.innerHTML='';
+    lefts.forEach(l=>{
+      const c=document.createElement('button');c.className='match-cell';c.textContent=l.text;
+      c.dataset.id=l.id;c.dataset.side='L';
+      if(l.done)c.classList.add('matched');
+      if(leftPicked===l.id)c.classList.add('picked');
+      c.onclick=()=>{if(l.done)return;leftPicked=l.id;updateGrid()};
+      mg.appendChild(c);
+    });
+    rights.forEach(r=>{
+      const c=document.createElement('button');c.className='match-cell';c.textContent=r.text;
+      c.dataset.id=r.id;c.dataset.side='R';
+      if(r.done)c.classList.add('matched');
+      c.onclick=()=>{
+        if(r.done)return;
+        if(leftPicked===null){document.getElementById('mm').textContent='⚠️ 請先點左邊任一活動';return}
+        if(leftPicked===r.id){
+          lefts.find(x=>x.id===r.id).done=true;
+          r.done=true;matched++;
+          document.getElementById('mm').textContent='✅ 配對成功！';
+          if(matched===pairs.length){
+            document.getElementById('mm').innerHTML='🎉 全部配對完成！';
+            optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+          }
+        }else{
+          document.getElementById('mm').textContent='❌ 配對錯誤，再試試。';
+        }
+        leftPicked=null;updateGrid();
+      };
+      mg.appendChild(c);
+    });
+  };
+  // 兩欄交替
+  const renderInterleaved=()=>{
+    mg.innerHTML='';
+    for(let i=0;i<pairs.length;i++){
+      const l=lefts[i];
+      const lc=document.createElement('button');lc.className='match-cell';lc.textContent=l.text;
+      if(l.done)lc.classList.add('matched');
+      if(leftPicked===l.id)lc.classList.add('picked');
+      lc.onclick=()=>{if(l.done)return;leftPicked=l.id;renderInterleaved()};
+      mg.appendChild(lc);
+      const r=rights[i];
+      const rc=document.createElement('button');rc.className='match-cell';rc.textContent=r.text;
+      if(r.done)rc.classList.add('matched');
+      rc.onclick=()=>{
+        if(r.done)return;
+        if(leftPicked===null){document.getElementById('mm').textContent='⚠️ 請先點左邊任一活動';return}
+        if(leftPicked===r.id){
+          lefts.find(x=>x.id===r.id).done=true;
+          r.done=true;matched++;
+          document.getElementById('mm').textContent='✅ 配對成功！';
+          if(matched===pairs.length){
+            document.getElementById('mm').innerHTML='🎉 全部配對完成！';
+            optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+          }
+        }else{document.getElementById('mm').textContent='❌ 配對錯誤，再試試。';}
+        leftPicked=null;renderInterleaved();
+      };
+      mg.appendChild(rc);
+    }
+  };
+  renderInterleaved();
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">配對完成後解鎖 →</button>`;
+}
+
+function earnBadge(idx){const el=document.getElementById('badge-'+idx);if(el)el.classList.add('earned')}
+function showStageClear(stage){
+  const stat=state.stageStats[state.stageIdx];
+  const isLast=state.stageIdx===STAGES.length-1;
+  const box=document.createElement('div');box.className='scene-box';box.style.textAlign='center';
+  box.innerHTML=`<div style="font-size:72px;margin:10px 0;">${stage.badgeEmoji}</div>
+    <h2 style="margin-bottom:10px;">獲得「${stage.badgeName}」！</h2>
+    <p style="font-size:15px;line-height:1.8;">本關完成：<strong>${stage.title}</strong><br>
+    答對 <strong style="color:#ffd966;font-size:22px;">${stat.correct} / ${stat.total}</strong> 題</p>`;
+  sceneEl.innerHTML='';sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="goNextStage()">${isLast?'🏆 查看結業證書':'⛵ 前往下一關'}</button>`;
+}
+function goNextStage(){state.stageIdx++;state.stepIdx=0;saveState();renderStep()}
+function showEnding(){
+  state.finishedAt=new Date().toISOString();saveState();
+  document.getElementById('ending').style.display='flex';
+  const sum=state.stageStats.map(s=>`<div style="margin:6px 0;">${s.title}：${s.correct} / ${s.total}</div>`).join('');
+  document.getElementById('ending-summary').innerHTML=`總答對 <strong style="color:#ffd966;font-size:28px;">${state.correctCount} / ${state.totalQuestions}</strong> 題<br><br>
+    <div style="text-align:left;max-width:340px;margin:0 auto;background:rgba(0,0,0,.2);padding:14px 18px;border-radius:10px;">${sum}</div>`;
+}
+</script>
+</body>
+</html>

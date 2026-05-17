@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海洋學徒冒險 — CH5-1 海水的組成和結構</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background: linear-gradient(180deg, #0b3a6b 0%, #14528f 35%, #1c6db4 70%, #2691d9 100%);
+    color: #fff;
+    overflow: hidden;
+  }
+  /* 海浪動畫背景 */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .bubble {
+    position: fixed;
+    bottom: -50px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    animation: rise linear infinite;
+    pointer-events: none;
+  }
+  @keyframes rise {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    10% { opacity: 0.8; }
+    100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
+  }
+
+  #game {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 頂部 HUD */
+  #hud {
+    padding: 12px 20px;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid rgba(255,255,255,0.15);
+    font-size: 14px;
+  }
+  #hud .title { font-weight: bold; font-size: 16px; }
+  #hud .badges { display: flex; gap: 8px; }
+  .badge-slot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 2px dashed rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: all 0.4s;
+  }
+  .badge-slot.earned {
+    background: linear-gradient(135deg, #ffd966, #f4a93f);
+    border: 2px solid #fff;
+    box-shadow: 0 0 14px rgba(255,217,102,0.7);
+    animation: pop 0.6s;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.3); }
+    60% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  /* 主場景 */
+  #scene {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .scene-box {
+    width: min(720px, 100%);
+    max-height: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 18px;
+    padding: 20px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    overflow-y: auto;
+  }
+
+  /* 對話框 */
+  .npc {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .npc-avatar {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffe082, #ffb74d);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .npc-text {
+    flex: 1;
+    background: rgba(255,255,255,0.95);
+    color: #1a3a5c;
+    padding: 14px 18px;
+    border-radius: 4px 18px 18px 18px;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .npc-text strong { color: #c0392b; }
+  .npc-text .name {
+    display: block;
+    font-weight: bold;
+    color: #2980b9;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  /* 知識卡 */
+  .knowledge-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,240,255,0.95));
+    color: #1a3a5c;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 12px 0;
+    border-left: 6px solid #f39c12;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  }
+  .knowledge-card h3 {
+    color: #d35400;
+    margin-bottom: 10px;
+    font-size: 17px;
+  }
+  .knowledge-card ul { margin-left: 18px; line-height: 1.9; }
+  .knowledge-card li { margin: 4px 0; font-size: 14.5px; }
+  .knowledge-card .hint {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(243,156,18,0.15);
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: #6e3f00;
+  }
+
+  /* 海洋分層視覺 */
+  .ocean-layers {
+    margin: 14px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .ocean-layers .layer {
+    padding: 14px 16px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .ocean-layers .layer:hover { filter: brightness(1.15); }
+  .ocean-layers .layer.active {
+    filter: brightness(1.3);
+    box-shadow: inset 0 0 0 3px #ffd966;
+  }
+  .layer-mixed { background: linear-gradient(180deg, #4fc3f7, #29b6f6); }
+  .layer-thermo { background: linear-gradient(180deg, #1976d2, #0d47a1); padding-top: 18px; padding-bottom: 18px; }
+  .layer-deep   { background: linear-gradient(180deg, #0d2c54, #061a36); padding-bottom: 18px; }
+  .layer .depth { font-size: 12px; opacity: 0.8; }
+  .layer .temp-readout {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  /* 鹽度地圖 */
+  .salinity-map {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .map-spot {
+    padding: 10px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 13px;
+  }
+  .map-spot:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+  .map-spot.revealed { background: rgba(255,217,102,0.3); border-color: #ffd966; }
+  .map-spot .emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+  .map-spot .reading { font-weight: bold; color: #ffd966; }
+
+  /* 離子分類遊戲 */
+  .ion-game { margin: 14px 0; }
+  .ion-game .ions {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0;
+    justify-content: center;
+  }
+  .ion-chip {
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.95);
+    color: #1a3a5c;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .ion-chip:hover { transform: scale(1.08); }
+  .ion-chip.selected-rock { border-color: #8d6e63; background: #d7ccc8; color: #4e342e; }
+  .ion-chip.selected-volcano { border-color: #e64a19; background: #ffccbc; color: #bf360c; }
+  .bins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .bin {
+    padding: 12px;
+    border-radius: 10px;
+    min-height: 70px;
+    text-align: center;
+    color: #fff;
+    font-size: 13px;
+  }
+  .bin.rock { background: linear-gradient(135deg, #6d4c41, #4e342e); }
+  .bin.volcano { background: linear-gradient(135deg, #d84315, #bf360c); }
+
+  /* 選項按鈕 */
+  #options {
+    padding: 12px 20px 20px;
+    background: rgba(0,0,0,0.25);
+    border-top: 2px solid rgba(255,255,255,0.1);
+  }
+  .question-block {
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  .question-block .q-num {
+    display: inline-block;
+    background: #f39c12;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-right: 8px;
+    font-weight: bold;
+  }
+  .opt-list { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.95);
+    color: #1a3a5c;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14.5px;
+    text-align: left;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .opt-btn:hover:not(:disabled) {
+    background: #ffd966;
+    transform: translateX(4px);
+  }
+  .opt-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+  .opt-btn.correct {
+    background: #66bb6a;
+    color: #fff;
+    border-color: #2e7d32;
+    animation: shake-y 0.4s;
+  }
+  .opt-btn.wrong {
+    background: #ef5350;
+    color: #fff;
+    border-color: #b71c1c;
+    animation: shake-x 0.4s;
+  }
+  @keyframes shake-y {
+    0%,100% { transform: translateY(0); }
+    25% { transform: translateY(-6px); }
+    75% { transform: translateY(4px); }
+  }
+  @keyframes shake-x {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(6px); }
+  }
+  .feedback {
+    margin-top: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .feedback.ok { background: rgba(102,187,106,0.25); border-left: 4px solid #66bb6a; }
+  .feedback.no { background: rgba(239,83,80,0.25); border-left: 4px solid #ef5350; }
+
+  /* 主要動作鈕 */
+  .next-btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 22px;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.4); }
+
+  /* 開始/結束 畫面 */
+  .splash {
+    position: fixed; inset: 0;
+    background: linear-gradient(180deg, rgba(11,58,107,0.95), rgba(28,109,180,0.95));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    text-align: center;
+  }
+  .splash h1 {
+    font-size: 36px;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .splash h2 { font-size: 20px; margin-bottom: 18px; opacity: 0.9; }
+  .splash p { max-width: 520px; line-height: 1.8; margin-bottom: 20px; font-size: 15px; opacity: 0.95; }
+  .splash .big-emoji { font-size: 80px; margin-bottom: 14px; animation: bob 2.5s ease-in-out infinite; }
+  @keyframes bob {
+    0%,100% { transform: translateY(0) rotate(-3deg); }
+    50% { transform: translateY(-10px) rotate(3deg); }
+  }
+
+  /* 角色站位（場景小動畫） */
+  .stage-art {
+    height: 110px;
+    position: relative;
+    margin-bottom: 10px;
+    background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.2) 100%);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .stage-art .sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #87ceeb 0%, #b3e5fc 60%, #4fc3f7 100%);
+  }
+  .stage-art .sun {
+    position: absolute; top: 10px; right: 30px;
+    font-size: 32px;
+  }
+  .stage-art .ship {
+    position: absolute;
+    bottom: 8px; left: 40%;
+    font-size: 48px;
+    animation: rock 3s ease-in-out infinite;
+  }
+  @keyframes rock {
+    0%,100% { transform: rotate(-4deg) translateY(0); }
+    50% { transform: rotate(4deg) translateY(-4px); }
+  }
+  .stage-art .wave-1, .stage-art .wave-2 {
+    position: absolute; bottom: 0; width: 100%;
+    height: 30px;
+    background: rgba(33,150,243,0.7);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  }
+  .stage-art .wave-2 { bottom: -8px; background: rgba(13,71,161,0.7); }
+
+  /* 響應式 */
+  @media (max-width: 600px) {
+    .npc-avatar { width: 44px; height: 44px; font-size: 24px; }
+    .npc-text { font-size: 14px; padding: 12px 14px; }
+    .splash h1 { font-size: 26px; }
+    .splash .big-emoji { font-size: 60px; }
+    #hud { font-size: 12px; padding: 10px; }
+    .badge-slot { width: 30px; height: 30px; font-size: 16px; }
+    .salinity-map { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- 氣泡裝飾 -->
+<div class="bubble" style="left:10%; width:18px; height:18px; animation-duration:14s;"></div>
+<div class="bubble" style="left:30%; width:12px; height:12px; animation-duration:10s; animation-delay:2s;"></div>
+<div class="bubble" style="left:55%; width:22px; height:22px; animation-duration:16s; animation-delay:5s;"></div>
+<div class="bubble" style="left:75%; width:10px; height:10px; animation-duration:9s; animation-delay:1s;"></div>
+<div class="bubble" style="left:88%; width:16px; height:16px; animation-duration:12s; animation-delay:3s;"></div>
+
+<!-- 開場畫面 -->
+<div id="splash" class="splash">
+  <div class="big-emoji">🌊</div>
+  <h1>海洋學徒冒險</h1>
+  <h2>第五章・第一話：海水的祕密</h2>
+  <p>歡迎加入 <strong>「探海號」</strong> 研究船！<br>
+    在艾克曼博士的帶領下，你將通過四個關卡，揭開海水的組成與結構。<br>
+    每個關卡都會獲得一枚 <strong>海洋研究勳章</strong>，集滿四枚即可結業！</p>
+  <div style="margin-bottom:14px;">
+    <label style="display:block; margin-bottom:6px; font-size:14px;">請輸入你的名字（用於成績匯出）：</label>
+    <input id="player-name" type="text" placeholder="例如：座號5號 王小明" style="padding:8px 14px; border-radius:20px; border:none; font-size:14px; width:280px; font-family:inherit;">
+  </div>
+  <div>
+    <button class="next-btn" onclick="startGame(false)">🚢 啟航！</button>
+    <button class="next-btn" id="resume-btn" style="display:none; background:linear-gradient(135deg,#26a69a,#00897b); margin-left:8px;" onclick="startGame(true)">📂 繼續上次</button>
+  </div>
+</div>
+
+<!-- 通關畫面 -->
+<div id="ending" class="splash" style="display:none;">
+  <div class="big-emoji">🏆</div>
+  <h1>恭喜結業！</h1>
+  <h2>你已掌握「海水的組成和結構」</h2>
+  <p id="ending-summary"></p>
+  <div>
+    <button class="next-btn" onclick="exportResult()">📥 匯出成績</button>
+    <button class="next-btn" style="background:linear-gradient(135deg,#7e57c2,#5e35b1); margin-left:8px;" onclick="resetAll()">🔄 重新挑戰</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="hud">
+    <div class="title">🚢 探海號・<span id="stage-title">準備啟航</span></div>
+    <div class="badges">
+      <div class="badge-slot" id="badge-0">🧂</div>
+      <div class="badge-slot" id="badge-1">🌍</div>
+      <div class="badge-slot" id="badge-2">🌡️</div>
+      <div class="badge-slot" id="badge-3">🌊</div>
+    </div>
+  </div>
+  <main id="scene"></main>
+  <div id="options"></div>
+</div>
+
+<script>
+// ============ 遊戲資料：每個關卡（小節）的劇情 + 知識 + 題目 ============
+const STAGES = [
+  // ---------- 關卡 1：5-1.1 海水的組成（★ 入門） ----------
+  {
+    id: '5-1.1',
+    title: '5-1.1 海水的組成',
+    badgeIdx: 0,
+    badgeEmoji: '🧂',
+    badgeName: '鹽類分析勳章',
+    difficulty: 1,
+    steps: [
+      {
+        type: 'narrate',
+        avatar: '👨‍🔬',
+        name: '艾克曼博士',
+        text: '歡迎加入探海號！我們的第一個任務是分析海水的成分。請看這桶剛打撈上來的海水……它看起來只是鹹鹹的水，但裡面藏著很多秘密。'
+      },
+      {
+        type: 'art',
+        html: `<div class="stage-art">
+                 <div class="sky"></div>
+                 <div class="sun">☀️</div>
+                 <div class="wave-1"></div>
+                 <div class="wave-2"></div>
+                 <div class="ship">⛵</div>
+               </div>`
+      },
+      {
+        type: 'knowledge',
+        title: '🧪 知識卡：海水的組成',
+        body: `
+          <ul>
+            <li>每 <strong>1000 公克</strong>海水平均含有 <strong>965 g 水</strong> 與 <strong>35 g 鹽類</strong>，鹽度約 <strong>35‰</strong>。</li>
+            <li><strong>陽離子</strong>（Na⁺、Mg²⁺、Ca²⁺、K⁺）：主要來自<strong>岩石風化</strong>，由河流帶入海洋。</li>
+            <li><strong>陰離子</strong>（Cl⁻、SO₄²⁻、HCO₃⁻）：主要來自<strong>火山氣體</strong>溶解於海水。</li>
+          </ul>
+          <div class="hint">💡 比較海水與地殼岩石成分，可推測各種離子的來源。</div>
+        `
+      },
+      {
+        type: 'minigame-ion'
+      },
+      {
+        type: 'question',
+        q: '1 公斤海水平均含有多少克鹽類？',
+        options: [
+          { text: '35 g（鹽度約 35‰）', correct: true, explain: '✅ 沒錯！1000 g 海水 ≈ 965 g 水 + 35 g 鹽。' },
+          { text: '100 g', correct: false, explain: '❌ 太多了，海水並沒有那麼鹹。' },
+          { text: '965 g', correct: false, explain: '❌ 965 g 是「水」的重量，不是鹽類。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '下列哪一個離子主要來自「岩石風化」？',
+        options: [
+          { text: 'Na⁺（鈉離子）', correct: true, explain: '✅ Na⁺、Mg²⁺、Ca²⁺、K⁺ 等陽離子主要來自岩石風化。' },
+          { text: 'Cl⁻（氯離子）', correct: false, explain: '❌ Cl⁻ 主要來自火山氣體溶解。' },
+          { text: 'SO₄²⁻（硫酸根離子）', correct: false, explain: '❌ SO₄²⁻ 也是來自火山氣體。' }
+        ]
+      }
+    ]
+  },
+
+  // ---------- 關卡 2：5-1.2 表層海水的鹽度分布（★★） ----------
+  {
+    id: '5-1.2',
+    title: '5-1.2 表層海水的鹽度分布',
+    badgeIdx: 1,
+    badgeEmoji: '🌍',
+    badgeName: '全球鹽度勳章',
+    difficulty: 2,
+    steps: [
+      {
+        type: 'narrate',
+        avatar: '👨‍🔬',
+        name: '艾克曼博士',
+        text: '太棒了！既然海水鹽度平均 35‰，那全世界的海水鹽度都一樣嗎？我們要環遊世界，採樣 4 個地點 —— 點點看，比比看！'
+      },
+      {
+        type: 'minigame-salinity'
+      },
+      {
+        type: 'knowledge',
+        title: '🌐 知識卡：鹽度水平分布的規律',
+        body: `
+          <ul>
+            <li>鹽度單位 <strong>‰（千分比）</strong>：每千克海水中鹽類的克數。</li>
+            <li>鹽度受「<strong>蒸發 − 降水 − 河水 − 冰川融化</strong>」共同影響。</li>
+            <li><strong>副熱帶高壓海域</strong>：蒸發強、降水少 → <strong>鹽度最高</strong>。</li>
+            <li><strong>赤道海域</strong>：降水豐沛 → 鹽度略低於副熱帶。</li>
+            <li><strong>極區</strong>：年蒸發小、冰融淡水多 → <strong>鹽度最低</strong>。</li>
+            <li>半封閉海域受蒸發/河水主導：<strong>紅海最鹹</strong>、<strong>波羅的海最淡</strong>。</li>
+          </ul>
+        `
+      },
+      {
+        type: 'question',
+        q: '鹽度的單位「‰」代表什麼？',
+        options: [
+          { text: '千分比（每千克海水含鹽的克數）', correct: true, explain: '✅ 35‰ 表示每 1000 g 海水含 35 g 鹽。' },
+          { text: '百分比', correct: false, explain: '❌ 百分比是 %，不是 ‰。' },
+          { text: '公斤', correct: false, explain: '❌ 千分比是一種比例，不是質量單位。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '為什麼副熱帶海域鹽度通常最高？',
+        options: [
+          { text: '蒸發強、降水少，海水中的鹽被濃縮', correct: true, explain: '✅ 副熱帶受高壓控制、晴天多、蒸發強，鹽度可超過 36‰。' },
+          { text: '河水大量注入帶來鹽分', correct: false, explain: '❌ 河水是「淡水」，反而會降低鹽度。' },
+          { text: '海冰融化補充鹽分', correct: false, explain: '❌ 海冰幾乎不含鹽，融化後反而稀釋海水。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '下列哪一個地區的表層鹽度最低？',
+        options: [
+          { text: '高緯度極區（冰融淡水多）', correct: true, explain: '✅ 極區年蒸發量小、冰融補充淡水，鹽度最低。' },
+          { text: '副熱帶大洋', correct: false, explain: '❌ 副熱帶是全球鹽度最高的區域。' },
+          { text: '紅海', correct: false, explain: '❌ 紅海是全球鹽度極高的代表海域。' }
+        ]
+      }
+    ]
+  },
+
+  // ---------- 關卡 3：5-1.3 表層海水的溫度分布（★★） ----------
+  {
+    id: '5-1.3',
+    title: '5-1.3 表層海水的溫度分布',
+    badgeIdx: 2,
+    badgeEmoji: '🌡️',
+    badgeName: '全球水溫勳章',
+    difficulty: 2,
+    steps: [
+      {
+        type: 'narrate',
+        avatar: '🛰️',
+        name: '探海號 AI',
+        text: '叮叮！衛星溫度資料下載完成！全球海面水溫從 −2℃ 到 30℃ 都有。從這張圖，你看得出什麼規律嗎？'
+      },
+      {
+        type: 'art',
+        html: `
+          <div style="text-align:center; padding:10px;">
+            <div style="display:inline-block; padding:10px 20px; background:rgba(255,255,255,0.1); border-radius:12px;">
+              <div style="font-size:14px; margin-bottom:8px;">🌍 全球海面溫度分布示意</div>
+              <div style="display:flex; height:120px; border-radius:8px; overflow:hidden; border:2px solid rgba(255,255,255,0.3);">
+                <div style="flex:1; background:linear-gradient(180deg, #0d47a1 0%, #1976d2 20%, #f57c00 50%, #d32f2f 65%, #f57c00 80%, #1976d2 100%); width:260px; position:relative;">
+                  <span style="position:absolute; top:4px; left:6px; font-size:11px;">90°N -2℃</span>
+                  <span style="position:absolute; top:50%; left:6px; transform:translateY(-50%); font-size:11px;">赤道 28℃</span>
+                  <span style="position:absolute; bottom:4px; left:6px; font-size:11px;">90°S -2℃</span>
+                </div>
+              </div>
+              <div style="font-size:12px; margin-top:6px; opacity:0.8;">等溫線約平行緯度 → 由赤道向極區遞減</div>
+            </div>
+          </div>
+        `
+      },
+      {
+        type: 'knowledge',
+        title: '🌡️ 知識卡：表層水溫的水平分布',
+        body: `
+          <ul>
+            <li>表層海水溫度約 <strong>−2℃ ~ 30℃</strong>，<strong>赤道最高、極區最低</strong>。</li>
+            <li>等溫線約 <strong>平行緯度</strong>（受日照角度主導）。</li>
+            <li>同緯度的東西差異 → 受 <strong>海流</strong> 影響：
+              <ul style="margin-top:4px;">
+                <li>熱帶海流由東向西 → <strong>熱帶西側</strong>（如菲律賓外海）水溫高於東側。</li>
+                <li>中緯度海流由西向東 → <strong>溫帶東側</strong> 反而比西側暖（如歐洲西岸暖、北美東岸冷）。</li>
+              </ul>
+            </li>
+          </ul>
+        `
+      },
+      {
+        type: 'question',
+        q: '表層海水溫度從赤道往極區，呈現什麼趨勢？',
+        options: [
+          { text: '遞減（赤道最高，極區最低）', correct: true, explain: '✅ 等溫線約平行緯度，水溫隨緯度升高而下降。' },
+          { text: '遞增', correct: false, explain: '❌ 方向相反了。' },
+          { text: '隨機分布', correct: false, explain: '❌ 表層水溫主要受日照角度控制，有明顯規律。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '熱帶海域為什麼「西側」水溫常高於「東側」？',
+        options: [
+          { text: '熱帶海流由東向西流，把暖水帶到西側', correct: true, explain: '✅ 信風驅動表面海流向西，西側因此累積暖水。' },
+          { text: '太陽從西邊升起', correct: false, explain: '❌ 太陽從東邊升起，這跟方向無關。' },
+          { text: '月球的引力較強', correct: false, explain: '❌ 月球引力主要影響潮汐，不是水溫分布。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '在開放大洋中，等溫線大致與什麼方向平行？',
+        options: [
+          { text: '緯線', correct: true, explain: '✅ 因為太陽輻射主要隨緯度變化。' },
+          { text: '經線', correct: false, explain: '❌ 同緯度水溫相近，等溫線不會沿經線走。' },
+          { text: '海岸線', correct: false, explain: '❌ 海岸線只在近岸有局部影響，不是全球規律。' }
+        ]
+      }
+    ]
+  },
+
+  // ---------- 關卡 4：5-1.4 海水溫度的垂直分布（★★★ 進階） ----------
+  {
+    id: '5-1.4',
+    title: '5-1.4 海水溫度的垂直分布',
+    badgeIdx: 3,
+    badgeEmoji: '🌊',
+    badgeName: '深海三層勳章',
+    difficulty: 3,
+    steps: [
+      {
+        type: 'narrate',
+        avatar: '👨‍🔬',
+        name: '艾克曼博士',
+        text: '最後一關！我們要把探測器放到海底，記錄不同深度的溫度。你會發現 —— 海水從表面到深海，溫度變化「並不平均」。'
+      },
+      {
+        type: 'minigame-layers'
+      },
+      {
+        type: 'knowledge',
+        title: '📊 知識卡：海水溫度的三層結構',
+        body: `
+          <ul>
+            <li><strong>混合層（0–200m）</strong>：風浪、波浪持續上下混合 → 水溫均勻，幾乎沒有垂直變化。</li>
+            <li><strong>斜溫層（溫躍層，~200–1000m）</strong>：水溫隨深度<strong>急遽下降</strong>，是溫度變化最快的範圍。</li>
+            <li><strong>深水層（>1000m）</strong>：水溫穩定在 <strong>1–3℃</strong>，由高緯冷海水下沉而來。</li>
+            <li><strong>緯度與季節差異</strong>：
+              <ul style="margin-top:4px;">
+                <li>中緯度<strong>夏季</strong>：表層溫高、混合層薄、斜溫層明顯。</li>
+                <li>中緯度<strong>冬季</strong>：混合層加厚、斜溫層不明顯。</li>
+                <li>熱帶：終年斜溫層明顯，混合層薄。</li>
+                <li>極區：上下水溫接近，斜溫層幾乎消失。</li>
+              </ul>
+            </li>
+          </ul>
+          <div class="hint">💡 點上方圖中的不同水層，可以查看典型水溫。</div>
+        `
+      },
+      {
+        type: 'question',
+        q: '海洋三層中，哪一層水溫變化「最快」？',
+        options: [
+          { text: '斜溫層（溫躍層）', correct: true, explain: '✅ 斜溫層介於混合層與深水層之間，是溫度梯度最大的範圍。' },
+          { text: '混合層', correct: false, explain: '❌ 混合層因風浪混合，水溫反而均勻。' },
+          { text: '深水層', correct: false, explain: '❌ 深水層穩定維持在 1~3℃，幾乎不變。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '混合層水溫均勻的主要原因是什麼？',
+        options: [
+          { text: '風力與波浪造成垂直混合', correct: true, explain: '✅ 表層風浪能量讓上層水體不斷混合，水溫趨於一致。' },
+          { text: '海底火山加熱', correct: false, explain: '❌ 海底火山只在局部影響，無法使整個混合層均勻。' },
+          { text: '月球引力', correct: false, explain: '❌ 月球引力造成潮汐，不會讓水溫垂直均勻。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '為什麼中緯度海域「夏季」的斜溫層比「冬季」明顯？',
+        options: [
+          { text: '夏季日照強，表層水溫升高，使混合層與深水層的溫差變大', correct: true, explain: '✅ 表層加熱越多 → 上下溫差越大 → 斜溫層越明顯。' },
+          { text: '冬季風力強，海水沸騰', correct: false, explain: '❌ 冬季風強反而使混合層加厚、斜溫層變不明顯。' },
+          { text: '夏季月亮較近', correct: false, explain: '❌ 跟月球距離無關。' }
+        ]
+      },
+      {
+        type: 'question',
+        q: '【綜合題】下列關於極區海洋的敘述，何者正確？',
+        options: [
+          { text: '上下水溫相近，斜溫層幾乎不明顯，容易發生垂直混合', correct: true, explain: '✅ 極區表層水冷且鹽度高、密度大，會下沉到深水層，造成上下水溫接近。' },
+          { text: '極區斜溫層最明顯，混合層最薄', correct: false, explain: '❌ 那是「熱帶」海域的特徵。' },
+          { text: '極區的混合層水溫總是高於深水層', correct: false, explain: '❌ 極區的表層水可能比深水層還冷。' }
+        ]
+      }
+    ]
+  }
+];
+
+// ============ 遊戲狀態 + 存檔 ============
+const STORAGE_KEY = 'marineRPG_5-1';
+let state = {
+  playerName: '',
+  stageIdx: 0,
+  stepIdx: 0,
+  correctCount: 0,
+  totalQuestions: 0,
+  stageStats: [],
+  startedAt: null,
+  finishedAt: null
+};
+
+const sceneEl = document.getElementById('scene');
+const optionsEl = document.getElementById('options');
+const stageTitleEl = document.getElementById('stage-title');
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return null;
+}
+
+// 啟動時檢查是否有存檔
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = loadState();
+  if (saved && !saved.finishedAt) {
+    const btn = document.getElementById('resume-btn');
+    btn.style.display = 'inline-block';
+    btn.title = `上次進度：${saved.playerName || '匿名'} — 關卡 ${saved.stageIdx + 1}`;
+  }
+});
+
+function startGame(resume) {
+  if (resume) {
+    const saved = loadState();
+    if (saved) state = saved;
+  } else {
+    const nameInput = document.getElementById('player-name');
+    state.playerName = (nameInput && nameInput.value.trim()) || '匿名學徒';
+    state.stageStats = STAGES.map(s => ({ id: s.id, title: s.title, correct: 0, total: 0 }));
+    state.startedAt = new Date().toISOString();
+    state.stageIdx = 0;
+    state.stepIdx = 0;
+    state.correctCount = 0;
+    state.totalQuestions = 0;
+    state.finishedAt = null;
+  }
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('ending').style.display = 'none';
+  // 恢復勳章
+  state.stageStats.forEach((st, i) => {
+    if (st.total > 0 && i < state.stageIdx) earnBadge(STAGES[i].badgeIdx);
+  });
+  saveState();
+  renderStep();
+}
+
+function resetAll() {
+  if (!confirm('確定要清除所有進度，重新挑戰嗎？')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  location.reload();
+}
+
+function exportResult() {
+  const lines = [];
+  lines.push('=== 海洋學徒冒險・成績單 ===');
+  lines.push('章節：CH5-1 海水的組成和結構');
+  lines.push('學生：' + (state.playerName || '匿名'));
+  lines.push('開始：' + (state.startedAt || ''));
+  lines.push('完成：' + (state.finishedAt || ''));
+  lines.push('總分：' + state.correctCount + ' / ' + state.totalQuestions);
+  lines.push('');
+  lines.push('--- 各關得分 ---');
+  state.stageStats.forEach(s => {
+    lines.push(s.title + '：' + s.correct + ' / ' + s.total);
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeName = (state.playerName || '匿名').replace(/[\\/:*?"<>|]/g, '_');
+  a.download = `海洋RPG_5-1_${safeName}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderStep() {
+  const stage = STAGES[state.stageIdx];
+  if (!stage) { showEnding(); return; }
+  stageTitleEl.textContent = stage.title + '（' + '★'.repeat(stage.difficulty) + '）';
+
+  const step = stage.steps[state.stepIdx];
+  if (!step) {
+    // 關卡結束：發勳章
+    earnBadge(stage.badgeIdx);
+    showStageClear(stage);
+    return;
+  }
+
+  sceneEl.innerHTML = '';
+  optionsEl.innerHTML = '';
+
+  if (step.type === 'narrate') {
+    renderNarrate(step);
+  } else if (step.type === 'art') {
+    renderArt(step);
+  } else if (step.type === 'knowledge') {
+    renderKnowledge(step);
+  } else if (step.type === 'question') {
+    renderQuestion(step, stage);
+  } else if (step.type === 'minigame-ion') {
+    renderIonGame();
+  } else if (step.type === 'minigame-salinity') {
+    renderSalinityGame();
+  } else if (step.type === 'minigame-layers') {
+    renderLayersGame();
+  }
+}
+
+function nextStep() {
+  state.stepIdx++;
+  saveState();
+  renderStep();
+}
+
+function renderNarrate(step) {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  box.innerHTML = `
+    <div class="npc">
+      <div class="npc-avatar">${step.avatar}</div>
+      <div class="npc-text">
+        <span class="name">${step.name}</span>
+        ${step.text}
+      </div>
+    </div>
+  `;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+
+function renderArt(step) {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  box.innerHTML = step.html;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+
+function renderKnowledge(step) {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  box.innerHTML = `
+    <div class="knowledge-card">
+      <h3>${step.title}</h3>
+      ${step.body}
+    </div>
+  `;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()">我懂了 ➤</button>`;
+}
+
+function renderQuestion(step, stage) {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  const qNum = stage.steps.filter((s, i) => s.type === 'question' && i <= state.stepIdx).length;
+  const qTotal = stage.steps.filter(s => s.type === 'question').length;
+  box.innerHTML = `
+    <div class="question-block">
+      <span class="q-num">Q${qNum}/${qTotal}</span>
+      ${step.q}
+    </div>
+    <div class="opt-list" id="opts"></div>
+    <div id="fb"></div>
+  `;
+  sceneEl.appendChild(box);
+
+  const optsEl = box.querySelector('#opts');
+  const fbEl = box.querySelector('#fb');
+
+  step.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = `${String.fromCharCode(65 + idx)}. ${opt.text}`;
+    btn.onclick = () => {
+      // 鎖定全部按鈕
+      [...optsEl.children].forEach(b => b.disabled = true);
+      state.totalQuestions++;
+      state.stageStats[state.stageIdx].total++;
+      if (opt.correct) {
+        btn.classList.add('correct');
+        state.correctCount++;
+        state.stageStats[state.stageIdx].correct++;
+        fbEl.innerHTML = `<div class="feedback ok">${opt.explain}</div>
+          <button class="next-btn" onclick="nextStep()">下一題 ➤</button>`;
+      } else {
+        btn.classList.add('wrong');
+        // 找到正確答案標示
+        const correctIdx = step.options.findIndex(o => o.correct);
+        optsEl.children[correctIdx].classList.add('correct');
+        fbEl.innerHTML = `<div class="feedback no">${opt.explain}<br><br>
+          ✅ <strong>正確答案：</strong>${step.options[correctIdx].text}<br>
+          ${step.options[correctIdx].explain.replace('✅ ','')}</div>
+          <button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+    };
+    optsEl.appendChild(btn);
+  });
+  optionsEl.innerHTML = '';
+}
+
+// 互動 1：離子分類遊戲
+function renderIonGame() {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  box.innerHTML = `
+    <div class="knowledge-card" style="border-left-color:#26a69a;">
+      <h3 style="color:#00695c;">🎯 互動任務：把離子拖回家！</h3>
+      <p style="font-size:14px; line-height:1.7;">點選下方離子，再點對應的「來源」格子。離子來源正確會發光。</p>
+      <div class="ion-game">
+        <div class="ions" id="ions">
+          <span class="ion-chip" data-src="rock" data-ion="Na⁺">Na⁺</span>
+          <span class="ion-chip" data-src="rock" data-ion="Mg²⁺">Mg²⁺</span>
+          <span class="ion-chip" data-src="rock" data-ion="Ca²⁺">Ca²⁺</span>
+          <span class="ion-chip" data-src="rock" data-ion="K⁺">K⁺</span>
+          <span class="ion-chip" data-src="volcano" data-ion="Cl⁻">Cl⁻</span>
+          <span class="ion-chip" data-src="volcano" data-ion="SO₄²⁻">SO₄²⁻</span>
+          <span class="ion-chip" data-src="volcano" data-ion="HCO₃⁻">HCO₃⁻</span>
+        </div>
+        <div class="bins">
+          <div class="bin rock" id="bin-rock">🪨 岩石風化 → 河流帶入<br><small id="rock-count">(0/4)</small></div>
+          <div class="bin volcano" id="bin-volcano">🌋 火山氣體 → 溶解海中<br><small id="volc-count">(0/3)</small></div>
+        </div>
+      </div>
+      <div id="ion-msg" style="margin-top:10px; font-size:14px; color:#00695c;"></div>
+    </div>
+  `;
+  sceneEl.appendChild(box);
+
+  let selectedChip = null;
+  let placedRock = 0, placedVolcano = 0;
+
+  box.querySelectorAll('.ion-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (chip.classList.contains('selected-rock') || chip.classList.contains('selected-volcano')) return;
+      box.querySelectorAll('.ion-chip').forEach(c => c.style.outline = '');
+      selectedChip = chip;
+      chip.style.outline = '3px solid #ffd966';
+    });
+  });
+
+  const tryPlace = (binType) => {
+    if (!selectedChip) {
+      document.getElementById('ion-msg').textContent = '⚠️ 請先點選一個離子。';
+      return;
+    }
+    const correct = selectedChip.dataset.src === binType;
+    if (correct) {
+      selectedChip.classList.add(binType === 'rock' ? 'selected-rock' : 'selected-volcano');
+      selectedChip.style.outline = '';
+      if (binType === 'rock') {
+        placedRock++;
+        document.getElementById('rock-count').textContent = `(${placedRock}/4)`;
+      } else {
+        placedVolcano++;
+        document.getElementById('volc-count').textContent = `(${placedVolcano}/3)`;
+      }
+      document.getElementById('ion-msg').textContent = `✅ ${selectedChip.dataset.ion} 歸位！`;
+      selectedChip = null;
+    } else {
+      document.getElementById('ion-msg').textContent = `❌ ${selectedChip.dataset.ion} 不是這個來源，再試試！`;
+      selectedChip.style.outline = '';
+      selectedChip = null;
+    }
+    if (placedRock === 4 && placedVolcano === 3) {
+      document.getElementById('ion-msg').innerHTML = '🎉 全部歸位！你已能分辨海水離子的兩大來源。';
+      optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+    }
+  };
+
+  document.getElementById('bin-rock').onclick = () => tryPlace('rock');
+  document.getElementById('bin-volcano').onclick = () => tryPlace('volcano');
+
+  optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()" style="opacity:0.4;" title="完成歸位後解鎖">先完成歸位 →</button>`;
+}
+
+// 互動 2：鹽度地圖
+function renderSalinityGame() {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  const spots = [
+    { id:'red',     name:'紅海',         emoji:'🏜️', val:'40 ‰', tag:'(最高！蒸發極強)' },
+    { id:'subtrop', name:'副熱帶大洋',   emoji:'☀️', val:'36 ‰', tag:'(蒸發 > 降水)' },
+    { id:'equator', name:'赤道海域',     emoji:'🌴', val:'34 ‰', tag:'(降水豐沛而下降)' },
+    { id:'arctic',  name:'北極海域',     emoji:'🧊', val:'32 ‰', tag:'(冰融+降水稀釋)' }
+  ];
+  box.innerHTML = `
+    <div class="knowledge-card" style="border-left-color:#42a5f5;">
+      <h3 style="color:#1565c0;">🗺️ 環遊世界記錄鹽度</h3>
+      <p style="font-size:14px;">點選下方 4 個採樣點，看看鹽度數字並比較規律。</p>
+      <div class="salinity-map" id="map"></div>
+      <div id="map-msg" style="margin-top:8px; font-size:13.5px;"></div>
+    </div>
+  `;
+  sceneEl.appendChild(box);
+  const map = box.querySelector('#map');
+  let revealed = 0;
+  spots.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'map-spot';
+    d.innerHTML = `<span class="emoji">${s.emoji}</span>${s.name}<div class="reading" style="display:none;">${s.val}<br><small style="opacity:0.85;">${s.tag}</small></div>`;
+    d.onclick = () => {
+      if (d.classList.contains('revealed')) return;
+      d.classList.add('revealed');
+      d.querySelector('.reading').style.display = 'block';
+      revealed++;
+      if (revealed === 4) {
+        document.getElementById('map-msg').innerHTML = '🎉 你已採樣完 4 個地點！可看到副熱帶 > 赤道 > 極區的規律。';
+        optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+    };
+    map.appendChild(d);
+  });
+  optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()" style="opacity:0.4;" title="採樣 4 個地點後解鎖">先採樣完 →</button>`;
+}
+
+// 互動 3：海洋分層
+function renderLayersGame() {
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  box.innerHTML = `
+    <div class="knowledge-card" style="border-left-color:#7e57c2;">
+      <h3 style="color:#4527a0;">🤿 下潛體驗：點擊三個水層</h3>
+      <p style="font-size:14px;">點下方各層看典型水溫。三層都點過後解鎖下一步。</p>
+      <div class="ocean-layers" id="layers">
+        <div class="layer layer-mixed" data-id="mixed">
+          🌤️ 混合層（0–200 m）<span class="temp-readout" id="t-mixed">點我</span>
+          <div class="depth">日照、風浪混合 → 水溫均勻</div>
+        </div>
+        <div class="layer layer-thermo" data-id="thermo">
+          🌀 斜溫層（~200–1000 m）<span class="temp-readout" id="t-thermo">點我</span>
+          <div class="depth">水溫隨深度急遽下降</div>
+        </div>
+        <div class="layer layer-deep" data-id="deep">
+          🧊 深水層（>1000 m）<span class="temp-readout" id="t-deep">點我</span>
+          <div class="depth">穩定的冷水，由高緯下沉</div>
+        </div>
+      </div>
+      <div id="layer-msg" style="margin-top:8px; font-size:13.5px; color:#fff;"></div>
+    </div>
+  `;
+  sceneEl.appendChild(box);
+
+  const readings = {
+    mixed:  { temp: '28 ℃', note: '與表面氣溫接近，幾乎沒有垂直變化。' },
+    thermo: { temp: '28 ℃ → 4 ℃', note: '短短幾百公尺溫差超過 20℃，是海中溫度變化最劇烈的範圍。' },
+    deep:   { temp: '1~3 ℃', note: '高緯冷海水沉積而來，幾乎不受日照影響。' }
+  };
+  const visited = new Set();
+  box.querySelectorAll('.layer').forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.id;
+      visited.add(id);
+      box.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('t-' + id).textContent = readings[id].temp;
+      document.getElementById('layer-msg').textContent = `📌 ${readings[id].note}`;
+      if (visited.size === 3) {
+        document.getElementById('layer-msg').innerHTML += '<br>🎉 三層都探索完了！';
+        optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+    };
+  });
+  optionsEl.innerHTML = `<button class="next-btn" onclick="nextStep()" style="opacity:0.4;" title="探索完三層後解鎖">先探索完 →</button>`;
+}
+
+// 通關（單關）
+function earnBadge(idx) {
+  const el = document.getElementById('badge-' + idx);
+  if (el) el.classList.add('earned');
+}
+
+function showStageClear(stage) {
+  const stat = state.stageStats[state.stageIdx];
+  const isLast = state.stageIdx === STAGES.length - 1;
+  const box = document.createElement('div');
+  box.className = 'scene-box';
+  box.style.textAlign = 'center';
+  box.innerHTML = `
+    <div style="font-size:72px; margin: 10px 0;">${stage.badgeEmoji}</div>
+    <h2 style="margin-bottom:10px;">獲得「${stage.badgeName}」！</h2>
+    <p style="font-size:15px; line-height:1.8;">
+      本關完成：<strong>${stage.title}</strong><br>
+      答對 <strong style="color:#ffd966; font-size:22px;">${stat.correct} / ${stat.total}</strong> 題
+    </p>
+  `;
+  sceneEl.innerHTML = '';
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML = `<button class="next-btn" onclick="goNextStage()">${isLast ? '🏆 查看結業證書' : '⛵ 前往下一關'}</button>`;
+}
+
+function goNextStage() {
+  state.stageIdx++;
+  state.stepIdx = 0;
+  saveState();
+  renderStep();
+}
+
+function showEnding() {
+  state.finishedAt = new Date().toISOString();
+  saveState();
+  document.getElementById('ending').style.display = 'flex';
+  const sum = state.stageStats.map(s =>
+    `<div style="margin:6px 0;">${s.title}：${s.correct} / ${s.total}</div>`
+  ).join('');
+  document.getElementById('ending-summary').innerHTML = `
+    總答對 <strong style="color:#ffd966; font-size:28px;">${state.correctCount} / ${state.totalQuestions}</strong> 題<br><br>
+    <div style="text-align:left; max-width:340px; margin:0 auto; background:rgba(0,0,0,0.2); padding:14px 18px; border-radius:10px;">
+      ${sum}
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>

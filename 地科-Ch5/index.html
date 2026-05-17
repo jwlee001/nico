@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海洋學徒冒險 — 第五章｜變動的海洋</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    background:linear-gradient(180deg,#0b3a6b 0%,#14528f 35%,#1c6db4 70%,#2691d9 100%);color:#fff}
+  body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.08) 0%,transparent 40%),radial-gradient(circle at 80% 20%,rgba(255,255,255,.06) 0%,transparent 40%);pointer-events:none;z-index:0}
+  .bubble{position:fixed;bottom:-50px;background:rgba(255,255,255,.15);border-radius:50%;animation:rise linear infinite;pointer-events:none;z-index:0}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:.8}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+  main{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:40px 20px 60px}
+  header{text-align:center;margin-bottom:28px}
+  header .ico{font-size:64px;display:inline-block;animation:bob 3s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+  h1{font-size:34px;margin:6px 0;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .subtitle{font-size:16px;opacity:.9;margin-bottom:14px}
+  .overall{display:inline-block;padding:10px 20px;background:rgba(0,0,0,.3);border-radius:24px;font-size:14px;margin-top:8px}
+  .overall strong{color:#ffd966;font-size:18px;margin:0 4px}
+
+  .player-bar{background:rgba(0,0,0,.3);backdrop-filter:blur(8px);border-radius:14px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .player-bar label{font-size:14px;font-weight:bold;flex-shrink:0}
+  .player-bar input{flex:1;min-width:200px;padding:8px 14px;border-radius:20px;border:none;font-size:14px;font-family:inherit}
+  .player-bar button{padding:8px 16px;background:linear-gradient(135deg,#26a69a,#00897b);color:#fff;border:none;border-radius:20px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:bold}
+  .player-bar button:hover{transform:translateY(-1px)}
+  .player-bar .note{font-size:12px;opacity:.75;flex-basis:100%}
+
+  .chapter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  .chapter{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);border-radius:16px;padding:20px;backdrop-filter:blur(6px);transition:all .3s;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .chapter:hover{transform:translateY(-4px);background:rgba(255,255,255,.13);border-color:rgba(255,217,102,.5);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+  .chapter.done{border-color:rgba(255,217,102,.7)}
+  .chapter.done::before{content:"✅ 已完成";position:absolute;top:10px;right:-32px;background:#66bb6a;color:#fff;padding:3px 36px;font-size:11px;font-weight:bold;transform:rotate(35deg)}
+
+  .ch-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .ch-num{flex-shrink:0;width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#ff9800,#f57c00);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+  .ch-title{font-size:17px;font-weight:bold;line-height:1.4}
+  .ch-sub{font-size:12.5px;opacity:.75;margin-top:2px}
+
+  .ch-meta{display:flex;justify-content:space-between;font-size:12.5px;opacity:.8;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+  .ch-meta .stars{color:#ffd966}
+
+  .ch-progress{margin:8px 0 12px}
+  .ch-progress .bar-bg{height:10px;background:rgba(0,0,0,.3);border-radius:6px;overflow:hidden}
+  .ch-progress .bar{height:100%;background:linear-gradient(90deg,#26a69a,#66bb6a);border-radius:6px;transition:width .6s}
+  .ch-progress .info{display:flex;justify-content:space-between;font-size:12px;margin-top:4px;opacity:.85}
+  .ch-progress .score{color:#ffd966;font-weight:bold}
+
+  .ch-badges{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+  .mini-badge{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:12px}
+  .mini-badge.got{background:linear-gradient(135deg,#ffd966,#f4a93f);border:1.5px solid #fff;box-shadow:0 0 8px rgba(255,217,102,.6)}
+
+  .ch-actions{margin-top:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .play-btn{flex:1;padding:10px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;text-decoration:none;border-radius:10px;text-align:center;font-weight:bold;font-size:14px;transition:all .2s;border:none;cursor:pointer;font-family:inherit;min-width:90px}
+  .play-btn:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.3)}
+  .resume-btn{background:linear-gradient(135deg,#26a69a,#00897b)}
+  .small-btn{padding:8px 10px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:12.5px}
+  .small-btn:hover{background:rgba(255,255,255,.25)}
+
+  .footer{text-align:center;margin-top:36px;font-size:13px;opacity:.7;line-height:1.7}
+  .footer button{padding:6px 14px;background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:18px;cursor:pointer;font-family:inherit;font-size:12.5px;margin:0 4px}
+  .footer button:hover{background:rgba(255,255,255,.25)}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;z-index:1000;opacity:0;transition:opacity .3s}
+  .toast.show{opacity:1}
+
+  @media (max-width:600px){
+    h1{font-size:24px}
+    header .ico{font-size:48px}
+    main{padding:24px 14px 40px}
+  }
+</style>
+</head>
+<body>
+<div class="bubble" style="left:8%;width:18px;height:18px;animation-duration:14s"></div>
+<div class="bubble" style="left:28%;width:12px;height:12px;animation-duration:10s;animation-delay:2s"></div>
+<div class="bubble" style="left:50%;width:22px;height:22px;animation-duration:16s;animation-delay:5s"></div>
+<div class="bubble" style="left:72%;width:10px;height:10px;animation-duration:9s;animation-delay:1s"></div>
+<div class="bubble" style="left:90%;width:16px;height:16px;animation-duration:12s;animation-delay:3s"></div>
+
+<main>
+  <header>
+    <span class="ico">🌊</span>
+    <h1>海洋學徒冒險</h1>
+    <div class="subtitle">第五章｜變動的海洋 — 章節選單</div>
+    <div class="overall" id="overall">尚未開始</div>
+  </header>
+
+  <div class="player-bar">
+    <label>👤 學生姓名：</label>
+    <input id="player-name" type="text" placeholder="例如：座號5號 王小明">
+    <button onclick="savePlayerName()">💾 儲存姓名</button>
+    <div class="note">📝 姓名會自動帶入各章節遊戲，並用於成績匯出。輸入後按「儲存姓名」。</div>
+  </div>
+
+  <div class="chapter-grid" id="grid"></div>
+
+  <div class="footer">
+    <p>📥 各章節結業後可下載成績單；老師可請學生集中繳交 5 個 .txt 檔。</p>
+    <p style="margin-top:10px;">
+      <button onclick="exportAll()">📥 匯出全章節總成績</button>
+      <button onclick="clearAll()">🗑️ 清除所有進度</button>
+    </p>
+    <p style="margin-top:14px;opacity:.6;font-size:12px;">海洋學徒冒險｜高中地球科學・第五章 變動的海洋</p>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CHAPTERS=[
+  {id:'5-1',file:'海洋學徒RPG-5-1.html',num:'5-1',title:'海水的組成和結構',sub:'鹽度、溫度的水平與垂直分布',stars:'★ ~ ★★★',
+    stageCount:4,badges:['🧂','🌍','🌡️','🌊'],stageNames:['海水組成','鹽度分布','溫度分布','垂直分層']},
+  {id:'5-2',file:'海洋學徒RPG-5-2.html',num:'5-2',title:'波浪',sub:'波形要素、風浪湧浪、海岸地形、海嘯',stars:'★ ~ ★★★',
+    stageCount:4,badges:['🌊','💨','🏖️','⚠️'],stageNames:['波形要素','風浪湧浪','海岸地形','海嘯']},
+  {id:'5-3',file:'海洋學徒RPG-5-3.html',num:'5-3',title:'海流',sub:'行星風系驅動、黑潮與臺灣海峽',stars:'★★',
+    stageCount:2,badges:['🌬️','🐟'],stageNames:['表面海流成因','臺灣附近海流']},
+  {id:'5-4',file:'海洋學徒RPG-5-4.html',num:'5-4',title:'潮汐',sub:'引潮力、大小潮、潮流、潮汐與生活',stars:'★ ~ ★★★',
+    stageCount:5,badges:['🌙','☀️','🏝️','⚖️','⚓'],stageNames:['引潮力','大小潮','臺灣潮流','影響因素','潮汐生活']},
+  {id:'5-5',file:'海洋學徒RPG-5-5.html',num:'5-5',title:'大氣與海洋的交互作用',sub:'能量平衡、聖嬰與南方振盪',stars:'★★ ~ ★★★',
+    stageCount:2,badges:['⚖️','👶'],stageNames:['海氣能量輸送','聖嬰現象']}
+];
+
+function getChapterState(ch){
+  try{
+    const s=localStorage.getItem('marineRPG_'+ch.id);
+    return s?JSON.parse(s):null;
+  }catch(e){return null;}
+}
+
+function getPlayerName(){
+  return localStorage.getItem('marineRPG_playerName')||'';
+}
+
+function savePlayerName(){
+  const v=document.getElementById('player-name').value.trim();
+  if(!v){showToast('⚠️ 請輸入姓名');return;}
+  localStorage.setItem('marineRPG_playerName',v);
+  // 同步寫入各章節的存檔
+  CHAPTERS.forEach(ch=>{
+    const st=getChapterState(ch);
+    if(st){
+      st.playerName=v;
+      try{localStorage.setItem('marineRPG_'+ch.id,JSON.stringify(st));}catch(e){}
+    }
+  });
+  showToast('✅ 姓名已儲存：'+v);
+  render();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function render(){
+  document.getElementById('player-name').value=getPlayerName();
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  let totalCorrect=0,totalQ=0,doneCh=0;
+  CHAPTERS.forEach(ch=>{
+    const st=getChapterState(ch);
+    const finished=st&&st.finishedAt;
+    const inProgress=st&&!st.finishedAt&&(st.stageIdx>0||st.stepIdx>0||(st.stageStats&&st.stageStats.some(s=>s.total>0)));
+    const correct=st?st.correctCount||0:0;
+    const total=st?st.totalQuestions||0:0;
+    totalCorrect+=correct;totalQ+=total;
+    if(finished)doneCh++;
+    const earnedBadges=(st&&st.stageStats)?st.stageStats.filter(s=>s.total>0).length:0;
+    // 估算題目總數
+    const estimatedTotal=Math.max(total,ch.stageCount*3);
+    const pct=estimatedTotal>0?Math.round(correct/estimatedTotal*100):0;
+
+    const card=document.createElement('div');
+    card.className='chapter'+(finished?' done':'');
+    card.innerHTML=`
+      <div class="ch-head">
+        <div class="ch-num">${ch.num}</div>
+        <div>
+          <div class="ch-title">${ch.title}</div>
+          <div class="ch-sub">${ch.sub}</div>
+        </div>
+      </div>
+      <div class="ch-meta">
+        <span>🎯 ${ch.stageCount} 個關卡</span>
+        <span class="stars">${ch.stars}</span>
+      </div>
+      <div class="ch-badges" title="勳章進度">
+        ${ch.badges.map((b,i)=>`<div class="mini-badge${i<earnedBadges?' got':''}" title="${ch.stageNames[i]||''}">${b}</div>`).join('')}
+      </div>
+      <div class="ch-progress">
+        <div class="bar-bg"><div class="bar" style="width:${pct}%"></div></div>
+        <div class="info">
+          <span>${finished?'✅ 已結業':inProgress?'⏳ 進行中':'⚪ 未開始'}</span>
+          <span class="score">${total>0?correct+' / '+total+' 題':''}</span>
+        </div>
+      </div>
+      <div class="ch-actions">
+        <a class="play-btn${inProgress?' resume-btn':''}" href="${ch.file}">${inProgress?'📂 繼續':finished?'🔄 重玩':'▶️ 開始'}</a>
+        ${st?`<button class="small-btn" onclick="clearOne('${ch.id}')" title="清除此章進度">🗑️</button>`:''}
+        ${finished?`<button class="small-btn" onclick="exportOne('${ch.id}')" title="匯出此章成績">📥</button>`:''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // 總進度
+  const ovEl=document.getElementById('overall');
+  if(totalQ===0){
+    ovEl.innerHTML='尚未開始 — 選擇任一章節開始冒險！';
+  }else{
+    ovEl.innerHTML=`✅ 已完成 <strong>${doneCh}</strong>/${CHAPTERS.length} 章｜總分 <strong>${totalCorrect}</strong>/${totalQ} 題`;
+  }
+}
+
+function clearOne(id){
+  if(!confirm('確定要清除「CH'+id+'」的進度嗎？'))return;
+  try{localStorage.removeItem('marineRPG_'+id);}catch(e){}
+  showToast('🗑️ 已清除 CH'+id);
+  render();
+}
+
+function clearAll(){
+  if(!confirm('確定要清除「全部 5 個章節」的進度與姓名嗎？此動作無法復原。'))return;
+  CHAPTERS.forEach(ch=>{try{localStorage.removeItem('marineRPG_'+ch.id);}catch(e){}});
+  try{localStorage.removeItem('marineRPG_playerName');}catch(e){}
+  showToast('🗑️ 全部進度已清除');
+  render();
+}
+
+function exportOne(id){
+  const ch=CHAPTERS.find(c=>c.id===id);
+  const st=getChapterState(ch);
+  if(!st){showToast('⚠️ 沒有資料');return;}
+  const lines=['=== 海洋學徒冒險・成績單 ===',
+    '章節：CH'+ch.num+' '+ch.title,
+    '學生：'+(st.playerName||'匿名'),
+    '開始：'+(st.startedAt||''),
+    '完成：'+(st.finishedAt||''),
+    '總分：'+(st.correctCount||0)+' / '+(st.totalQuestions||0),
+    '','--- 各關得分 ---'];
+  (st.stageStats||[]).forEach(s=>lines.push(s.title+'：'+s.correct+' / '+s.total));
+  download(lines.join('\n'),`海洋RPG_${ch.id}_${(st.playerName||'匿名').replace(/[\\/:*?"<>|]/g,'_')}.txt`);
+}
+
+function exportAll(){
+  const name=getPlayerName()||'匿名';
+  const lines=['=== 海洋學徒冒險・全章節總成績單 ===',
+    '學生：'+name,
+    '匯出時間：'+new Date().toLocaleString('zh-TW'),
+    ''];
+  let gTotal=0,gCorrect=0,done=0;
+  CHAPTERS.forEach(ch=>{
+    const st=getChapterState(ch);
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('▶ CH'+ch.num+' '+ch.title);
+    if(!st){lines.push('  狀態：未開始');return;}
+    const c=st.correctCount||0,t=st.totalQuestions||0;
+    gTotal+=t;gCorrect+=c;if(st.finishedAt)done++;
+    lines.push('  狀態：'+(st.finishedAt?'✅ 已結業':'⏳ 進行中'));
+    lines.push('  得分：'+c+' / '+t+(t>0?'  ('+Math.round(c/t*100)+'%)':''));
+    if(st.startedAt)lines.push('  開始：'+st.startedAt);
+    if(st.finishedAt)lines.push('  完成：'+st.finishedAt);
+    (st.stageStats||[]).forEach(s=>{
+      if(s.total>0)lines.push('    • '+s.title+'：'+s.correct+' / '+s.total);
+    });
+  });
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('🎯 總計：'+gCorrect+' / '+gTotal+'  (完成 '+done+'/'+CHAPTERS.length+' 章)');
+  download(lines.join('\n'),`海洋RPG_總成績_${name.replace(/[\\/:*?"<>|]/g,'_')}.txt`);
+}
+
+function download(text,filename){
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 每次焦點回到頁面就重新讀取（從章節玩完回到 index 自動更新）
+window.addEventListener('focus',render);
+window.addEventListener('pageshow',render);
+render();
+</script>
+</body>
+</html>

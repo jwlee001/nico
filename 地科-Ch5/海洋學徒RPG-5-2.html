@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海洋學徒冒險 — CH5-2 波浪</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    background:linear-gradient(180deg,#0b3a6b 0%,#14528f 35%,#1c6db4 70%,#2691d9 100%);color:#fff;overflow:hidden}
+  body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(255,255,255,.08) 0%,transparent 40%),radial-gradient(circle at 80% 20%,rgba(255,255,255,.06) 0%,transparent 40%);pointer-events:none}
+  .bubble{position:fixed;bottom:-50px;background:rgba(255,255,255,.15);border-radius:50%;animation:rise linear infinite;pointer-events:none}
+  @keyframes rise{0%{transform:translateY(0);opacity:0}10%{opacity:.8}100%{transform:translateY(-110vh) translateX(20px);opacity:0}}
+  #game{height:100vh;display:flex;flex-direction:column;position:relative;z-index:1}
+  #hud{padding:12px 20px;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid rgba(255,255,255,.15);font-size:14px}
+  #hud .title{font-weight:bold;font-size:16px}
+  #hud .badges{display:flex;gap:8px}
+  .badge-slot{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .4s}
+  .badge-slot.earned{background:linear-gradient(135deg,#ffd966,#f4a93f);border:2px solid #fff;box-shadow:0 0 14px rgba(255,217,102,.7);animation:pop .6s}
+  @keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+  #scene{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+  .scene-box{width:min(720px,100%);max-height:100%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);border-radius:18px;padding:20px;backdrop-filter:blur(6px);box-shadow:0 8px 32px rgba(0,0,0,.3);overflow-y:auto}
+  .npc{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
+  .npc-avatar{flex-shrink:0;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ffe082,#ffb74d);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .npc-text{flex:1;background:rgba(255,255,255,.95);color:#1a3a5c;padding:14px 18px;border-radius:4px 18px 18px 18px;line-height:1.7;font-size:15px}
+  .npc-text strong{color:#c0392b}
+  .npc-text .name{display:block;font-weight:bold;color:#2980b9;margin-bottom:4px;font-size:13px}
+  .knowledge-card{background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,240,255,.95));color:#1a3a5c;border-radius:14px;padding:18px 20px;margin:12px 0;border-left:6px solid #f39c12;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .knowledge-card h3{color:#d35400;margin-bottom:10px;font-size:17px}
+  .knowledge-card ul{margin-left:18px;line-height:1.9}
+  .knowledge-card li{margin:4px 0;font-size:14.5px}
+  .knowledge-card .hint{margin-top:10px;padding:8px 12px;background:rgba(243,156,18,.15);border-radius:8px;font-size:13.5px;color:#6e3f00}
+  #options{padding:12px 20px 20px;background:rgba(0,0,0,.25);border-top:2px solid rgba(255,255,255,.1)}
+  .question-block{margin-bottom:10px;padding:12px 14px;background:rgba(255,255,255,.1);border-radius:10px;font-size:15px}
+  .question-block .q-num{display:inline-block;background:#f39c12;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;margin-right:8px;font-weight:bold}
+  .opt-list{display:flex;flex-direction:column;gap:8px}
+  .opt-btn{padding:12px 16px;background:rgba(255,255,255,.95);color:#1a3a5c;border:2px solid transparent;border-radius:10px;cursor:pointer;font-size:14.5px;text-align:left;transition:all .2s;font-family:inherit}
+  .opt-btn:hover:not(:disabled){background:#ffd966;transform:translateX(4px)}
+  .opt-btn:disabled{cursor:not-allowed;opacity:.7}
+  .opt-btn.correct{background:#66bb6a;color:#fff;border-color:#2e7d32;animation:shake-y .4s}
+  .opt-btn.wrong{background:#ef5350;color:#fff;border-color:#b71c1c;animation:shake-x .4s}
+  @keyframes shake-y{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px)}75%{transform:translateY(4px)}}
+  @keyframes shake-x{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(6px)}}
+  .feedback{margin-top:8px;padding:10px 14px;border-radius:10px;font-size:13.5px;line-height:1.6}
+  .feedback.ok{background:rgba(102,187,106,.25);border-left:4px solid #66bb6a}
+  .feedback.no{background:rgba(239,83,80,.25);border-left:4px solid #ef5350}
+  .next-btn{display:inline-block;margin-top:10px;padding:10px 22px;background:linear-gradient(135deg,#ff9800,#f57c00);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .2s;font-family:inherit}
+  .next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .splash{position:fixed;inset:0;background:linear-gradient(180deg,rgba(11,58,107,.95),rgba(28,109,180,.95));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center}
+  .splash h1{font-size:36px;margin-bottom:12px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  .splash h2{font-size:20px;margin-bottom:18px;opacity:.9}
+  .splash p{max-width:520px;line-height:1.8;margin-bottom:20px;font-size:15px;opacity:.95}
+  .splash .big-emoji{font-size:80px;margin-bottom:14px;animation:bob 2.5s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+
+  /* 波浪互動圖 */
+  .wave-diagram{position:relative;height:160px;margin:12px 0;background:linear-gradient(180deg,#bbdefb 0%,#64b5f6 50%,#1976d2 100%);border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.3)}
+  .wave-svg{width:100%;height:100%;display:block}
+  .wave-label{position:absolute;background:rgba(255,255,255,.95);color:#1a3a5c;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:bold;cursor:pointer;transition:all .2s;border:2px solid transparent}
+  .wave-label:hover{transform:scale(1.1)}
+  .wave-label.correct{background:#66bb6a;color:#fff;border-color:#2e7d32}
+  .wave-label.wrong{background:#ef5350;color:#fff;border-color:#b71c1c}
+
+  /* 風暴調節器 */
+  .wind-control{background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(220,235,255,.92));color:#1a3a5c;padding:14px;border-radius:12px;margin:12px 0}
+  .wind-control label{display:block;margin:8px 0 4px;font-size:14px;font-weight:bold}
+  .wind-control input[type=range]{width:100%}
+  .wind-readout{margin-top:10px;padding:10px;background:rgba(33,150,243,.15);border-radius:8px;font-size:14px;line-height:1.7}
+  .wind-readout .big{font-size:18px;font-weight:bold;color:#1565c0}
+
+  /* 海岸地形 */
+  .coast-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+  .coast-card{padding:14px;border-radius:12px;cursor:pointer;text-align:center;color:#fff;font-size:14px;border:3px solid transparent;transition:all .2s}
+  .coast-card .ce{font-size:36px;display:block;margin-bottom:6px}
+  .coast-card.headland{background:linear-gradient(135deg,#8d6e63,#5d4037)}
+  .coast-card.bay{background:linear-gradient(135deg,#4fc3f7,#0288d1)}
+  .coast-card.selected{transform:scale(1.06)}
+  .coast-card.correct-pick{border-color:#ffd966;box-shadow:0 0 16px rgba(255,217,102,.7)}
+
+  /* 海嘯模擬 */
+  .tsunami-stage{display:flex;align-items:flex-end;gap:0;height:140px;background:linear-gradient(180deg,#87ceeb 0%,#4fc3f7 60%,#01579b 100%);border-radius:12px;overflow:hidden;margin:14px 0;border:2px solid rgba(255,255,255,.3);position:relative}
+  .depth-step{flex:1;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);position:relative}
+  .depth-step .floor{position:absolute;bottom:0;left:0;width:100%;background:#6d4c41}
+  .depth-step .wave-arrow{position:absolute;font-size:28px;transition:all .8s ease-out}
+
+  @media (max-width:600px){
+    .splash h1{font-size:26px}.splash .big-emoji{font-size:60px}
+    #hud{font-size:12px;padding:10px}.badge-slot{width:30px;height:30px;font-size:16px}
+    .coast-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="bubble" style="left:10%;width:18px;height:18px;animation-duration:14s"></div>
+<div class="bubble" style="left:30%;width:12px;height:12px;animation-duration:10s;animation-delay:2s"></div>
+<div class="bubble" style="left:55%;width:22px;height:22px;animation-duration:16s;animation-delay:5s"></div>
+<div class="bubble" style="left:75%;width:10px;height:10px;animation-duration:9s;animation-delay:1s"></div>
+<div class="bubble" style="left:88%;width:16px;height:16px;animation-duration:12s;animation-delay:3s"></div>
+
+<div id="splash" class="splash">
+  <div class="big-emoji">🌊</div>
+  <h1>海洋學徒冒險</h1>
+  <h2>第五章・第二話：海洋的脈動 — 波浪</h2>
+  <p>從沙灘上的小浪到太平洋上的滔天巨浪，<br>都是「波浪」的不同面貌。<br>
+    本話將通過 <strong>4 個關卡</strong>，了解波浪的成因、變化，以及它如何雕塑海岸、甚至帶來海嘯災害。</p>
+  <div style="margin-bottom:14px;">
+    <label style="display:block;margin-bottom:6px;font-size:14px;">請輸入你的名字（用於成績匯出）：</label>
+    <input id="player-name" type="text" placeholder="例如：座號5號 王小明" style="padding:8px 14px;border-radius:20px;border:none;font-size:14px;width:280px;font-family:inherit;">
+  </div>
+  <div>
+    <button class="next-btn" onclick="startGame(false)">🌊 出發！</button>
+    <button class="next-btn" id="resume-btn" style="display:none;background:linear-gradient(135deg,#26a69a,#00897b);margin-left:8px;" onclick="startGame(true)">📂 繼續上次</button>
+  </div>
+</div>
+
+<div id="ending" class="splash" style="display:none">
+  <div class="big-emoji">🏆</div>
+  <h1>恭喜結業！</h1>
+  <h2>你已掌握「波浪」單元</h2>
+  <p id="ending-summary"></p>
+  <div>
+    <button class="next-btn" onclick="exportResult()">📥 匯出成績</button>
+    <button class="next-btn" style="background:linear-gradient(135deg,#7e57c2,#5e35b1);margin-left:8px" onclick="resetAll()">🔄 重新挑戰</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="hud">
+    <div class="title">🚢 探海號・<span id="stage-title">準備啟航</span></div>
+    <div class="badges">
+      <div class="badge-slot" id="badge-0">🌊</div>
+      <div class="badge-slot" id="badge-1">💨</div>
+      <div class="badge-slot" id="badge-2">🏖️</div>
+      <div class="badge-slot" id="badge-3">⚠️</div>
+    </div>
+  </div>
+  <main id="scene"></main>
+  <div id="options"></div>
+</div>
+
+<script>
+const STAGES = [
+  // ----- 5-2.1 波浪的現象和成因 -----
+  {
+    id:'5-2.1', title:'5-2.1 波浪的現象和成因', badgeIdx:0, badgeEmoji:'🌊',
+    badgeName:'波形要素勳章', difficulty:1,
+    steps:[
+      {type:'narrate', avatar:'👨‍🔬', name:'艾克曼博士',
+        text:'看那海面上一波又一波的起伏！要理解波浪，先學會描述它。我教你幾個關鍵名詞 —— 波峰、波谷、波高、波長、週期、波速。'},
+      {type:'wave-label-game'},
+      {type:'knowledge', title:'🌊 知識卡：波浪的基本要素',
+        body:`<ul>
+          <li><strong>波峰</strong>：波形的最高點；<strong>波谷</strong>：最低點。</li>
+          <li><strong>波高</strong>：波峰到波谷的垂直距離。</li>
+          <li><strong>波長</strong>：相鄰兩波峰（或兩波谷）的水平距離。</li>
+          <li><strong>波速</strong>＝波長 ÷ 週期＝波長 × 頻率。</li>
+          <li><strong>水分子的運動</strong>：水分子只在原位作<strong>圓形振盪</strong>，並沒有跟著波形前進；前進的是「能量」與「波形」。</li>
+          <li><strong>波動的最大深度</strong>：水波圓形振盪的最大深度約為波長的 1/2。當水深小於波長一半時，波浪振盪變成扁平 → 形成「碎浪」。</li>
+        </ul>
+        <div class="hint">💡 為什麼海面風平浪靜時，丟下的瓶子不會被波浪帶走？因為水分子只原地振盪，沒有水平輸送！</div>`
+      },
+      {type:'question', q:'波浪行進時，水分子的運動方式是？',
+        options:[
+          {text:'在原位作圓形振盪，不隨波形前進', correct:true,
+            explain:'✅ 跟著波前進的是「能量」與「波形」，水分子幾乎在原地。'},
+          {text:'跟著波形一起向前移動', correct:false,
+            explain:'❌ 否則漁船早就被帶到大洋深處了。'},
+          {text:'垂直上下擺動，沒有水平分量', correct:false,
+            explain:'❌ 振盪是「圓形」軌跡，仍有水平分量，只是平均而言原地。'}
+        ]
+      },
+      {type:'question', q:'下列關於「波長」的敘述何者正確？',
+        options:[
+          {text:'相鄰兩波峰之間的水平距離', correct:true, explain:'✅ 也等於相鄰兩波谷的距離。'},
+          {text:'波峰到波谷的垂直距離', correct:false, explain:'❌ 那是「波高」。'},
+          {text:'波浪通過某點所花的時間', correct:false, explain:'❌ 那是「週期」。'}
+        ]
+      },
+      {type:'question', q:'波速、波長、週期三者的關係是？',
+        options:[
+          {text:'波速 = 波長 ÷ 週期', correct:true, explain:'✅ 也可寫成 波速 = 波長 × 頻率。'},
+          {text:'波速 = 週期 ÷ 波長', correct:false, explain:'❌ 公式顛倒。'},
+          {text:'波速 = 波長 × 週期', correct:false, explain:'❌ 應該是「除以」週期。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 5-2.2 風浪與湧浪 -----
+  {
+    id:'5-2.2', title:'5-2.2 風浪與湧浪', badgeIdx:1, badgeEmoji:'💨',
+    badgeName:'風域大師勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'🌬️', name:'氣象官',
+        text:'最常見的波浪是「風吹起來」的風浪。但你聽過湧浪嗎？颱風還在外海時，岸邊早就湧起長浪了 —— 那就是湧浪的傑作。我們來實驗一下。'},
+      {type:'wind-game'},
+      {type:'knowledge', title:'💨 知識卡：風浪 vs 湧浪',
+        body:`<ul>
+          <li><strong>風域</strong>：海面上「正有風」吹拂的範圍。</li>
+          <li>風域中的波長＆週期分布廣，但<strong>能量主要由 3 個因素決定</strong>：
+            <ul style="margin-top:4px;">
+              <li>① <strong>風速</strong>越強 → 波越高</li>
+              <li>② <strong>吹拂面積（風區）</strong>越廣 → 波越長</li>
+              <li>③ <strong>持續時間</strong>越久 → 累積能量越多</li>
+            </ul>
+          </li>
+          <li><strong>風浪</strong>：仍在風域內、週期短（多在 30 秒內）、波形雜亂。</li>
+          <li><strong>湧浪</strong>：離開風域後仍能繼續傳播的長週期波。短週期波較易衰減，<strong>長週期、長波長者才能傳得遠</strong>。</li>
+          <li>🚨 若近海觀測到<strong>週期 &gt; 8 秒</strong>的波浪，代表遠方外海可能有風暴（颱風）！</li>
+        </ul>`
+      },
+      {type:'question', q:'下列何者「不會」增加風浪的能量？',
+        options:[
+          {text:'月球引力增強', correct:true,
+            explain:'✅ 月球引力主要造成潮汐，不影響風浪能量。'},
+          {text:'風速增強', correct:false,
+            explain:'❌ 風速增強是最直接增加波高的因素。'},
+          {text:'風吹拂時間延長', correct:false,
+            explain:'❌ 持續時間越久，能量累積越多。'}
+        ]
+      },
+      {type:'question', q:'為什麼颱風還在外海，岸邊卻已能觀測到長浪？',
+        options:[
+          {text:'長週期波（湧浪）衰減慢，能離開風域繼續傳播', correct:true,
+            explain:'✅ 短週期波很快被合併或衰減，剩下長週期波傳到岸邊。'},
+          {text:'颱風會發射長浪訊號到岸邊', correct:false,
+            explain:'❌ 沒有這種東西。'},
+          {text:'地球自轉帶動海水', correct:false,
+            explain:'❌ 地球自轉不會產生長浪。'}
+        ]
+      },
+      {type:'question', q:'近海觀測到週期超過 8 秒以上的波浪，最可能的警示是？',
+        options:[
+          {text:'遠方外海可能有強烈風暴（如颱風）', correct:true,
+            explain:'✅ 長週期波是外海風暴傳來的訊號，應提高警覺。'},
+          {text:'即將發生海底地震', correct:false,
+            explain:'❌ 地震引起的是海嘯，週期更長（數十分鐘）。'},
+          {text:'潮汐即將達到最高點', correct:false,
+            explain:'❌ 與潮汐週期（約 12h25m）無關。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 延伸 沿岸流與海岸地形 -----
+  {
+    id:'5-2.3', title:'延伸：波浪與海岸地形', badgeIdx:2, badgeEmoji:'🏖️',
+    badgeName:'海岸雕刻勳章', difficulty:2,
+    steps:[
+      {type:'narrate', avatar:'⛏️', name:'地形觀察員',
+        text:'同樣是海岸，為什麼有的地方是峭壁、有的地方是沙灘？因為波浪有「能量集中」的偏好 —— 點下方兩種海岸，看看波浪選擇了誰。'},
+      {type:'coast-game'},
+      {type:'knowledge', title:'🏖️ 知識卡：波浪如何改變海岸',
+        body:`<ul>
+          <li>波浪進入海灣時 → 進行方向分散 → <strong>能量減弱、波高漸低</strong> → 沉積物易停留 → <strong>形成沙灘</strong>。</li>
+          <li>波浪朝海岬前進時 → 進行方向集中 → <strong>能量集中、波高漸高</strong> → 沉積物被沖刷 → 形成<strong>海蝕地形（峭壁、海蝕洞）</strong>。</li>
+          <li>長時間下來，海岬被侵蝕 &gt; 堆積，海灣堆積 &gt; 侵蝕，<strong>海岸線會逐漸變平直</strong>。</li>
+          <li><strong>沿岸流</strong>：波浪斜交海岸時，平行海岸的分量會形成沿岸流，可搬運大量泥沙。</li>
+          <li><strong>突堤效應</strong>：海岸工程（如防波堤）阻斷沿岸流 → 上游側淤積、下游側侵蝕（例：臺中港北側形成高美濕地）。</li>
+          <li>⚠️ 強烈東北季風或颱風接近時，<strong>瘋狗浪</strong>（突發大浪）常造成意外，應避免海邊活動。</li>
+        </ul>`
+      },
+      {type:'question', q:'波浪進入海灣後，能量會如何變化？',
+        options:[
+          {text:'分散而減弱，因此沙灘多在海灣處', correct:true,
+            explain:'✅ 能量分散 → 沉積為主。'},
+          {text:'集中而增強，因此海灣形成峭壁', correct:false,
+            explain:'❌ 那是海岬的狀況。'},
+          {text:'不變', correct:false, explain:'❌ 海灣地形會影響波浪能量。'}
+        ]
+      },
+      {type:'question', q:'為什麼海岸線會隨時間變得「越來越平直」？',
+        options:[
+          {text:'海岬侵蝕、海灣堆積，兩者趨於同一直線', correct:true,
+            explain:'✅ 凸出的被磨平，凹入的被填滿。'},
+          {text:'地殼上升把岸線拉直', correct:false,
+            explain:'❌ 那是構造運動，不是波浪作用。'},
+          {text:'潮汐把沙子均勻分配', correct:false,
+            explain:'❌ 主要還是波浪，不是潮汐。'}
+        ]
+      },
+      {type:'question', q:'臺中港北側的「高美濕地」與沿岸流有什麼關係？',
+        options:[
+          {text:'防波堤攔截向南的沿岸流，泥沙在北側堆積形成濕地', correct:true,
+            explain:'✅ 突堤效應的典型案例。'},
+          {text:'潮汐倒灌泥沙形成濕地', correct:false,
+            explain:'❌ 主要是沿岸流被攔阻。'},
+          {text:'河流改道形成濕地', correct:false,
+            explain:'❌ 不是河流原因。'}
+        ]
+      }
+    ]
+  },
+
+  // ----- 延伸 海嘯 -----
+  {
+    id:'5-2.4', title:'延伸：海嘯', badgeIdx:3, badgeEmoji:'⚠️',
+    badgeName:'防災警覺勳章', difficulty:3,
+    steps:[
+      {type:'narrate', avatar:'🚨', name:'防災中心',
+        text:'最後一關，談海嘯。為什麼海嘯在大洋上「不到 1 公尺高」，到了岸邊卻能變成 10 公尺的巨浪？我們做個模擬：點下方箭頭，看波浪從深海傳到淺海會發生什麼事。'},
+      {type:'tsunami-game'},
+      {type:'knowledge', title:'⚠️ 知識卡：海嘯',
+        body:`<ul>
+          <li><strong>成因</strong>：海底斷層突然錯動（大規模地震），帶動整層海水垂直位移；也可能由海底火山爆發、海底山崩造成。</li>
+          <li><strong>特徵</strong>：波長可達<strong>數百公里</strong>，能量擾動<strong>整層海水（從海面到海床）</strong>。</li>
+          <li><strong>深海中</strong>：波速可達<strong>秒速 200 公尺（時速 720 km，相當於噴射機）</strong>，但波高不到 1 公尺，船上幾乎察覺不到。</li>
+          <li><strong>近岸時</strong>：水深變淺 → 波速減慢 → 波長變短 → <strong>波高劇增形成巨浪</strong>，對海岸造成強大衝擊。</li>
+          <li>遇到喇叭狀河口或海灣時，海嘯會被「集中放大」，破壞範圍可達內陸數公里以上。</li>
+        </ul>
+        <div class="hint">⚠️ 若在海邊感到地震，或看到海水突然異常退去，應立刻往高地撤離！</div>`
+      },
+      {type:'question', q:'海嘯與一般風浪最主要的差別是？',
+        options:[
+          {text:'海嘯振盪整層海水，風浪只振盪表層', correct:true,
+            explain:'✅ 海嘯波長極長，影響從海面到海床整層。'},
+          {text:'海嘯只在白天發生', correct:false, explain:'❌ 與時間無關。'},
+          {text:'海嘯由月球引力造成', correct:false, explain:'❌ 那是潮汐。'}
+        ]
+      },
+      {type:'question', q:'為什麼海嘯靠近岸邊時波高會劇增？',
+        options:[
+          {text:'水深變淺，波速減慢、波長變短，能量擠壓使波高增加', correct:true,
+            explain:'✅ 能量守恆 → 波長壓縮 → 波高放大。'},
+          {text:'近岸風變強', correct:false, explain:'❌ 海嘯與風無關。'},
+          {text:'月球引力在岸邊較大', correct:false, explain:'❌ 引力不會這樣分布。'}
+        ]
+      },
+      {type:'question', q:'下列何者「不是」海嘯的可能成因？',
+        options:[
+          {text:'颱風吹拂海面', correct:true, explain:'✅ 颱風會造成風浪與暴潮，但不是海嘯。'},
+          {text:'海底斷層大規模垂直錯動', correct:false, explain:'❌ 這正是最常見的海嘯成因。'},
+          {text:'海底火山爆發或海底山崩', correct:false, explain:'❌ 都可能造成海嘯。'}
+        ]
+      },
+      {type:'question', q:'【綜合題】海嘯來臨前，岸邊可能出現的「徵兆」是？',
+        options:[
+          {text:'海水突然異常退去，露出平常看不到的海床', correct:true,
+            explain:'✅ 這是海嘯主波到達前常見的徵兆，應立刻往高處逃。'},
+          {text:'海面忽然結冰', correct:false, explain:'❌ 與海嘯無關。'},
+          {text:'天空變為紫色', correct:false, explain:'❌ 與海嘯無關。'}
+        ]
+      }
+    ]
+  }
+];
+
+const STORAGE_KEY='marineRPG_5-2';
+let state={playerName:'',stageIdx:0,stepIdx:0,correctCount:0,totalQuestions:0,stageStats:[],startedAt:null,finishedAt:null};
+const sceneEl=document.getElementById('scene'), optionsEl=document.getElementById('options'), stageTitleEl=document.getElementById('stage-title');
+
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
+function loadState(){try{const s=localStorage.getItem(STORAGE_KEY);if(s)return JSON.parse(s)}catch(e){}return null}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const saved=loadState();
+  if(saved&&!saved.finishedAt){
+    const btn=document.getElementById('resume-btn');
+    btn.style.display='inline-block';
+    btn.title=`上次進度：${saved.playerName||'匿名'} — 關卡 ${saved.stageIdx+1}`;
+  }
+});
+
+function startGame(resume){
+  if(resume){const saved=loadState();if(saved)state=saved;}
+  else{
+    state.playerName=(document.getElementById('player-name').value.trim())||'匿名學徒';
+    state.stageStats=STAGES.map(s=>({id:s.id,title:s.title,correct:0,total:0}));
+    state.startedAt=new Date().toISOString();
+    state.stageIdx=0;state.stepIdx=0;state.correctCount=0;state.totalQuestions=0;state.finishedAt=null;
+  }
+  document.getElementById('splash').style.display='none';
+  document.getElementById('ending').style.display='none';
+  state.stageStats.forEach((st,i)=>{if(st.total>0&&i<state.stageIdx)earnBadge(STAGES[i].badgeIdx)});
+  saveState();renderStep();
+}
+
+function resetAll(){if(!confirm('確定要清除所有進度，重新挑戰嗎？'))return;try{localStorage.removeItem(STORAGE_KEY)}catch(e){}location.reload()}
+
+function exportResult(){
+  const lines=['=== 海洋學徒冒險・成績單 ===','章節：CH5-2 波浪',
+    '學生：'+(state.playerName||'匿名'),
+    '開始：'+(state.startedAt||''),'完成：'+(state.finishedAt||''),
+    '總分：'+state.correctCount+' / '+state.totalQuestions,'','--- 各關得分 ---'];
+  state.stageStats.forEach(s=>lines.push(s.title+'：'+s.correct+' / '+s.total));
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`海洋RPG_5-2_${(state.playerName||'匿名').replace(/[\\/:*?"<>|]/g,'_')}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderStep(){
+  const stage=STAGES[state.stageIdx];
+  if(!stage){showEnding();return}
+  stageTitleEl.textContent=stage.title+'（'+'★'.repeat(stage.difficulty)+'）';
+  const step=stage.steps[state.stepIdx];
+  if(!step){earnBadge(stage.badgeIdx);showStageClear(stage);return}
+  sceneEl.innerHTML='';optionsEl.innerHTML='';
+  const map={narrate:renderNarrate,knowledge:renderKnowledge,question:renderQuestion,
+    'wave-label-game':renderWaveLabelGame,'wind-game':renderWindGame,
+    'coast-game':renderCoastGame,'tsunami-game':renderTsunamiGame};
+  if(map[step.type])map[step.type](step,stage);
+}
+
+function nextStep(){state.stepIdx++;saveState();renderStep()}
+
+function renderNarrate(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="npc"><div class="npc-avatar">${step.avatar}</div>
+    <div class="npc-text"><span class="name">${step.name}</span>${step.text}</div></div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+
+function renderKnowledge(step){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card"><h3>${step.title}</h3>${step.body}</div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">我懂了 ➤</button>`;
+}
+
+function renderQuestion(step,stage){
+  const box=document.createElement('div');box.className='scene-box';
+  const qNum=stage.steps.filter((s,i)=>s.type==='question'&&i<=state.stepIdx).length;
+  const qTotal=stage.steps.filter(s=>s.type==='question').length;
+  box.innerHTML=`<div class="question-block"><span class="q-num">Q${qNum}/${qTotal}</span>${step.q}</div>
+    <div class="opt-list" id="opts"></div><div id="fb"></div>`;
+  sceneEl.appendChild(box);
+  const opts=box.querySelector('#opts'), fb=box.querySelector('#fb');
+  step.options.forEach((opt,idx)=>{
+    const b=document.createElement('button');b.className='opt-btn';
+    b.textContent=`${String.fromCharCode(65+idx)}. ${opt.text}`;
+    b.onclick=()=>{
+      [...opts.children].forEach(x=>x.disabled=true);
+      state.totalQuestions++;state.stageStats[state.stageIdx].total++;
+      if(opt.correct){
+        b.classList.add('correct');state.correctCount++;state.stageStats[state.stageIdx].correct++;
+        fb.innerHTML=`<div class="feedback ok">${opt.explain}</div><button class="next-btn" onclick="nextStep()">下一題 ➤</button>`;
+      }else{
+        b.classList.add('wrong');
+        const ci=step.options.findIndex(o=>o.correct);
+        opts.children[ci].classList.add('correct');
+        fb.innerHTML=`<div class="feedback no">${opt.explain}<br><br>✅ <strong>正確答案：</strong>${step.options[ci].text}<br>${step.options[ci].explain.replace('✅ ','')}</div>
+          <button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+      saveState();
+    };
+    opts.appendChild(b);
+  });
+  optionsEl.innerHTML='';
+}
+
+// 互動 1：波形要素標籤
+function renderWaveLabelGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#26a69a;">
+    <h3 style="color:#00695c;">🎯 互動：標出波形上的位置</h3>
+    <p style="font-size:14px;">下方的波形上有 4 個位置（A~D）。點選對應的標籤，將它放到正確的位置。</p>
+    <div class="wave-diagram" id="wd">
+      <svg class="wave-svg" viewBox="0 0 400 160" preserveAspectRatio="none">
+        <path d="M 0 80 Q 50 20, 100 80 T 200 80 T 300 80 T 400 80" stroke="#fff" stroke-width="3" fill="none"/>
+        <line x1="0" y1="80" x2="400" y2="80" stroke="rgba(255,255,255,.4)" stroke-dasharray="4" stroke-width="1"/>
+        <circle cx="50" cy="20" r="6" fill="#ffd966"/><text x="56" y="18" fill="#fff" font-size="14" font-weight="bold">A</text>
+        <circle cx="150" cy="140" r="6" fill="#ffd966"/><text x="156" y="142" fill="#fff" font-size="14" font-weight="bold">B</text>
+        <line x1="250" y1="20" x2="250" y2="140" stroke="#ffd966" stroke-width="2"/><text x="256" y="80" fill="#fff" font-size="14" font-weight="bold">C</text>
+        <line x1="50" y1="155" x2="150" y2="155" stroke="#ffd966" stroke-width="2"/>
+        <line x1="50" y1="150" x2="50" y2="160" stroke="#ffd966" stroke-width="2"/>
+        <line x1="150" y1="150" x2="150" y2="160" stroke="#ffd966" stroke-width="2"/>
+        <text x="86" y="153" fill="#fff" font-size="14" font-weight="bold">D</text>
+      </svg>
+    </div>
+    <p style="font-size:14px;margin-top:8px;">點下方標籤後點波形上對應的字母：</p>
+    <div id="label-pool" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+      <button class="opt-btn" data-lbl="波峰" style="flex:0 0 auto;padding:8px 14px;">波峰</button>
+      <button class="opt-btn" data-lbl="波谷" style="flex:0 0 auto;padding:8px 14px;">波谷</button>
+      <button class="opt-btn" data-lbl="波高" style="flex:0 0 auto;padding:8px 14px;">波高</button>
+      <button class="opt-btn" data-lbl="波長" style="flex:0 0 auto;padding:8px 14px;">波長</button>
+    </div>
+    <p style="font-size:14px;margin-top:10px;">輪流點：先點標籤名稱，再點波形圖上的字母 A/B/C/D。</p>
+    <div id="match-msg" style="margin-top:8px;font-size:14px;"></div>
+    <div id="answer-area" style="margin-top:8px;">
+      <button class="opt-btn" onclick="checkWaveAnswer('A','波峰')" style="padding:6px 12px;">A = ?</button>
+      <button class="opt-btn" onclick="checkWaveAnswer('B','波谷')" style="padding:6px 12px;">B = ?</button>
+      <button class="opt-btn" onclick="checkWaveAnswer('C','波高')" style="padding:6px 12px;">C = ?</button>
+      <button class="opt-btn" onclick="checkWaveAnswer('D','波長')" style="padding:6px 12px;">D = ?</button>
+    </div>
+  </div>`;
+  sceneEl.appendChild(box);
+  window._selectedLabel=null;window._matched={};window._matchedCount=0;
+  box.querySelectorAll('#label-pool button').forEach(b=>{
+    b.onclick=()=>{
+      box.querySelectorAll('#label-pool button').forEach(x=>x.style.background='');
+      b.style.background='#ffd966';window._selectedLabel=b.dataset.lbl;
+      document.getElementById('match-msg').textContent='已選：'+b.dataset.lbl+' — 請點波形上的字母按鈕。';
+    };
+  });
+  window.checkWaveAnswer=(pos,correctLabel)=>{
+    if(!window._selectedLabel){document.getElementById('match-msg').textContent='⚠️ 請先點選一個標籤名稱。';return}
+    const msg=document.getElementById('match-msg');
+    const btn=document.querySelector(`#answer-area button[onclick*="'${pos}'"]`);
+    if(window._selectedLabel===correctLabel){
+      btn.textContent=pos+' = '+correctLabel+' ✓';
+      btn.classList.add('correct');btn.disabled=true;
+      window._matched[pos]=true;window._matchedCount++;
+      msg.textContent='✅ '+pos+' 是「'+correctLabel+'」！';
+      if(window._matchedCount===4){
+        msg.innerHTML='🎉 四個都標對了！';
+        optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+      }
+    }else{
+      msg.textContent='❌ '+pos+' 不是「'+window._selectedLabel+'」，再試試。';
+    }
+    window._selectedLabel=null;
+    box.querySelectorAll('#label-pool button').forEach(x=>x.style.background='');
+  };
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4" title="標完 4 個位置後解鎖">先完成標籤 →</button>`;
+}
+
+// 互動 2：風暴調節
+function renderWindGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#1976d2;">
+    <h3 style="color:#0d47a1;">🌪️ 互動：你來當風暴調節員！</h3>
+    <p style="font-size:14px;">調整下方三個滑桿，看看波高、波長與週期如何變化。</p>
+    <div class="wind-control">
+      <label>風速：<span id="v-wind">10</span> m/s</label>
+      <input type="range" id="r-wind" min="0" max="40" value="10">
+      <label>吹拂面積：<span id="v-area">100</span> km²</label>
+      <input type="range" id="r-area" min="10" max="1000" value="100">
+      <label>持續時間：<span id="v-time">5</span> 小時</label>
+      <input type="range" id="r-time" min="0" max="48" value="5">
+      <div class="wind-readout">
+        🌊 預估波高：<span class="big" id="o-h">1.0</span> m<br>
+        📏 預估波長：<span class="big" id="o-l">20</span> m<br>
+        ⏱️ 預估週期：<span class="big" id="o-p">4</span> 秒<br>
+        <span id="alert-msg" style="display:block;margin-top:8px;font-weight:bold;"></span>
+      </div>
+    </div>
+    <p style="font-size:13.5px;margin-top:8px;">💡 試試把三個都拉到最大，會看到什麼？</p>
+  </div>`;
+  sceneEl.appendChild(box);
+  let extreme=false;
+  const update=()=>{
+    const w=+document.getElementById('r-wind').value;
+    const a=+document.getElementById('r-area').value;
+    const t=+document.getElementById('r-time').value;
+    document.getElementById('v-wind').textContent=w;
+    document.getElementById('v-area').textContent=a;
+    document.getElementById('v-time').textContent=t;
+    // 簡化公式
+    const h=(w*w/100*Math.min(1,a/500)*Math.min(1,t/24)).toFixed(1);
+    const l=Math.round(w*1.5+a/20+t*1.5);
+    const p=(Math.sqrt(l)/1.25).toFixed(1);
+    document.getElementById('o-h').textContent=h;
+    document.getElementById('o-l').textContent=l;
+    document.getElementById('o-p').textContent=p;
+    const msg=document.getElementById('alert-msg');
+    if(+p>8){
+      msg.innerHTML='🚨 週期超過 8 秒 → 遠方外海可能有風暴（颱風）！';
+      msg.style.color='#c62828';
+      if(!extreme){extreme=true;
+        optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;}
+    }else{msg.textContent='';}
+  };
+  ['r-wind','r-area','r-time'].forEach(id=>document.getElementById(id).oninput=update);
+  update();
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+}
+
+// 互動 3：海岸地形
+function renderCoastGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#fb8c00;">
+    <h3 style="color:#e65100;">🏖️ 互動：能量會聚到哪裡？</h3>
+    <p style="font-size:14px;">點選下方兩種海岸地形，看看波浪能量「偏好」誰。</p>
+    <div class="coast-grid">
+      <div class="coast-card headland" id="c-head"><span class="ce">⛰️</span>海岬<br><small>凸出海中的地形</small></div>
+      <div class="coast-card bay" id="c-bay"><span class="ce">🏖️</span>海灣<br><small>凹入陸地的地形</small></div>
+    </div>
+    <div id="coast-msg" style="margin-top:10px;font-size:14px;padding:10px;background:rgba(255,255,255,.1);border-radius:8px;min-height:60px;">點選看看！</div>
+  </div>`;
+  sceneEl.appendChild(box);
+  let seen={head:false,bay:false};
+  document.getElementById('c-head').onclick=()=>{
+    document.getElementById('c-head').classList.add('selected','correct-pick');
+    document.getElementById('coast-msg').innerHTML='⛰️ <strong>海岬</strong>：波浪進行方向集中 → 能量集中 → <strong>侵蝕為主</strong>，多形成峭壁、海蝕地形。';
+    seen.head=true;checkDone();
+  };
+  document.getElementById('c-bay').onclick=()=>{
+    document.getElementById('c-bay').classList.add('selected','correct-pick');
+    document.getElementById('coast-msg').innerHTML='🏖️ <strong>海灣</strong>：波浪進行方向分散 → 能量減弱 → <strong>堆積為主</strong>，多形成沙灘。';
+    seen.bay=true;checkDone();
+  };
+  function checkDone(){
+    if(seen.head&&seen.bay){
+      document.getElementById('coast-msg').innerHTML+='<br><br>🎉 兩種都看過了！';
+      optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;
+    }
+  }
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">先點選兩種地形 →</button>`;
+}
+
+// 互動 4：海嘯近岸放大
+function renderTsunamiGame(){
+  const box=document.createElement('div');box.className='scene-box';
+  box.innerHTML=`<div class="knowledge-card" style="border-left-color:#e53935;">
+    <h3 style="color:#b71c1c;">🌊 互動：海嘯近岸放大模擬</h3>
+    <p style="font-size:14px;">點下方按鈕，看海嘯從深海到淺海的變化。</p>
+    <div class="tsunami-stage" id="ts">
+      <div class="depth-step" style="background:rgba(0,0,0,.0)">
+        <div class="floor" style="height:10%;"></div>
+        <div class="wave-arrow" id="w1" style="bottom:50%;font-size:14px;">≈1m</div>
+        <div style="position:absolute;bottom:14%;font-size:11px;">深海 4000m</div>
+      </div>
+      <div class="depth-step">
+        <div class="floor" style="height:30%;"></div>
+        <div class="wave-arrow" id="w2" style="bottom:50%;font-size:18px;opacity:0;">≈3m</div>
+        <div style="position:absolute;bottom:34%;font-size:11px;">陸棚 200m</div>
+      </div>
+      <div class="depth-step">
+        <div class="floor" style="height:55%;"></div>
+        <div class="wave-arrow" id="w3" style="bottom:60%;font-size:30px;opacity:0;">≈10m</div>
+        <div style="position:absolute;bottom:59%;font-size:11px;">近岸 50m</div>
+      </div>
+      <div class="depth-step">
+        <div class="floor" style="height:75%;"></div>
+        <div class="wave-arrow" id="w4" style="bottom:80%;font-size:44px;opacity:0;color:#fff;">🌊</div>
+        <div style="position:absolute;bottom:79%;font-size:11px;">海岸</div>
+      </div>
+    </div>
+    <button class="next-btn" id="run-ts" onclick="playTsunami()">▶️ 啟動模擬</button>
+    <div id="ts-msg" style="margin-top:10px;font-size:14px;padding:8px;background:rgba(255,255,255,.1);border-radius:8px;min-height:50px;"></div>
+  </div>`;
+  sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()" style="opacity:.4">先看完模擬 →</button>`;
+  window.playTsunami=()=>{
+    document.getElementById('run-ts').disabled=true;
+    const msg=document.getElementById('ts-msg');
+    const steps=[
+      {id:'w1',text:'🌊 深海：波速約 200 m/s（時速 720 km），但波高 < 1 m，船員幾乎察覺不到。'},
+      {id:'w2',text:'⚡ 陸棚：水深變淺，波速降低、波長變短，能量被壓縮，波高開始增加。'},
+      {id:'w3',text:'⚠️ 近岸：波高已達 10 m 以上，形成巨浪。'},
+      {id:'w4',text:'🚨 上岸：海嘯衝擊海岸，破壞範圍可達內陸數公里。應立即往高處撤離！'}
+    ];
+    let i=0;
+    const tick=()=>{
+      if(i>=steps.length){
+        optionsEl.innerHTML=`<button class="next-btn" onclick="nextStep()">繼續 ➤</button>`;return;
+      }
+      document.getElementById(steps[i].id).style.opacity='1';
+      msg.textContent=steps[i].text;i++;setTimeout(tick,1500);
+    };
+    tick();
+  };
+}
+
+function earnBadge(idx){const el=document.getElementById('badge-'+idx);if(el)el.classList.add('earned')}
+
+function showStageClear(stage){
+  const stat=state.stageStats[state.stageIdx];
+  const isLast=state.stageIdx===STAGES.length-1;
+  const box=document.createElement('div');box.className='scene-box';box.style.textAlign='center';
+  box.innerHTML=`<div style="font-size:72px;margin:10px 0;">${stage.badgeEmoji}</div>
+    <h2 style="margin-bottom:10px;">獲得「${stage.badgeName}」！</h2>
+    <p style="font-size:15px;line-height:1.8;">本關完成：<strong>${stage.title}</strong><br>
+    答對 <strong style="color:#ffd966;font-size:22px;">${stat.correct} / ${stat.total}</strong> 題</p>`;
+  sceneEl.innerHTML='';sceneEl.appendChild(box);
+  optionsEl.innerHTML=`<button class="next-btn" onclick="goNextStage()">${isLast?'🏆 查看結業證書':'⛵ 前往下一關'}</button>`;
+}
+
+function goNextStage(){state.stageIdx++;state.stepIdx=0;saveState();renderStep()}
+
+function showEnding(){
+  state.finishedAt=new Date().toISOString();saveState();
+  document.getElementById('ending').style.display='flex';
+  const sum=state.stageStats.map(s=>`<div style="margin:6px 0;">${s.title}：${s.correct} / ${s.total}</div>`).join('');
+  document.getElementById('ending-summary').innerHTML=`總答對 <strong style="color:#ffd966;font-size:28px;">${state.correctCount} / ${state.totalQuestions}</strong> 題<br><br>
+    <div style="text-align:left;max-width:340px;margin:0 auto;background:rgba(0,0,0,.2);padding:14px 18px;border-radius:10px;">${sum}</div>`;
+}
+</script>
+</body>
+</html>
