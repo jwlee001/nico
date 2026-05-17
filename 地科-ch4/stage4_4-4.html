@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>變動的大氣 第四關 — 天氣現象與地面天氣圖</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: linear-gradient(180deg, #1c3550 0%, #3b5f80 40%, #b8c8d8 100%);
+    min-height: 100vh; color: #fff; padding: 20px; }
+  .game { max-width: 760px; margin: 0 auto; background: rgba(255,255,255,0.96); color: #222; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); overflow: hidden; }
+  header { background: #1f4060; color: #fff; padding: 16px 24px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .status { display: flex; gap: 16px; padding: 12px 24px; background: #f3f6fb; border-bottom: 1px solid #dde3ec; font-size: 14px; flex-wrap: wrap; }
+  .status .pill { background: #fff; border: 1px solid #cfd6e0; border-radius: 999px; padding: 4px 12px; }
+  .status .hp { color: #c0392b; font-weight: 600; }
+  .scene { padding: 24px; min-height: 280px; line-height: 1.8; font-size: 16px; }
+  .scene h2 { color: #1f4060; margin-top: 0; }
+  .npc { background: #fff8e1; border-left: 4px solid #f4b400; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .tori { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .kp { background: #e8f5e9; border: 1px dashed #43a047; padding: 8px 12px; margin: 10px 0; border-radius: 4px; color: #1b5e20; font-weight: 600; }
+  .hint { background: #fff3e0; border-left: 4px solid #fb8c00; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 14px; }
+  .ok { color: #2e7d32; font-weight: 700; }
+  .ng { color: #c62828; font-weight: 700; }
+  .diagram { font-family: "Courier New", monospace; background: #f0f4fa; padding: 12px; border-radius: 6px; white-space: pre; font-size: 13px; line-height: 1.4; overflow-x: auto; }
+  table { border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  table th, table td { border: 1px solid #999; padding: 6px 10px; text-align: center; }
+  table th { background: #e0e7f1; }
+  .choices { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .choices button { background: #1f4060; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; font-size: 15px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; }
+  .choices button:hover { background: #2c5a82; transform: translateX(4px); }
+  .choices button.boss { background: #c0392b; }
+  .choices button.boss:hover { background: #e74c3c; }
+  footer { padding: 10px 24px; background: #f3f6fb; font-size: 12px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>🌤️ 變動的大氣：探空見習生日誌</h1>
+    <div class="sub">第四關 — 4-4 天氣現象與地面天氣圖</div>
+  </header>
+  <div class="status">
+    <span class="pill hp">❤️ 體力 <span id="hp">100</span></span>
+    <span class="pill">🏅 徽章 <span id="badge">0</span></span>
+    <span class="pill">🎒 裝備 <span id="items">無</span></span>
+    <span class="pill">📚 知識點 <span id="kp">0</span> / 7</span>
+  </div>
+  <div class="scene" id="scene"></div>
+  <div class="choices" id="choices"></div>
+  <footer>點選下方按鈕推進劇情。答錯會扣體力，可重答。</footer>
+</div>
+
+<script>
+const state = { hp: 100, badges: [], items: [], kp: new Set(), kpTotal: 7 };
+
+function render() {
+  document.getElementById('hp').textContent = state.hp;
+  document.getElementById('badge').textContent = state.badges.length;
+  document.getElementById('items').textContent = state.items.length ? state.items.join('、') : '無';
+  document.getElementById('kp').textContent = state.kp.size;
+}
+
+function go(id) {
+  const s = scenes[id];
+  document.getElementById('scene').innerHTML = s.html;
+  const c = document.getElementById('choices');
+  c.innerHTML = '';
+  (s.choices || []).forEach(ch => {
+    const b = document.createElement('button');
+    b.textContent = ch.label;
+    if (ch.boss) b.classList.add('boss');
+    b.onclick = () => { if (ch.effect) ch.effect(); render(); go(ch.next); };
+    c.appendChild(b);
+  });
+  render();
+  window.scrollTo(0, 0);
+}
+
+const scenes = {
+
+  start: {
+    html: `
+      <h2>中央氣象局　作業中心　07:30</h2>
+      <p>晨會剛開始，預報員們聚在大螢幕前。今天輪到你值班，要協助繪製<b>地面天氣圖</b>並做今日天氣預報。</p>
+      <div class="npc">👩‍💼 <b>主任</b>：「見習生，地面天氣圖看似一張線條圖，背後卻是<b>全球氣象觀測網</b>的成果。我們先了解資料從哪來。」</div>
+    `,
+    choices: [
+      { label: '🛰️ 認識氣象觀測方式', next: 's1_obs' }
+    ]
+  },
+
+  s1_obs: {
+    html: `
+      <h2>① 氣象觀測方式</h2>
+      <p>氣象觀測來源大致分為 7 類：</p>
+      <ul>
+        <li><b>地面觀測站</b>：全球約 <b>10,000 個</b></li>
+        <li><b>高空觀測站</b>：以探空氣球（無線電探空儀）進行，全球約 <b>900 個</b></li>
+        <li><b>氣象雷達</b>：偵測降水位置、強度、結構</li>
+        <li><b>氣象衛星</b>：雲圖、海溫、輻射等</li>
+        <li><b>海上浮標、船舶、飛機</b>：補足海洋與空中觀測</li>
+      </ul>
+      <p>主要觀測項目：<b>氣壓、氣溫、溼度、降水量、風速、風向、雲量、雲狀、蒸發量、天氣現象</b>。</p>
+      <div class="hint">💡 歷史小故事：19 世紀電報興起，各國交換氣象資料，誕生第一批地面天氣圖。但時間不統一，誤差很大。<b>1855 年美國</b>率先施行標準時間，從此各國可同步觀測、繪製大範圍天氣圖。</div>
+      <div class="kp">📘 知識點解鎖：觀測方式與標準時間 ✔</div>
+    `,
+    choices: [
+      { label: '➡ 認識高低壓系統', next: 's2_hl' }
+    ]
+  },
+
+  s2_hl: {
+    html: `
+      <h2>② 高壓與低壓的天氣型態</h2>
+      <p>主任在白板上畫了兩個圓柱：</p>
+      <div class="diagram">    ↓ 下沉氣流              ↑ 上升氣流
+    H 高壓                  L 低壓
+   ↗   ↘ 輻散              ↘   ↗ 輻合
+   晴朗、穩定                陰雨、不穩定</div>
+      <ul>
+        <li><b>高壓系統</b>：中心氣流<b>下沉</b>，地面氣流向外<b>輻散</b>。下沉空氣絕熱壓縮升溫 → 不易凝結 → <b>晴朗天氣</b></li>
+        <li><b>低壓系統</b>：中心氣流<b>上升</b>，地面氣流向內<b>輻合</b>。上升空氣絕熱膨脹降溫 → 容易凝結 → <b>陰雨天氣</b></li>
+      </ul>
+      <div class="hint">💡 結合 4-3：低壓中心上升氣流 = 第四種「低壓輻合」上升機制。颱風就是極強的低壓中心。</div>
+      <div class="kp">📘 知識點解鎖：高低壓天氣型態 ✔</div>
+    `,
+    choices: [
+      { label: '➡ 認識季節性天氣系統', next: 's3_season' }
+    ]
+  },
+
+  s3_season: {
+    html: `
+      <h2>③ 影響臺灣的主要天氣系統</h2>
+      <table>
+        <tr><th>季節</th><th>主要系統</th><th>天氣特徵</th></tr>
+        <tr><td>夏</td><td><b>太平洋副熱帶高壓</b></td><td>下沉氣流→晴朗炎熱；午後易雷陣雨</td></tr>
+        <tr><td>夏（颱風期）</td><td><b>熱帶氣旋（颱風）</b></td><td>強烈低壓→強風豪雨</td></tr>
+        <tr><td>冬</td><td><b>蒙古/西伯利亞冷高壓</b></td><td>東北季風→北部、東北部濕冷</td></tr>
+        <tr><td>春</td><td><b>鋒面低壓系統</b></td><td>梅雨、滯留鋒→陰雨綿綿</td></tr>
+      </table>
+      <div class="kp">📘 知識點解鎖：季節天氣系統 ✔</div>
+      <p><b>判斷題</b>：夏天臺北悶熱無雲、最高溫 36°C，最可能受何種系統影響？</p>
+    `,
+    choices: [
+      { label: 'A. 太平洋副熱帶高壓', next: 's3_right', effect: () => { state.kp.add('season'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'B. 西伯利亞冷高壓', next: 's3_wrong', effect: () => state.hp -= 10 },
+      { label: 'C. 鋒面低壓', next: 's3_wrong', effect: () => state.hp -= 10 },
+      { label: 'D. 颱風外圍', next: 's3_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  s3_right: { html: `<p class="ok">✅ 答對！</p><p>夏季太平洋副熱帶高壓籠罩臺灣，下沉氣流壓抑對流，造成晴朗炎熱的「酷暑」型態。</p>`, choices: [{ label: '➡ 學習天氣圖判讀', next: 's4_map' }] },
+  s3_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 「夏天 + 晴熱無雲 + 高溫」是太平洋副熱帶高壓的典型表現。</div>`, choices: [{ label: '↩ 重新選擇', next: 's3_season' }] },
+
+  s4_map: {
+    html: `
+      <h2>④ 地面天氣圖判讀</h2>
+      <p>主任打開今天的地面天氣圖：</p>
+      <div class="diagram">     1010 ────────────╮
+                      ╱  H 1024
+        ╭────── 1015 ╯  (太平洋高壓)
+        │  L 1000
+        │  (鋒面低壓)         ↘ 東北風
+     ╰── 1010 ────────────────────</div>
+      <p>地面天氣圖三個重點：</p>
+      <ul>
+        <li><b>等壓線</b>：氣壓相同的點連線，單位 <b>百帕（hPa）</b></li>
+        <li>等壓線<b>密集處風強</b>；稀疏處風弱</li>
+        <li>判讀風向：北半球 → 風從高壓<b>順時針旋出</b>，向低壓<b>逆時針旋入</b></li>
+      </ul>
+      <div class="kp">📘 知識點解鎖：天氣圖判讀 ✔</div>
+      <p><b>地理題</b>：臺灣冬季常被「蒙古高壓」籠罩，盛行的風向是？</p>
+    `,
+    choices: [
+      { label: 'A. 西南風', next: 's4_wrong', effect: () => state.hp -= 10 },
+      { label: 'B. 東北風', next: 's4_right', effect: () => { state.kp.add('map'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'C. 正北風', next: 's4_wrong', effect: () => state.hp -= 10 },
+      { label: 'D. 正東風', next: 's4_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  s4_right: { html: `<p class="ok">✅ 答對！</p><p>蒙古高壓位於臺灣西北方，空氣從高壓順時針外流到臺灣時，方向為東北 → 故稱「東北季風」。</p>`, choices: [{ label: '🧪 進入觀測實驗：乾濕球溫度計', next: 's5_psy' }] },
+  s4_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 北半球高壓<b>順時針</b>外流。高壓在臺灣西北方 → 流到臺灣的風 = 東北風。</div>`, choices: [{ label: '↩ 重新思考', next: 's4_map' }] },
+
+  s5_psy: {
+    html: `
+      <h2>⑤ 探討活動：乾濕球溫度計</h2>
+      <p>主任遞給你<b>乾濕球溫度計</b>（你在第二關獲得）。</p>
+      <div class="npc">👩‍💼 <b>主任</b>：「乾濕球溫度計可同時讀出兩個溫度，再透過查表得到相對溼度與露點。」</div>
+      <p><b>原理</b>：</p>
+      <ul>
+        <li><b>乾球</b>：一般溫度計，量空氣實際氣溫</li>
+        <li><b>濕球</b>：用紗布包覆球部、紗布吸蒸餾水保持濕潤。水蒸發時<b>吸收熱量</b>，使濕球溫度<b>低於</b>乾球</li>
+        <li>空氣愈乾燥 → 水蒸發愈快 → 濕球溫度愈低 → <b>乾濕差愈大</b></li>
+        <li>當空氣已飽和（相對溼度 100%）→ 水無法蒸發 → 乾濕球讀數<b>相同</b></li>
+      </ul>
+      <p><b>使用流程</b>：①裝水浸濕紗布 → ②直立掛於陰涼處 10 分鐘 → ③等濕球溫度不再下降時讀數 → ④查相對溼度表 → ⑤查露點溫度圖。</p>
+      <div class="kp">📘 知識點解鎖：乾濕球溫度計原理 ✔</div>
+    `,
+    choices: [
+      { label: '⚔️ 挑戰 Boss', next: 'boss1', boss: true, effect: () => state.kp.add('obs') }
+    ]
+  },
+
+  boss1: {
+    html: `
+      <h2>⚔️ Boss 戰　第 1 題（天氣圖判讀）</h2>
+      <p>下列為地面天氣圖摘要：</p>
+      <div class="diagram">L 996 ──────╮
+              ╲
+       1004 ─── ╲
+                ╲
+       1012 ────── H 1024 (蒙古)</div>
+      <p>關於此圖（北半球冬季），下列敘述何者正確？</p>
+    `,
+    choices: [
+      { label: 'A. 蒙古高壓中心為陰雨天氣', next: 'b1_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. L 低壓區可能正在發生陰雨', next: 'b1_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'C. 此圖中等壓線間距越大表示風速越強', next: 'b1_wrong', effect: () => state.hp -= 20 },
+      { label: 'D. 從 H 流出的氣流呈逆時針', next: 'b1_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b1_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 高壓 = 下沉晴朗；低壓 = 上升陰雨；等壓線密 = 風強；北半球高壓順時針流出。</div>`, choices: [{ label: '↩ 重答', next: 'boss1' }] },
+  b1_right: { html: `<p class="ok">✅ 正確！</p><p>低壓中心氣流輻合上升，水氣凝結成雲雨。</p>`, choices: [{ label: '➡ 進入第 2 題', next: 'boss2' }] },
+
+  boss2: {
+    html: `
+      <h2>⚔️ Boss 戰　第 2 題（乾濕球查表）</h2>
+      <p>下表為相對溼度查表（節錄）：</p>
+      <table>
+        <tr><th>乾球溫度</th><th>乾濕差 1°C</th><th>乾濕差 2°C</th><th>乾濕差 4°C</th><th>乾濕差 8°C</th></tr>
+        <tr><td>20°C</td><td>91%</td><td>81%</td><td>64%</td><td>32%</td></tr>
+        <tr><td>30°C</td><td>93%</td><td>86%</td><td>74%</td><td>50%</td></tr>
+      </table>
+      <p>某日下午氣溫 <b>30°C</b>，使用乾濕球溫度計，讀出乾球 30°C、濕球 26°C。請問相對溼度是？</p>
+    `,
+    choices: [
+      { label: 'A. 50%', next: 'b2_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 64%', next: 'b2_wrong', effect: () => state.hp -= 20 },
+      { label: 'C. 74%', next: 'b2_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'D. 86%', next: 'b2_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b2_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 乾球 30°C、濕球 26°C → 乾濕差 = 30 - 26 = 4°C。查表 30°C 列、乾濕差 4°C 欄。</div>`, choices: [{ label: '↩ 重答', next: 'boss2' }] },
+  b2_right: { html: `<p class="ok">✅ 正確！</p><p>乾濕差 4°C、乾球 30°C → 查得相對溼度 74%。</p>`, choices: [{ label: '➡ 進入第 3 題', next: 'boss3' }] },
+
+  boss3: {
+    html: `
+      <h2>⚔️ Boss 戰　第 3 題（綜合天氣判斷）</h2>
+      <p>夏季某午後，臺北從晴朗轉為短暫強雷雨，請問最可能的成因組合是？</p>
+    `,
+    choices: [
+      { label: 'A. 受東北季風＋鋒面低壓影響', next: 'b3_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 地表受熱對流＋局部低壓上升氣流', next: 'b3_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'C. 受蒙古冷高壓籠罩', next: 'b3_wrong', effect: () => state.hp -= 20 },
+      { label: 'D. 平流層下沉氣流增強', next: 'b3_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b3_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 夏季午後雷陣雨 = 地表強烈受熱 → 對流上升 → 凝結降雨，與冷鋒、冬季無關。</div>`, choices: [{ label: '↩ 重答', next: 'boss3' }] },
+  b3_right: {
+    html: `<p class="ok">✅ 正確！</p><p>夏季地表強烈日照導致局部受熱，引發強對流，加上區域性低壓輻合上升，是典型午後雷陣雨成因。</p>
+      <div class="kp">🏅 獲得徽章：<b>預報員徽章</b></div>`,
+    choices: [{ label: '🎉 過關！', next: 'end', effect: () => { state.badges.push('預報員徽章'); state.items.push('天氣圖判讀指南'); } }]
+  },
+
+  end: {
+    html: `
+      <h2>🏅 第四關過關！</h2>
+      <p>體力：<b><span id="endHp"></span></b>　／　徽章：<b><span id="endBadges"></span></b></p>
+      <div class="npc">👩‍💼 <b>主任</b>：「四關都過了——但你最後還要面對一個難題：科學能否被用於戰爭或操控氣候？這是<b>科學論辯</b>，沒有標準答案。」</div>
+      <hr>
+      <h3>📝 學習回顧</h3>
+      <ol>
+        <li>列出 7 種氣象觀測方式。</li>
+        <li>高壓 vs. 低壓的氣流方向、天氣特徵。</li>
+        <li>影響臺灣四季的主要天氣系統。</li>
+        <li>地面天氣圖上等壓線的意義；如何由等壓線判斷風強與風向。</li>
+        <li>乾濕球溫度計原理、為何乾濕差愈大溼度愈低。</li>
+      </ol>
+    `,
+    choices: [
+      { label: '🔄 重新挑戰本關', next: 'start', effect: () => { state.hp = 100; state.badges = []; state.items = []; state.kp = new Set(); } }
+    ]
+  }
+
+};
+
+const origGo = go;
+window.go = function(id) {
+  origGo(id);
+  if (id === 'end') {
+    const eh = document.getElementById('endHp');
+    const eb = document.getElementById('endBadges');
+    if (eh) eh.textContent = state.hp;
+    if (eb) eb.textContent = state.badges.join('、');
+  }
+};
+
+go('start');
+</script>
+</body>
+</html>

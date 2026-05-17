@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>變動的大氣 終章 — 科學論辯：人造氣象</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: linear-gradient(180deg, #2a1a3a 0%, #4a2a5e 40%, #7a5694 100%);
+    min-height: 100vh; color: #fff; padding: 20px; }
+  .game { max-width: 760px; margin: 0 auto; background: rgba(255,255,255,0.97); color: #222; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); overflow: hidden; }
+  header { background: #4a2a5e; color: #fff; padding: 16px 24px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .status { display: flex; gap: 16px; padding: 12px 24px; background: #f3f6fb; border-bottom: 1px solid #dde3ec; font-size: 14px; flex-wrap: wrap; }
+  .status .pill { background: #fff; border: 1px solid #cfd6e0; border-radius: 999px; padding: 4px 12px; }
+  .status .hp { color: #c0392b; font-weight: 600; }
+  .scene { padding: 24px; min-height: 280px; line-height: 1.8; font-size: 16px; }
+  .scene h2 { color: #4a2a5e; margin-top: 0; }
+  .npc { background: #fff8e1; border-left: 4px solid #f4b400; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .tori { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .opp { background: #ffebee; border-left: 4px solid #c62828; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .pro { background: #e8f5e9; border-left: 4px solid #2e7d32; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .kp { background: #e8f5e9; border: 1px dashed #43a047; padding: 8px 12px; margin: 10px 0; border-radius: 4px; color: #1b5e20; font-weight: 600; }
+  .hint { background: #fff3e0; border-left: 4px solid #fb8c00; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 14px; }
+  .ending { background: linear-gradient(135deg, #fff8e1, #f3e5f5); border: 2px solid #9c27b0; padding: 16px 20px; margin: 16px 0; border-radius: 8px; }
+  .ok { color: #2e7d32; font-weight: 700; }
+  .ng { color: #c62828; font-weight: 700; }
+  .choices { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .choices button { background: #4a2a5e; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; font-size: 15px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; }
+  .choices button:hover { background: #6a3f86; transform: translateX(4px); }
+  .choices button.boss { background: #c0392b; }
+  .choices button.boss:hover { background: #e74c3c; }
+  footer { padding: 10px 24px; background: #f3f6fb; font-size: 12px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>⚖️ 變動的大氣：探空見習生日誌</h1>
+    <div class="sub">終章 — 科學論辯：人造氣象的科學與倫理</div>
+  </header>
+  <div class="status">
+    <span class="pill hp">❤️ 體力 <span id="hp">100</span></span>
+    <span class="pill">🏅 徽章 <span id="badge">0</span></span>
+    <span class="pill">🤔 立場 <span id="stance">中立</span></span>
+    <span class="pill">📚 論點 <span id="kp">0</span> / 5</span>
+  </div>
+  <div class="scene" id="scene"></div>
+  <div class="choices" id="choices"></div>
+  <footer>本關沒有絕對對錯，重點在於<b>用科學證據與倫理價值思考</b>。</footer>
+</div>
+
+<script>
+const state = {
+  hp: 100, badges: [], items: [], kp: new Set(), kpTotal: 5,
+  proScore: 0,
+  conScore: 0
+};
+
+function render() {
+  document.getElementById('hp').textContent = state.hp;
+  document.getElementById('badge').textContent = state.badges.length;
+  document.getElementById('kp').textContent = state.kp.size;
+  let s = '中立';
+  if (state.proScore - state.conScore >= 2) s = '支持人工氣象';
+  else if (state.conScore - state.proScore >= 2) s = '反對人工氣象';
+  document.getElementById('stance').textContent = s;
+}
+
+function go(id) {
+  const s = scenes[id];
+  document.getElementById('scene').innerHTML = s.html;
+  const c = document.getElementById('choices');
+  c.innerHTML = '';
+  (s.choices || []).forEach(ch => {
+    const b = document.createElement('button');
+    b.textContent = ch.label;
+    if (ch.boss) b.classList.add('boss');
+    b.onclick = () => { if (ch.effect) ch.effect(); render(); go(ch.next); };
+    c.appendChild(b);
+  });
+  render();
+  window.scrollTo(0, 0);
+}
+
+const scenes = {
+
+  start: {
+    html: `
+      <h2>聯合國日內瓦氣象總部　國際氣象倫理論壇</h2>
+      <p>恭喜你完成全部 4 個任務，獲得正式氣象員資格。但結業之前，國際氣象組織（WMO）安排了最後一個試煉——以見習生身分參與一場關於「人造氣象是否該被允許」的公開論辯。</p>
+      <div class="npc">👨‍⚖️ <b>論辯主持人</b>：「歡迎。今天的議題是：『人類應該為了戰爭、體育賽事或農業需求，主動改變天氣狀態嗎？』。在表態之前，請先了解三段歷史。」</div>
+    `,
+    choices: [
+      { label: '📖 閱讀歷史 ①：1971 越戰人工降雨', next: 's1_vietnam' }
+    ]
+  },
+
+  s1_vietnam: {
+    html: `
+      <h2>歷史 ① — 1971 越戰：人造大水</h2>
+      <p>1971 年越戰期間，美軍利用<b>西南季風</b>盛行季節，動用 26,000 多架次飛機，在戰場上空雲層投放 <b>470 多萬枚碘化銀降雨催化彈</b>，製造強降雨。</p>
+      <p>結果：</p>
+      <ul>
+        <li>局部地區洪水氾濫，橋梁、水壩、道路、村莊毀損</li>
+        <li>北越部隊運補物資從每週平均 <b>35,000 噸降至 2,000 噸</b></li>
+        <li>北越南侵作戰受阻</li>
+      </ul>
+      <div class="hint">💡 科學原理：在雲中撒播<b>碘化銀</b>（晶體結構與冰晶相似）作為<b>凝結核/冰核</b>，加速雲滴或冰晶聚集成雨。這結合了第 2 關「凝結核」與第 3 關「上升運動」的概念。</div>
+      <div class="kp">📘 論點解鎖：人工增雨可作為武器 ✔</div>
+    `,
+    choices: [
+      { label: '📖 閱讀歷史 ②：國際公約', next: 's2_treaty', effect: () => state.kp.add('weapon') }
+    ]
+  },
+
+  s2_treaty: {
+    html: `
+      <h2>歷史 ② — 國際公約</h2>
+      <p>越戰後，國際社會深感氣象武器的破壞力與不可逆性：</p>
+      <ul>
+        <li><b>1977 年</b>《禁止將影響環境手段用於軍事目的公約》：禁止研發改變環境與氣候的軍事技術</li>
+        <li><b>1978 年</b>該公約生效</li>
+        <li><b>1992 年</b>《聯合國氣候變化綱要公約》重申禁止將氣候科學用於戰爭目的</li>
+      </ul>
+      <div class="npc">👨‍⚖️ <b>主持人</b>：「但你會問——『非戰爭用途』呢？例如缺水、體育賽事？這就是第三段歷史。」</div>
+      <div class="kp">📘 論點解鎖：國際法禁止氣象武器 ✔</div>
+    `,
+    choices: [
+      { label: '📖 閱讀歷史 ③：2008 北京奧運', next: 's3_olympic', effect: () => state.kp.add('law') }
+    ]
+  },
+
+  s3_olympic: {
+    html: `
+      <h2>歷史 ③ — 2008 北京奧運人工消雨</h2>
+      <p>歷史數據顯示北京 8 月 8 日 <b>有四成機率會下小雨</b>。為確保開幕式完美演出，北京氣象部門自 2002 年開始研究人工消雨。</p>
+      <p>對策包括：</p>
+      <ol>
+        <li><b>液氮消冷霧</b>：將霧中水滴急速結為冰晶，再融化降落</li>
+        <li>對遠方雲層<b>人工增雨</b>，讓雨提早下完，雲到達北京前已消耗</li>
+        <li>對發展中的對流雲<b>大量撒碘化銀</b>，使水氣以<b>小雨滴</b>提早降下</li>
+        <li>對冰雹雲撒碘化銀讓「小雹」提早落下</li>
+      </ol>
+      <p>8 月 8 日當晚共發射超過 <b>1,000 枚</b>碘化銀火箭彈，最終<b>開幕式滴雨未下</b>。</p>
+      <div class="kp">📘 論點解鎖：人工消雨技術 ✔</div>
+    `,
+    choices: [
+      { label: '💭 進入論辯：你的立場是？', next: 's4_debate', effect: () => state.kp.add('olympic') }
+    ]
+  },
+
+  s4_debate: {
+    html: `
+      <h2>⚖️ 論辯場　第一輪</h2>
+      <p>主持人轉向你：「見習生，根據你掌握的科學知識，請對<b>第一個議題</b>表態：『人工消雨會不會造成下游區域乾旱？』」</p>
+      <div class="pro">🟢 <b>支持方</b>：奧運期間只是把雨「延後」或「移位」，影響範圍有限，且能避免重大活動損失。</div>
+      <div class="opp">🔴 <b>反對方</b>：水氣循環是區域性的。若某地強行消雨，鄰近區域的雨量也會被改變，可能造成<b>原本該有的降水減少</b>，下游甚至形成乾旱。</div>
+    `,
+    choices: [
+      { label: '🟢 支持：影響範圍有限，可接受', next: 's4_pro', effect: () => { state.proScore += 1; state.kp.add('debate1'); } },
+      { label: '🔴 反對：水氣有限，會造成鄰近區域乾旱', next: 's4_con', effect: () => { state.conScore += 1; state.kp.add('debate1'); } }
+    ]
+  },
+  s4_pro: { html: `<p>✏️ 你選擇了支持。</p><div class="hint">💡 注意：根據課本「結語」，科學上仍不確定，但已有案例顯示<b>某地人工消雨後，附近地區降雨銳減甚至形成乾旱</b>。你的論點需要更多證據支持。</div>`, choices: [{ label: '➡ 第二輪議題', next: 's5_debate2' }] },
+  s4_con: { html: `<p>✏️ 你選擇了反對。</p><div class="hint">💡 課本指出「若是在某地實施人工降雨，則導致鄰近地區的雨量銳減，甚至形成乾旱」——你的論點與課本立場一致。</div>`, choices: [{ label: '➡ 第二輪議題', next: 's5_debate2' }] },
+
+  s5_debate2: {
+    html: `
+      <h2>⚖️ 論辯場　第二輪</h2>
+      <p>主持人提出第二題：「如果<b>不是戰爭、也不是奧運</b>，而是<b>嚴重乾旱的農業區</b>，人工增雨是否該被允許？」</p>
+      <div class="pro">🟢 <b>支持方</b>：糧食安全是基本人權；人工增雨技術相對成熟，碘化銀劑量遠低於環境毒性閾值。</div>
+      <div class="opp">🔴 <b>反對方</b>：①「鄰居」的雨被你搶走，會引發跨區域水資源爭議；②長期碘化銀沉積對生態的累積效應仍未完全釐清；③會養成「干預習慣」、忽略真正的問題（過度抽水、暖化）。</div>
+    `,
+    choices: [
+      { label: '🟢 支持：人道優先，可在嚴格規範下使用', next: 's5_pro', effect: () => state.proScore += 1 },
+      { label: '🔴 反對：未知風險太多，不應依賴', next: 's5_con', effect: () => state.conScore += 1 },
+      { label: '⚖️ 折衷：需先建立國際監管與科學評估制度', next: 's5_mid', effect: () => { state.proScore += 0.5; state.conScore += 0.5; } }
+    ]
+  },
+  s5_pro: { html: `<p>✏️ 你選擇了支持。</p><div class="hint">💡 延伸思考：你會如何回應「鄰近區域被搶水」的指控？國際監管由誰來負責？</div>`, choices: [{ label: '➡ 第三輪：終極議題', next: 's6_final' }] },
+  s5_con: { html: `<p>✏️ 你選擇了反對。</p><div class="hint">💡 延伸思考：那麼面對糧食危機，有什麼<b>非人工增雨</b>的替代方案？（節水灌溉、品種改良、跨區調水…）</div>`, choices: [{ label: '➡ 第三輪：終極議題', next: 's6_final' }] },
+  s5_mid: { html: `<p>✏️ 你選擇了折衷。</p><div class="hint">💡 這是最務實的立場。實務上需建立：①跨國協議 ②環境影響評估 ③可逆性檢查 ④受影響地區協商機制。</div>`, choices: [{ label: '➡ 第三輪：終極議題', next: 's6_final' }] },
+
+  s6_final: {
+    html: `
+      <h2>⚖️ 論辯場　第三輪　終極議題</h2>
+      <p>主持人提出最後一題（綜合題）：</p>
+      <p>「人類是否應該<b>『地球工程』</b>（如向平流層注入硫酸鹽氣膠以反射陽光、減緩暖化）？這已經超越改變局部天氣，而是<b>改變全球氣候</b>。」</p>
+      <div class="hint">💡 從你學過的知識思考：①平流層注入物質後，會影響第 1 關提到的<b>臭氧層</b>嗎？②會改變全球大氣壓力與風場（第 3 關）嗎？③是否有「下不停／停不下來」的不可逆性？</div>
+    `,
+    choices: [
+      { label: '🟢 該做：暖化是更大的威脅', next: 's6_pro', effect: () => state.proScore += 1 },
+      { label: '🔴 不該做：副作用無法承擔', next: 's6_con', effect: () => state.conScore += 1 },
+      { label: '⚖️ 視情況：作為「最後手段」，且需全球共識', next: 's6_mid', effect: () => { state.proScore += 0.5; state.conScore += 0.5; } }
+    ]
+  },
+  s6_pro: { html: `<p>✏️ 你選擇了支持地球工程。</p>`, choices: [{ label: '🎬 走向結局', next: 'ending' }] },
+  s6_con: { html: `<p>✏️ 你選擇了反對地球工程。</p>`, choices: [{ label: '🎬 走向結局', next: 'ending' }] },
+  s6_mid: { html: `<p>✏️ 你選擇了「最後手段」立場。</p>`, choices: [{ label: '🎬 走向結局', next: 'ending' }] },
+
+  ending: {
+    html: `
+      <h2>🎬 結局</h2>
+      <p>你的最終立場：<b><span id="finalStance"></span></b>　（支持分 <span id="proS"></span> / 反對分 <span id="conS"></span>）</p>
+      <div class="ending" id="endingBox"></div>
+      <hr>
+      <h3>🏆 全章完成 — 取得正式氣象員資格</h3>
+      <p>體力：<b><span id="endHp"></span></b>　／　徽章：<b><span id="endBadges"></span></b></p>
+      <div class="npc">👨‍🔬 <b>游博士</b>：「無論你的立場為何，記住一件事——<b>科學是工具，價值判斷是責任</b>。氣象員不只懂得讀懂天空，還要懂得敬畏天空。」</div>
+      <hr>
+      <h3>📝 學習回顧與思辨題</h3>
+      <ol>
+        <li>解釋人工降雨的科學原理（連結哪些前面章節的知識點？）</li>
+        <li>1977 年與 1992 年公約禁止氣象武器的理由為何？</li>
+        <li>北京奧運開幕式人工消雨採用哪三種主要技術？</li>
+        <li>請評估：人工消雨/增雨可能帶來的<b>三項負面後果</b>。</li>
+        <li>若你是聯合國氣象官員，會建議制訂什麼樣的國際規範？</li>
+      </ol>
+    `,
+    choices: [
+      { label: '🔄 重新挑戰本關（換立場試試）', next: 'start', effect: () => { state.hp = 100; state.proScore = 0; state.conScore = 0; state.kp = new Set(); } }
+    ]
+  }
+
+};
+
+const origGo = go;
+window.go = function(id) {
+  origGo(id);
+  if (id === 'ending') {
+    state.badges.push('氣象倫理徽章');
+    document.getElementById('endHp').textContent = state.hp;
+    document.getElementById('endBadges').textContent = state.badges.join('、');
+    document.getElementById('proS').textContent = state.proScore;
+    document.getElementById('conS').textContent = state.conScore;
+
+    let stance, msg;
+    const diff = state.proScore - state.conScore;
+    if (diff >= 1.5) {
+      stance = '🟢 支持人工氣象派';
+      msg = '<b>你的結局：「氣候工程師」</b><br>你相信科學可以也應該被用來改善人類處境。但記得在每次決策前，先回答：誰受益？誰受害？影響是否可逆？';
+    } else if (diff <= -1.5) {
+      stance = '🔴 反對人工氣象派';
+      msg = '<b>你的結局：「自然守護者」</b><br>你重視大氣系統的複雜與脆弱，主張謙卑。但別忘了——「不作為」也是一種選擇，面對極端氣候時你會怎麼做？';
+    } else {
+      stance = '⚖️ 中立／折衷派';
+      msg = '<b>你的結局：「氣象倫理法官」</b><br>你選擇了最困難也最務實的位置：用案例權衡、用制度規範。這需要持續學習科學新知與倫理框架——你或許適合走氣候政策的職涯。';
+    }
+    document.getElementById('finalStance').textContent = stance;
+    document.getElementById('endingBox').innerHTML = msg;
+  }
+};
+
+go('start');
+</script>
+</body>
+</html>

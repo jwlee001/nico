@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>變動的大氣 第一關 — 大氣的結構</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: linear-gradient(180deg, #0a1a3a 0%, #1e3a6f 50%, #87ceeb 100%);
+    min-height: 100vh;
+    color: #fff;
+    padding: 20px;
+  }
+  .game {
+    max-width: 760px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.96);
+    color: #222;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  header {
+    background: #1e3a6f;
+    color: #fff;
+    padding: 16px 24px;
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  header .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .status {
+    display: flex;
+    gap: 16px;
+    padding: 12px 24px;
+    background: #f3f6fb;
+    border-bottom: 1px solid #dde3ec;
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+  .status .pill {
+    background: #fff;
+    border: 1px solid #cfd6e0;
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+  .status .hp { color: #c0392b; font-weight: 600; }
+  .scene {
+    padding: 24px;
+    min-height: 280px;
+    line-height: 1.8;
+    font-size: 16px;
+  }
+  .scene h2 { color: #1e3a6f; margin-top: 0; }
+  .scene .narration { color: #444; }
+  .scene .npc { background: #fff8e1; border-left: 4px solid #f4b400; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .scene .tori { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .scene .kp { background: #e8f5e9; border: 1px dashed #43a047; padding: 8px 12px; margin: 10px 0; border-radius: 4px; color: #1b5e20; font-weight: 600; }
+  .scene .ok { color: #2e7d32; font-weight: 700; }
+  .scene .ng { color: #c62828; font-weight: 700; }
+  .scene table { border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  .scene table th, .scene table td { border: 1px solid #999; padding: 6px 10px; text-align: center; }
+  .scene table th { background: #e0e7f1; }
+  .choices {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .choices button {
+    background: #1e3a6f;
+    color: #fff;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .choices button:hover { background: #2c5aa0; transform: translateX(4px); }
+  .choices button.boss { background: #c0392b; }
+  .choices button.boss:hover { background: #e74c3c; }
+  .badge-list { font-size: 13px; }
+  .item-list { font-size: 13px; color: #555; }
+  footer { padding: 10px 24px; background: #f3f6fb; font-size: 12px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>🎈 變動的大氣：探空見習生日誌</h1>
+    <div class="sub">第一關 — 4-1 大氣的結構</div>
+  </header>
+  <div class="status">
+    <span class="pill hp">❤️ 體力 <span id="hp">100</span></span>
+    <span class="pill">🏅 徽章 <span id="badge">0</span></span>
+    <span class="pill">🎒 裝備 <span id="items">無</span></span>
+    <span class="pill">📚 知識點 <span id="kp">0</span> / 6</span>
+  </div>
+  <div class="scene" id="scene"></div>
+  <div class="choices" id="choices"></div>
+  <footer>點選下方按鈕推進劇情。答錯會扣體力，可重答。</footer>
+</div>
+
+<script>
+const state = {
+  hp: 100,
+  badges: [],
+  items: [],
+  kp: new Set(),
+  kpTotal: 6
+};
+
+function render() {
+  document.getElementById('hp').textContent = state.hp;
+  document.getElementById('badge').textContent = state.badges.length;
+  document.getElementById('items').textContent = state.items.length ? state.items.join('、') : '無';
+  document.getElementById('kp').textContent = state.kp.size;
+}
+
+function go(id) {
+  const s = scenes[id];
+  document.getElementById('scene').innerHTML = s.html;
+  const c = document.getElementById('choices');
+  c.innerHTML = '';
+  (s.choices || []).forEach(ch => {
+    const b = document.createElement('button');
+    b.textContent = ch.label;
+    if (ch.boss) b.classList.add('boss');
+    b.onclick = () => {
+      if (ch.effect) ch.effect();
+      render();
+      go(ch.next);
+    };
+    c.appendChild(b);
+  });
+  render();
+  window.scrollTo(0, 0);
+}
+
+const scenes = {
+
+  start: {
+    html: `
+      <h2>清晨 5:00　中央氣象局板橋探空站</h2>
+      <p class="narration">海風吹過操作場，遠方天空才剛泛起魚肚白。</p>
+      <div class="npc">👨‍🔬 <b>游博士</b>：「見習生，今天的任務是搭乘改裝過的高空探空氣球，從地表一路升到 100 公里以上，沿途記錄大氣的『身體狀況』。每一層的脾氣都不一樣——別搞混了。」</div>
+      <div class="tori">🧔 <b>Tori 學長</b>：「別緊張。先檢查裝備——水銀氣壓計帶了沒？1643 年我就是用這東西測出地表氣壓的喔。」</div>
+    `,
+    choices: [
+      { label: '✅ 檢查裝備並出發', next: 'launch' }
+    ]
+  },
+
+  launch: {
+    html: `
+      <h2>裝備檢查 ✓</h2>
+      <p>你帶上 <b>水銀氣壓計</b>、<b>無線電探空儀</b>，啟動釋放程序。氣球以每分鐘 300 公尺的速度上升。</p>
+      <p>儀表板第一筆讀數：氣壓 <b>1013 hPa</b>，氣溫 <b>15°C</b>。</p>
+      <div class="tori">🧔 <b>Tori</b>：「這就是 <b>1 個標準大氣壓（1 atm）</b>——定義是緯度 45°、海平面、0°C 時 76 cm 水銀柱造成的壓力。氣象上單位用 <b>百帕（hPa）</b>。」</div>
+      <div class="kp">📘 知識點解鎖：大氣壓力定義與單位 ✔</div>
+    `,
+    choices: [
+      { label: '🎈 爬升到 3 公里', next: 'h3', effect: () => {
+          state.items.push('水銀氣壓計', '探空氣球');
+          state.kp.add('pressure');
+        } }
+    ]
+  },
+
+  h3: {
+    html: `
+      <h2>高度 3 公里</h2>
+      <p>儀表氣壓 <b>≈ 700 hPa</b>。你發現一件奇怪的事：氣壓的下降速度比一開始<b>變慢了</b>。</p>
+      <div class="tori">🧔 <b>Tori</b>：「考你一題——為什麼氣壓遞減率會隨高度增加而變小？」</div>
+    `,
+    choices: [
+      { label: 'A. 因為高空溫度比較低', next: 'h3_wrong' },
+      { label: 'B. 因為空氣分子受重力主要集中在低空，越高越稀薄', next: 'h3_right' },
+      { label: 'C. 因為高空風較強，把氣壓吹走了', next: 'h3_wrong' }
+    ]
+  },
+  h3_right: {
+    html: `<p class="ok">✅ 答對！</p><p>越靠近地表，空氣密度越大；越高處空氣越稀薄，氣壓下降速度自然變慢。</p>
+      <div class="kp">📘 知識點強化：氣壓的垂直遞減特性 ✔</div>`,
+    choices: [
+      { label: '🎈 繼續爬升到 10 公里', next: 'h10', effect: () => { state.hp = Math.min(100, state.hp + 10); } }
+    ]
+  },
+  h3_wrong: {
+    html: `<p class="ng">❌ 不太對。提示：想想空氣分子的<b>分布</b>。</p>`,
+    choices: [
+      { label: '↩ 再想一次', next: 'h3', effect: () => { state.hp -= 10; } }
+    ]
+  },
+
+  h10: {
+    html: `
+      <h2>高度 10 公里　— 對流層頂</h2>
+      <p>窗外仍是雲層，氣球偶爾被亂流顛得搖晃。氣壓 <b>≈ 300 hPa</b>，氣溫降到 <b>−55°C</b>。</p>
+      <div class="tori">🧔 <b>Tori</b>：「這層叫 <b>對流層</b>。地表加熱靠紅外線傳回大氣，所以<b>越高越冷</b>；地表水氣蒸發，雲雨幾乎都在這裡發生。」</div>
+      <div class="kp">📘 知識點解鎖：對流層 ✔</div>
+    `,
+    choices: [
+      { label: '🎈 爬升到 25 公里', next: 'h25', effect: () => state.kp.add('troposphere') }
+    ]
+  },
+
+  h25: {
+    html: `
+      <h2>高度 25 公里　— 平流層</h2>
+      <p>亂流忽然消失，窗外一片澄藍。儀器示警：<b>臭氧濃度急升</b>。</p>
+      <div class="tori">🧔 <b>Tori</b>：「臭氧主要集中在 20–30 km，會吸收紫外線，使這層<b>下冷上熱</b>。因此幾乎沒有上下對流，運動以水平為主——所以叫『平流』。」</div>
+      <div class="kp">📘 知識點解鎖：平流層／臭氧層 ✔</div>
+    `,
+    choices: [
+      { label: '🎈 爬升到 70 公里', next: 'h70', effect: () => state.kp.add('stratosphere') }
+    ]
+  },
+
+  h70: {
+    html: `
+      <h2>高度 70 公里　— 中氣層</h2>
+      <p>窗外開始出現流星燃燒的橘色軌跡。</p>
+      <div class="tori">🧔 <b>Tori</b>：「中氣層臭氧含量低，沒有額外加熱，所以溫度又開始<b>隨高度遞減</b>。流星大多在這層燒掉。」</div>
+      <div class="kp">📘 知識點解鎖：中氣層 ✔</div>
+    `,
+    choices: [
+      { label: '🎈 爬升到 110 公里', next: 'h110', effect: () => state.kp.add('mesosphere') }
+    ]
+  },
+
+  h110: {
+    html: `
+      <h2>高度 110 公里　— 增溫層</h2>
+      <p>極光在窗外閃爍，氣球外殼幾乎接觸不到空氣。</p>
+      <div class="tori">🧔 <b>Tori</b>：「<b>增溫層（熱氣層）</b>。氣體稀薄，但吸收太陽<b>短波輻射</b>（紫外線、X 射線、γ 射線），溫度可達上千度。氣體分子被打成<b>原子態或帶電粒子</b>——所以這裡也是電離層。」</div>
+      <div class="kp">📘 知識點解鎖：增溫層 ✔／大氣分層完成 ✔</div>
+      <p>無線電傳來游博士的聲音：「所有知識點收集完成。準備好接受結業考了嗎？」</p>
+    `,
+    choices: [
+      { label: '⚔️ 挑戰 Boss：氣象員資格測驗', next: 'boss1', boss: true, effect: () => { state.kp.add('thermosphere'); state.kp.add('layers'); } }
+    ]
+  },
+
+  boss1: {
+    html: `
+      <h2>⚔️ Boss 戰　第 1 題</h2>
+      <p>探空氣球在 <b>30 公里</b>高處紀錄到「氣溫隨高度增加而上升」。請問氣球此時最可能位於哪一層？</p>
+    `,
+    choices: [
+      { label: 'A. 對流層', next: 'b1_wrong_a' },
+      { label: 'B. 平流層', next: 'b1_right' },
+      { label: 'C. 中氣層', next: 'b1_wrong_c' },
+      { label: 'D. 增溫層', next: 'b1_wrong_d' }
+    ]
+  },
+  b1_wrong_a: { html: `<p class="ng">❌ 對流層溫度隨高度<b>下降</b>，因為熱源來自地表。</p>`, choices: [{ label: '↩ 重答', next: 'boss1', effect: () => state.hp -= 20 }] },
+  b1_wrong_c: { html: `<p class="ng">❌ 中氣層臭氧含量低，溫度隨高度下降。</p>`, choices: [{ label: '↩ 重答', next: 'boss1', effect: () => state.hp -= 20 }] },
+  b1_wrong_d: { html: `<p class="ng">❌ 30 km 還遠遠到不了增溫層（> 80 km）。</p>`, choices: [{ label: '↩ 重答', next: 'boss1', effect: () => state.hp -= 20 }] },
+  b1_right: {
+    html: `<p class="ok">✅ 正確！</p><p>平流層中臭氧吸收紫外線，使溫度隨高度上升。</p>`,
+    choices: [{ label: '➡ 進入第 2 題', next: 'boss2', effect: () => state.hp = Math.min(100, state.hp + 10) }]
+  },
+
+  boss2: {
+    html: `
+      <h2>⚔️ Boss 戰　第 2 題</h2>
+      <p>下表為某次探空氣球資料，請推算 <b>5,449 公尺</b>高度的大氣壓力最接近多少？</p>
+      <table>
+        <tr><th>高度 (m)</th><th>198</th><th>1,192</th><th>3,094</th><th>5,449</th><th>10,463</th></tr>
+        <tr><th>氣壓 (hPa)</th><td>1,000</td><td>885.5</td><td>700</td><td>?</td><td>261</td></tr>
+      </table>
+    `,
+    choices: [
+      { label: 'A. 約 800 hPa', next: 'b2_wrong_a' },
+      { label: 'B. 約 520 hPa', next: 'b2_right' },
+      { label: 'C. 約 400 hPa', next: 'b2_wrong_c' },
+      { label: 'D. 約 300 hPa', next: 'b2_wrong_d' }
+    ]
+  },
+  b2_wrong_a: { html: `<p class="ng">❌ 太高。5,449 m 應低於 3,094 m 的 700 hPa。</p>`, choices: [{ label: '↩ 重答', next: 'boss2', effect: () => state.hp -= 20 }] },
+  b2_wrong_c: { html: `<p class="ng">❌ 太低。介於 700 與 261 之間，且 5,449 較接近 3,094。</p>`, choices: [{ label: '↩ 重答', next: 'boss2', effect: () => state.hp -= 20 }] },
+  b2_wrong_d: { html: `<p class="ng">❌ 那是約 10 公里高的氣壓。</p>`, choices: [{ label: '↩ 重答', next: 'boss2', effect: () => state.hp -= 20 }] },
+  b2_right: {
+    html: `<p class="ok">✅ 正確！</p><p>表中標準答案為 <b>518.6 hPa</b>。你成功掌握「氣壓隨高度的非線性遞減」。</p>
+      <div class="kp">🏅 獲得徽章：<b>大氣結構徽章</b></div>`,
+    choices: [{ label: '🎉 過關！', next: 'end', effect: () => {
+        state.hp = Math.min(100, state.hp + 10);
+        state.badges.push('大氣結構徽章');
+        state.items.push('見習生勳章·一星');
+      } }]
+  },
+
+  end: {
+    html: `
+      <h2>🏅 第一關過關！</h2>
+      <p>體力：<b>${''}</b><span id="endHp"></span>　／　徽章：<b><span id="endBadges"></span></b></p>
+      <div class="npc">👨‍🔬 <b>游博士</b>：「漂亮，見習生。下一關，玉山雲海觀測站等著你——準備迎接<b>水氣的世界</b>。」</div>
+      <hr>
+      <h3>📝 學習回顧</h3>
+      <ol>
+        <li>由下而上四層的名稱與各自的<b>加熱來源</b>。</li>
+        <li>為何氣壓遞減率「隨高度增加而<b>變小</b>」？</li>
+        <li>1 atm = ?  hPa？氣象學常用單位是？</li>
+        <li>哪一層空氣運動以水平為主？為什麼？</li>
+        <li>極光與流星分別出現在哪一層？</li>
+      </ol>
+    `,
+    choices: [
+      { label: '🔄 重新挑戰本關', next: 'start', effect: () => { state.hp = 100; state.badges = []; state.items = []; state.kp = new Set(); } }
+    ]
+  }
+
+};
+
+// fix end scene placeholders
+const origGo = go;
+window.go = function(id) {
+  origGo(id);
+  if (id === 'end') {
+    const eh = document.getElementById('endHp');
+    const eb = document.getElementById('endBadges');
+    if (eh) eh.textContent = state.hp;
+    if (eb) eb.textContent = state.badges.join('、');
+  }
+};
+
+go('start');
+</script>
+</body>
+</html>

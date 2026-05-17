@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>變動的大氣 第二關 — 水氣變化</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: linear-gradient(180deg, #2c3e50 0%, #4a6fa5 40%, #b8d4e3 100%);
+    min-height: 100vh; color: #fff; padding: 20px;
+  }
+  .game { max-width: 760px; margin: 0 auto; background: rgba(255,255,255,0.96); color: #222; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); overflow: hidden; }
+  header { background: #2c5f8d; color: #fff; padding: 16px 24px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .status { display: flex; gap: 16px; padding: 12px 24px; background: #f3f6fb; border-bottom: 1px solid #dde3ec; font-size: 14px; flex-wrap: wrap; }
+  .status .pill { background: #fff; border: 1px solid #cfd6e0; border-radius: 999px; padding: 4px 12px; }
+  .status .hp { color: #c0392b; font-weight: 600; }
+  .scene { padding: 24px; min-height: 280px; line-height: 1.8; font-size: 16px; }
+  .scene h2 { color: #2c5f8d; margin-top: 0; }
+  .npc { background: #fff8e1; border-left: 4px solid #f4b400; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .tori { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .kp { background: #e8f5e9; border: 1px dashed #43a047; padding: 8px 12px; margin: 10px 0; border-radius: 4px; color: #1b5e20; font-weight: 600; }
+  .hint { background: #fff3e0; border-left: 4px solid #fb8c00; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 14px; }
+  .ok { color: #2e7d32; font-weight: 700; }
+  .ng { color: #c62828; font-weight: 700; }
+  .formula { background: #f5f5f5; border: 1px solid #ccc; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-family: "Courier New", monospace; font-size: 15px; text-align: center; }
+  table { border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  table th, table td { border: 1px solid #999; padding: 6px 10px; text-align: center; }
+  table th { background: #e0e7f1; }
+  .choices { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .choices button { background: #2c5f8d; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; font-size: 15px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; }
+  .choices button:hover { background: #3a7bb8; transform: translateX(4px); }
+  .choices button.boss { background: #c0392b; }
+  .choices button.boss:hover { background: #e74c3c; }
+  footer { padding: 10px 24px; background: #f3f6fb; font-size: 12px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>☁️ 變動的大氣：探空見習生日誌</h1>
+    <div class="sub">第二關 — 4-2 大氣中的水氣變化</div>
+  </header>
+  <div class="status">
+    <span class="pill hp">❤️ 體力 <span id="hp">100</span></span>
+    <span class="pill">🏅 徽章 <span id="badge">0</span></span>
+    <span class="pill">🎒 裝備 <span id="items">無</span></span>
+    <span class="pill">📚 知識點 <span id="kp">0</span> / 7</span>
+  </div>
+  <div class="scene" id="scene"></div>
+  <div class="choices" id="choices"></div>
+  <footer>點選下方按鈕推進劇情。答錯會扣體力，可重答。</footer>
+</div>
+
+<script>
+const state = { hp: 100, badges: [], items: [], kp: new Set(), kpTotal: 7 };
+
+function render() {
+  document.getElementById('hp').textContent = state.hp;
+  document.getElementById('badge').textContent = state.badges.length;
+  document.getElementById('items').textContent = state.items.length ? state.items.join('、') : '無';
+  document.getElementById('kp').textContent = state.kp.size;
+}
+
+function go(id) {
+  const s = scenes[id];
+  document.getElementById('scene').innerHTML = s.html;
+  const c = document.getElementById('choices');
+  c.innerHTML = '';
+  (s.choices || []).forEach(ch => {
+    const b = document.createElement('button');
+    b.textContent = ch.label;
+    if (ch.boss) b.classList.add('boss');
+    b.onclick = () => { if (ch.effect) ch.effect(); render(); go(ch.next); };
+    c.appendChild(b);
+  });
+  render();
+  window.scrollTo(0, 0);
+}
+
+const scenes = {
+
+  start: {
+    html: `
+      <h2>玉山雲海觀測站　清晨 4:30</h2>
+      <p>你完成第一關訓練後，被派往海拔 <b>3,952 公尺</b>的玉山主峰觀測站。剛踏出車門，一陣冷風夾著霧氣撲面而來。</p>
+      <div class="npc">👩‍🔬 <b>站長</b>：「歡迎見習生。這裡是研究『水』在大氣中各種變化的最佳場所——你會看到雲、霧、露、霜、霰、雹⋯⋯通通在一天裡上演。記住一件事：<b>大氣對水的『胃口』隨溫度而變</b>。」</div>
+      <div class="tori">🧔 <b>Tori 學長</b>（無線電）：「在開始之前，先複習水的三態。它不只是『換造型』，每次換造型都會<b>吸熱或放熱</b>，這是天氣變化的能量來源！」</div>
+    `,
+    choices: [
+      { label: '🔬 走進三態實驗室', next: 's1_states' }
+    ]
+  },
+
+  s1_states: {
+    html: `
+      <h2>① 水的三態與潛熱</h2>
+      <p>實驗室裡有三杯水：一杯冰塊、一杯液態水、一杯沸騰的蒸氣。</p>
+      <p><b>潛熱</b>：物質在三態變化時<b>吸收或釋放</b>的熱量，但<b>溫度不變</b>。每變化 1 公克的水：</p>
+      <ul>
+        <li>蒸發（液→氣）<b>吸收 600 卡</b>；凝結（氣→液）<b>放出 600 卡</b></li>
+        <li>融化（固→液）<b>吸收 80 卡</b>；結冰（液→固）<b>放出 80 卡</b></li>
+        <li>昇華（固→氣）<b>吸收 680 卡</b>；凝華（氣→固）<b>放出 680 卡</b></li>
+      </ul>
+      <div class="tori">🧔 <b>Tori</b>：「為什麼颱風威力這麼強？因為海面大量蒸發的水氣，在颱風中心<b>凝結成雲</b>時釋放出潛熱，這是颱風的能量燃料。」</div>
+      <div class="kp">📘 知識點解鎖：水的三態變化與潛熱 ✔</div>
+      <p><b>小測驗</b>：1 公克 0°C 的冰昇華成 0°C 的水蒸氣，需要吸收幾卡？</p>
+    `,
+    choices: [
+      { label: 'A. 80 卡', next: 's1_wrong', effect: () => state.hp -= 10 },
+      { label: 'B. 600 卡', next: 's1_wrong', effect: () => state.hp -= 10 },
+      { label: 'C. 680 卡', next: 's1_right', effect: () => { state.kp.add('states'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'D. 760 卡', next: 's1_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  s1_right: {
+    html: `<p class="ok">✅ 答對！</p><p>固體直接變氣體叫「昇華」，吸熱 680 卡（≈ 80 + 600，先融化再蒸發的總和）。</p>`,
+    choices: [{ label: '➡ 進入溼度實驗', next: 's2_abs' }]
+  },
+  s1_wrong: {
+    html: `<p class="ng">❌ 不對。</p><div class="hint">💡 昇華 = 固體 → 氣體，相當於「融化 + 蒸發」兩步加起來。</div>`,
+    choices: [{ label: '↩ 重新回顧', next: 's1_states' }]
+  },
+
+  s2_abs: {
+    html: `
+      <h2>② 絕對溼度（實際水氣量）</h2>
+      <p>站長遞給你一個密閉氣箱，溫度設定 27°C、一大氣壓。氣箱裡每 1 立方公尺空氣含有 <b>15 公克</b>的水氣。</p>
+      <div class="npc">👩‍🔬 <b>站長</b>：「這就是<b>絕對溼度</b>——又稱<b>實際水氣量</b>，單位是 <b>g/m³</b>。它告訴我們『目前空氣裡到底有多少水』。」</div>
+      <p>但有件事很有趣：同樣 27°C 的空氣，<b>最多</b>可以裝多少水？</p>
+      <div class="kp">📘 知識點解鎖：絕對溼度 ✔</div>
+    `,
+    choices: [
+      { label: '➡ 查看「最多能裝多少水」', next: 's3_sat' }
+    ]
+  },
+
+  s3_sat: {
+    html: `
+      <h2>③ 飽和水氣量與飽和曲線</h2>
+      <p>站長打開圖表：27°C 的空氣每立方公尺<b>最多</b>容納 <b>30 公克</b>水氣。超過就會凝結成水滴。</p>
+      <div class="formula">飽和水氣量（g/m³）→ 隨<b>溫度升高而增加</b></div>
+      <p>飽和曲線（圖 4-5）大致如下：</p>
+      <table>
+        <tr><th>溫度 °C</th><th>10</th><th>15</th><th>20</th><th>27</th><th>30</th></tr>
+        <tr><th>飽和量 g/m³</th><td>12</td><td>15</td><td>20</td><td>30</td><td>42</td></tr>
+      </table>
+      <div class="tori">🧔 <b>Tori</b>：「<b>飽和</b>就是『空氣已經裝到最大值，再也擠不進去』。此時的水氣量稱為<b>飽和水氣量</b>。」</div>
+      <div class="kp">📘 知識點解鎖：飽和與飽和水氣量 ✔</div>
+    `,
+    choices: [
+      { label: '➡ 學習相對溼度', next: 's4_rh' }
+    ]
+  },
+
+  s4_rh: {
+    html: `
+      <h2>④ 相對溼度</h2>
+      <p>有了「實際裝多少」與「最多能裝多少」兩個值，就可以算出空氣有多<b>潮濕</b>。</p>
+      <div class="formula">相對溼度（%）= <b>實際水氣量 ÷ 飽和水氣量 × 100%</b></div>
+      <p>以剛才氣箱為例（27°C、實際 15 g/m³、飽和 30 g/m³）：</p>
+      <div class="formula">15 ÷ 30 × 100% = <b>50%</b></div>
+      <div class="kp">📘 知識點解鎖：相對溼度公式 ✔</div>
+      <p><b>實戰演練</b>：若另一個氣箱 20°C、實際水氣量 15 g/m³（飽和量 20 g/m³），相對溼度是多少？</p>
+    `,
+    choices: [
+      { label: 'A. 25%', next: 's4_wrong', effect: () => state.hp -= 10 },
+      { label: 'B. 50%', next: 's4_wrong', effect: () => state.hp -= 10 },
+      { label: 'C. 75%', next: 's4_right', effect: () => { state.kp.add('rh'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'D. 100%', next: 's4_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  s4_right: {
+    html: `<p class="ok">✅ 答對！15 ÷ 20 × 100% = 75%。</p><p>注意：水氣量沒變，但溫度下降（27→20°C），相對溼度卻上升了——因為空氣「胃口變小」。</p>`,
+    choices: [{ label: '➡ 學習露點溫度', next: 's5_dew' }]
+  },
+  s4_wrong: {
+    html: `<p class="ng">❌ 不對。</p><div class="hint">💡 公式：實際 ÷ 飽和 × 100%。題目給的飽和量是 20 g/m³。</div>`,
+    choices: [{ label: '↩ 重新計算', next: 's4_rh' }]
+  },
+
+  s5_dew: {
+    html: `
+      <h2>⑤ 露點溫度</h2>
+      <p>站長拉著你走到戶外。天剛亮，草地上佈滿露珠。</p>
+      <div class="npc">👩‍🔬 <b>站長</b>：「<b>固定水氣量</b>下，把空氣不斷冷卻，總會到達某個溫度——此時相對溼度剛好 100%，水氣開始凝結。這個溫度叫做<b>露點溫度</b>。」</div>
+      <div class="hint">💡 重要關係：<br>
+        ・露點 = 「水氣量達飽和時的溫度」<br>
+        ・相對溼度愈高 → 露點愈接近氣溫<br>
+        ・相對溼度 = 100% 時，露點 = 氣溫
+      </div>
+      <p>例：27°C 含 15 g/m³ 水氣的空氣（相對溼度 50%）冷卻時，當溫度降到 <b>17°C 左右</b>（此時飽和量 ≈ 15 g/m³），就達到露點。</p>
+      <div class="kp">📘 知識點解鎖：露點溫度 ✔</div>
+      <p><b>判斷題</b>：某地下午氣溫 25°C，露點 10°C。下列哪個敘述正確？</p>
+    `,
+    choices: [
+      { label: 'A. 空氣相對溼度很高，快下雨了', next: 's5_wrong', effect: () => state.hp -= 10 },
+      { label: 'B. 空氣很乾燥，因為露點離氣溫很遠', next: 's5_right', effect: () => { state.kp.add('dew'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'C. 露點 10°C 表示氣壓很低', next: 's5_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  s5_right: {
+    html: `<p class="ok">✅ 答對！</p><p>氣溫與露點差距愈大，相對溼度愈低，空氣愈乾燥。氣象上甚至用「氣溫 - 露點」當作乾燥程度的指標。</p>`,
+    choices: [{ label: '➡ 觀察凝結現象', next: 's6_cn' }]
+  },
+  s5_wrong: {
+    html: `<p class="ng">❌ 不對。</p><div class="hint">💡 露點愈接近氣溫 → 愈接近飽和 → 愈潮濕；露點離氣溫很遠 → 還差得遠 → 乾燥。</div>`,
+    choices: [{ label: '↩ 重新思考', next: 's5_dew' }]
+  },
+
+  s6_cn: {
+    html: `
+      <h2>⑥ 凝結核與凝結現象</h2>
+      <p>站長帶你登上觀景台，眼前霧氣繚繞。</p>
+      <div class="npc">👩‍🔬 <b>站長</b>：「空氣達到飽和只是『有可能凝結』，要真正凝結成水滴，還需要一樣東西——<b>凝結核</b>。」</div>
+      <p>常見的凝結核：<b>鹽粒、塵埃、灰燼、火山灰、花粉⋯</b>。沒有凝結核，水氣難以聚集成水滴或冰晶。</p>
+      <p><b>凝結現象對照表</b>（依水氣達飽和的方式）：</p>
+      <table>
+        <tr><th>現象</th><th>形成位置</th><th>狀態</th></tr>
+        <tr><td><b>雲</b></td><td>空中</td><td>水滴或冰晶</td></tr>
+        <tr><td><b>霧</b></td><td>近地表</td><td>水滴（你看得到）</td></tr>
+        <tr><td><b>雪／霰／雹</b></td><td>空中（低溫）</td><td>冰晶／冰粒</td></tr>
+        <tr><td><b>露</b></td><td>地物表面</td><td>水滴（高於 0°C）</td></tr>
+        <tr><td><b>霜</b></td><td>地物表面</td><td>冰晶（低於 0°C，水氣直接凝華）</td></tr>
+      </table>
+      <div class="tori">🧔 <b>Tori</b>：「口訣：『看得到就是水態；看不到就不是水態（還是水氣）。』霜是<b>凝華</b>（氣→固），不是先結露再結冰。」</div>
+      <div class="kp">📘 知識點解鎖：凝結核 ✔／凝結現象分類 ✔</div>
+    `,
+    choices: [
+      { label: '⚔️ 挑戰 Boss：水氣判讀大師', next: 'boss1', boss: true, effect: () => { state.kp.add('cn'); state.kp.add('phenomena'); } }
+    ]
+  },
+
+  boss1: {
+    html: `
+      <h2>⚔️ Boss 戰　第 1 題（基本概念）</h2>
+      <p>下列關於霜的敘述，何者正確？</p>
+    `,
+    choices: [
+      { label: 'A. 霜是露水結凍而成', next: 'b1_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 霜是水氣直接凝華成冰晶', next: 'b1_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'C. 霜是高空雲滴落到地面凍結而成', next: 'b1_wrong', effect: () => state.hp -= 20 },
+      { label: 'D. 霜的形成需要溫度高於 0°C', next: 'b1_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b1_wrong: { html: `<p class="ng">❌ 不正確。</p><div class="hint">💡 霜：地物表面溫度低於 0°C 時，水氣<b>直接</b>凝華為冰晶（不經液態）。</div>`, choices: [{ label: '↩ 重答', next: 'boss1' }] },
+  b1_right: { html: `<p class="ok">✅ 正確！</p><p>霜是水氣 → 固態的<b>凝華</b>過程，過程中釋放 680 卡/克的潛熱。</p>`, choices: [{ label: '➡ 進入第 2 題', next: 'boss2' }] },
+
+  boss2: {
+    html: `
+      <h2>⚔️ Boss 戰　第 2 題（相對溼度計算）</h2>
+      <p>下表為飽和水氣量隨溫度的變化：</p>
+      <table>
+        <tr><th>溫度 °C</th><th>10</th><th>15</th><th>20</th><th>30</th></tr>
+        <tr><th>飽和量 g/m³</th><td>12</td><td>15</td><td>20</td><td>42</td></tr>
+      </table>
+      <p>某地清晨 6 點氣溫 <b>10°C</b>，瀰漫霧氣（達飽和）。到上午 10 點氣溫升至 <b>20°C</b>，假設<b>水氣量不變</b>，此時相對溼度為多少？</p>
+    `,
+    choices: [
+      { label: 'A. 25%', next: 'b2_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 50%', next: 'b2_wrong', effect: () => state.hp -= 20 },
+      { label: 'C. 60%', next: 'b2_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'D. 100%', next: 'b2_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b2_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 步驟：①清晨 10°C 飽和 → 實際水氣 = 飽和量 = 12 g/m³。②氣溫升到 20°C，飽和量變 20 g/m³，水氣量仍 12。③相對溼度 = 12 ÷ 20 × 100%。</div>`, choices: [{ label: '↩ 重答', next: 'boss2' }] },
+  b2_right: { html: `<p class="ok">✅ 正確！12 ÷ 20 × 100% = 60%。</p><p>這正是「春霧曝死鬼」的科學基礎——清晨起霧，白天回溫後相對溼度反而下降，變晴朗。</p>`, choices: [{ label: '➡ 進入第 3 題', next: 'boss3' }] },
+
+  boss3: {
+    html: `
+      <h2>⚔️ Boss 戰　第 3 題（露點判斷）</h2>
+      <p>下午氣象站讀數：氣溫 <b>30°C</b>、含水氣 <b>15 g/m³</b>（飽和量 30 g/m³ 對應 27°C；15 g/m³ 對應 17°C）。請問此空氣的<b>露點溫度</b>最接近多少？</p>
+    `,
+    choices: [
+      { label: 'A. 約 10°C', next: 'b3_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 約 17°C', next: 'b3_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'C. 約 27°C', next: 'b3_wrong', effect: () => state.hp -= 20 },
+      { label: 'D. 約 30°C', next: 'b3_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b3_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 露點 = 「實際水氣量 = 飽和水氣量」時的溫度。題目告訴你 15 g/m³ 對應 17°C 飽和。</div>`, choices: [{ label: '↩ 重答', next: 'boss3' }] },
+  b3_right: {
+    html: `<p class="ok">✅ 正確！</p><p>露點 = 把空氣冷卻到讓現有水氣剛好飽和的溫度。15 g/m³ 對應飽和溫度 17°C，即是露點。</p>
+      <div class="kp">🏅 獲得徽章：<b>水氣大師徽章</b></div>`,
+    choices: [{ label: '🎉 過關！', next: 'end', effect: () => { state.badges.push('水氣大師徽章'); state.items.push('乾濕球溫度計'); } }]
+  },
+
+  end: {
+    html: `
+      <h2>🏅 第二關過關！</h2>
+      <p>體力：<b><span id="endHp"></span></b>　／　徽章：<b><span id="endBadges"></span></b></p>
+      <div class="npc">👩‍🔬 <b>站長</b>：「漂亮！你已掌握大氣中水的脾氣。把<b>乾濕球溫度計</b>帶走——下一關你會在天氣圖前用得到。」</div>
+      <hr>
+      <h3>📝 學習回顧</h3>
+      <ol>
+        <li>三態變化的<b>潛熱</b>數值（蒸發 600、融化 80、昇華 680 cal/g）。</li>
+        <li><b>絕對溼度</b>與<b>相對溼度</b>單位、公式差異。</li>
+        <li>為什麼「水氣量不變」但相對溼度會隨溫度上升下降？</li>
+        <li><b>露點</b>的定義與意義。</li>
+        <li>霧、露、霜分別在哪裡形成？哪些是凝華？</li>
+        <li><b>凝結核</b>是什麼？舉三例。</li>
+      </ol>
+    `,
+    choices: [
+      { label: '🔄 重新挑戰本關', next: 'start', effect: () => { state.hp = 100; state.badges = []; state.items = []; state.kp = new Set(); } }
+    ]
+  }
+
+};
+
+const origGo = go;
+window.go = function(id) {
+  origGo(id);
+  if (id === 'end') {
+    const eh = document.getElementById('endHp');
+    const eb = document.getElementById('endBadges');
+    if (eh) eh.textContent = state.hp;
+    if (eb) eb.textContent = state.badges.join('、');
+  }
+};
+
+go('start');
+</script>
+</body>
+</html>

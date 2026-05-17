@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>變動的大氣：探空見習生日誌 — 任務總部</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: linear-gradient(135deg, #1a2530 0%, #2c4a6b 50%, #87ceeb 100%);
+    min-height: 100vh; color: #fff; padding: 30px 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 32px; margin-bottom: 6px; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  .subtitle { text-align: center; opacity: 0.85; margin-bottom: 30px; font-size: 15px; }
+  .intro { background: rgba(255,255,255,0.96); color: #222; padding: 20px 24px; border-radius: 12px; margin-bottom: 24px; line-height: 1.7; }
+  .intro h2 { color: #1e3a6f; margin-top: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .card { background: rgba(255,255,255,0.96); color: #222; border-radius: 12px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; text-decoration: none; display: block; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .card h3 { margin: 0 0 6px 0; color: #1e3a6f; }
+  .card .tag { display: inline-block; background: #1e3a6f; color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+  .card .tag.boss { background: #c0392b; }
+  .card p { margin: 6px 0 0 0; font-size: 14px; color: #555; line-height: 1.55; }
+  .card .kp { font-size: 12px; color: #2e7d32; margin-top: 8px; }
+  .diff { float: right; font-size: 11px; color: #c0392b; }
+  footer { text-align: center; margin-top: 30px; opacity: 0.7; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎈 變動的大氣：探空見習生日誌</h1>
+  <div class="subtitle">普通型高級中學・自然科學領域・地球科學 第 4 章 RPG 學習任務</div>
+
+  <div class="intro">
+    <h2>📜 任務簡報</h2>
+    <p>你是中央氣象局新進的<b>探空見習生</b>。要取得正式氣象員資格，必須完成 5 個任務，依序探索大氣的結構、水氣變化、運動、天氣現象，並通過最後的科學倫理論辯。</p>
+    <p><b>遊戲方式</b>：每關獨立執行 15~25 分鐘。點選下方關卡卡片即可開始。答題錯誤會扣體力但可重答；過關獲得徽章。</p>
+    <p><b>給老師</b>：建議搭配課本進度發放對應關卡。每關末段附有「學習回顧」題組，可作為形成性評量或回家功課。</p>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="stage1_4-1.html">
+      <span class="tag">第一關</span><span class="diff">難度 ★★☆</span>
+      <h3>4-1 大氣的結構</h3>
+      <p>搭乘探空氣球從地表升到 110 公里，認識大氣壓力、垂直分層（對流/平流/中氣/增溫層）。</p>
+      <div class="kp">📘 6 個知識點 · Boss 戰 2 題</div>
+    </a>
+
+    <a class="card" href="stage2_4-2.html">
+      <span class="tag">第二關</span><span class="diff">難度 ★★★</span>
+      <h3>4-2 大氣中的水氣變化</h3>
+      <p>在玉山雲海觀測站學習水三態與潛熱、絕對/相對溼度、露點、凝結核。</p>
+      <div class="kp">📘 7 個知識點 · Boss 戰 3 題</div>
+    </a>
+
+    <a class="card" href="stage3_4-3.html">
+      <span class="tag">第三關</span><span class="diff">難度 ★★★★</span>
+      <h3>4-3 大氣的運動</h3>
+      <p>駕駛氣象偵察機學習絕熱、四種上升運動、氣壓梯度力、科氏力、摩擦力、地轉風/地面風。</p>
+      <div class="kp">📘 9 個知識點 · Boss 戰 4 題</div>
+    </a>
+
+    <a class="card" href="stage4_4-4.html">
+      <span class="tag">第四關</span><span class="diff">難度 ★★★</span>
+      <h3>4-4 天氣現象與地面天氣圖</h3>
+      <p>在中央氣象局學習觀測方式、高低壓系統、天氣圖判讀、乾濕球溫度計。</p>
+      <div class="kp">📘 7 個知識點 · Boss 戰 3 題</div>
+    </a>
+
+    <a class="card" href="stage5_final.html">
+      <span class="tag boss">終章</span><span class="diff">開放式</span>
+      <h3>科學論辯：人造氣象</h3>
+      <p>聯合國氣象倫理論壇，三輪論辯（越戰人工降雨、奧運消雨、地球工程），多重結局。</p>
+      <div class="kp">📘 5 個論點 · 3 種結局</div>
+    </a>
+  </div>
+
+  <footer>© 教師教學使用 · 內容依據課本《地球科學》第 4 章 變動的大氣</footer>
+</div>
+</body>
+</html>

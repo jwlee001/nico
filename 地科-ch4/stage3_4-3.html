@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>變動的大氣 第三關 — 大氣的運動</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: linear-gradient(180deg, #1a2530 0%, #2c4a6b 35%, #5a7fa0 100%);
+    min-height: 100vh; color: #fff; padding: 20px; }
+  .game { max-width: 760px; margin: 0 auto; background: rgba(255,255,255,0.96); color: #222; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); overflow: hidden; }
+  header { background: #2c4a6b; color: #fff; padding: 16px 24px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .status { display: flex; gap: 16px; padding: 12px 24px; background: #f3f6fb; border-bottom: 1px solid #dde3ec; font-size: 14px; flex-wrap: wrap; }
+  .status .pill { background: #fff; border: 1px solid #cfd6e0; border-radius: 999px; padding: 4px 12px; }
+  .status .hp { color: #c0392b; font-weight: 600; }
+  .scene { padding: 24px; min-height: 280px; line-height: 1.8; font-size: 16px; }
+  .scene h2 { color: #2c4a6b; margin-top: 0; }
+  .npc { background: #fff8e1; border-left: 4px solid #f4b400; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .tori { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .kp { background: #e8f5e9; border: 1px dashed #43a047; padding: 8px 12px; margin: 10px 0; border-radius: 4px; color: #1b5e20; font-weight: 600; }
+  .hint { background: #fff3e0; border-left: 4px solid #fb8c00; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-size: 14px; }
+  .ok { color: #2e7d32; font-weight: 700; }
+  .ng { color: #c62828; font-weight: 700; }
+  .formula { background: #f5f5f5; border: 1px solid #ccc; padding: 10px 14px; margin: 10px 0; border-radius: 4px; font-family: "Courier New", monospace; font-size: 15px; text-align: center; }
+  .diagram { font-family: "Courier New", monospace; background: #f0f4fa; padding: 12px; border-radius: 6px; white-space: pre; font-size: 13px; line-height: 1.4; overflow-x: auto; }
+  table { border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  table th, table td { border: 1px solid #999; padding: 6px 10px; text-align: center; }
+  table th { background: #e0e7f1; }
+  .choices { padding: 0 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .choices button { background: #2c4a6b; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; font-size: 15px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; }
+  .choices button:hover { background: #3d6493; transform: translateX(4px); }
+  .choices button.boss { background: #c0392b; }
+  .choices button.boss:hover { background: #e74c3c; }
+  footer { padding: 10px 24px; background: #f3f6fb; font-size: 12px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>🌪️ 變動的大氣：探空見習生日誌</h1>
+    <div class="sub">第三關 — 4-3 大氣的運動</div>
+  </header>
+  <div class="status">
+    <span class="pill hp">❤️ 體力 <span id="hp">100</span></span>
+    <span class="pill">🏅 徽章 <span id="badge">0</span></span>
+    <span class="pill">🎒 裝備 <span id="items">無</span></span>
+    <span class="pill">📚 知識點 <span id="kp">0</span> / 9</span>
+  </div>
+  <div class="scene" id="scene"></div>
+  <div class="choices" id="choices"></div>
+  <footer>本關難度最高，請仔細閱讀說明。答錯會扣體力，可重答。</footer>
+</div>
+
+<script>
+const state = { hp: 100, badges: [], items: [], kp: new Set(), kpTotal: 9 };
+
+function render() {
+  document.getElementById('hp').textContent = state.hp;
+  document.getElementById('badge').textContent = state.badges.length;
+  document.getElementById('items').textContent = state.items.length ? state.items.join('、') : '無';
+  document.getElementById('kp').textContent = state.kp.size;
+}
+
+function go(id) {
+  const s = scenes[id];
+  document.getElementById('scene').innerHTML = s.html;
+  const c = document.getElementById('choices');
+  c.innerHTML = '';
+  (s.choices || []).forEach(ch => {
+    const b = document.createElement('button');
+    b.textContent = ch.label;
+    if (ch.boss) b.classList.add('boss');
+    b.onclick = () => { if (ch.effect) ch.effect(); render(); go(ch.next); };
+    c.appendChild(b);
+  });
+  render();
+  window.scrollTo(0, 0);
+}
+
+const scenes = {
+
+  start: {
+    html: `
+      <h2>松山機場　氣象偵察機指揮所</h2>
+      <p>第三關是真正的挑戰：你要登上 P-3 氣象偵察機，深入颱風與冷鋒，理解風為何而起、為何偏轉。</p>
+      <div class="npc">👨‍✈️ <b>機長</b>：「見習生，今天我們要學的是<b>讓空氣動起來的力</b>。風是水平運動，雲雨是垂直運動，兩者各有它的原因。」</div>
+      <div class="tori">🧔 <b>Tori</b>：「先說個觀念：空氣會動，一定有<b>不平衡的力</b>。我們今天會見到 4 種力：氣壓梯度力、科氏力、摩擦力、加上垂直方向的浮力（絕熱）。」</div>
+    `,
+    choices: [
+      { label: '🛫 起飛 — 先研究垂直運動', next: 'v1_adiabatic' }
+    ]
+  },
+
+  // ========== 垂直運動 ==========
+  v1_adiabatic: {
+    html: `
+      <h2>① 絕熱過程 — 雲是怎麼來的</h2>
+      <p>偵察機爬升中。機長指著艙外飄起的小雲。</p>
+      <div class="npc">👨‍✈️ <b>機長</b>：「想像一團<b>空氣塊</b>從地面被推上去。它和外界<b>沒有熱量交換</b>，這叫<b>絕熱過程</b>。」</div>
+      <p>過程：</p>
+      <ul>
+        <li><b>絕熱上升</b>：高空氣壓小 → 空氣塊膨脹 → 分子撞擊變少 → 溫度<b>下降</b>（絕熱膨脹降溫）</li>
+        <li><b>絕熱下沉</b>：低空氣壓大 → 空氣塊壓縮 → 溫度<b>上升</b>（絕熱壓縮升溫）</li>
+      </ul>
+      <div class="hint">💡 關鍵：絕熱「沒有」熱量出入，溫度變化全來自於體積變化（壓縮 / 膨脹）。</div>
+      <p>當空氣塊上升到某高度，溫度降到<b>露點</b>時，水氣達飽和開始凝結成雲——這就是雲底高度的由來。</p>
+      <div class="kp">📘 知識點解鎖：絕熱過程 ✔</div>
+    `,
+    choices: [
+      { label: '➡ 認識 4 種上升運動', next: 'v2_uplift' }
+    ]
+  },
+
+  v2_uplift: {
+    html: `
+      <h2>② 4 種使空氣上升的機制</h2>
+      <p>機長秀出一張圖表，列出讓空氣上升的 4 種原因：</p>
+      <ol>
+        <li><b>地面加熱</b>：夏季午後地面被太陽烤熱 → 局部空氣受熱膨脹上升 → <b>午後雷陣雨</b></li>
+        <li><b>地形抬升</b>：冬季<b>東北季風</b>遇山脈，迎風面爬升降溫凝結 → 北部山區下雨</li>
+        <li><b>鋒面舉升</b>：冷暖氣團相遇，密度小的<b>暖空氣沿交界面爬升</b></li>
+        <li><b>低壓輻合</b>：地面低壓中心四周空氣向中心匯流 → 中心向上運動</li>
+      </ol>
+      <div class="kp">📘 知識點解鎖：四種上升運動機制 ✔</div>
+      <p><b>判斷題</b>：夏季臺北市傍晚下起一陣短暫強雷雨，最可能是哪一種上升運動？</p>
+    `,
+    choices: [
+      { label: 'A. 地面加熱（午後雷陣雨）', next: 'v2_right', effect: () => { state.kp.add('uplift'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'B. 地形抬升', next: 'v2_wrong', effect: () => state.hp -= 10 },
+      { label: 'C. 鋒面舉升', next: 'v2_wrong', effect: () => state.hp -= 10 },
+      { label: 'D. 低壓輻合', next: 'v2_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  v2_right: { html: `<p class="ok">✅ 答對！</p><p>夏季午後地表被烈日烤得灼熱，局部地區強烈受熱對流，形成短暫卻劇烈的雷陣雨。</p>`, choices: [{ label: '➡ 接著研究水平運動', next: 'h1_pgf' }] },
+  v2_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 「夏季傍晚 + 短暫強雨」是典型午後雷陣雨特徵——地表加熱導致的對流。</div>`, choices: [{ label: '↩ 重新選擇', next: 'v2_uplift' }] },
+
+  // ========== 水平運動 ==========
+  h1_pgf: {
+    html: `
+      <h2>③ 氣壓梯度力（PGF）</h2>
+      <p>偵察機平飛在 5,000 公尺高空。雷達顯示出一片<b>等壓線圖</b>。</p>
+      <div class="diagram">L 1006 ──────────
+       1010 ──────────
+       1014 ──────────
+  H    1018 ──────────  ← 等壓線（hPa）</div>
+      <p>等壓線：把氣壓相同的點連成線。</p>
+      <div class="npc">👨‍✈️ <b>機長</b>：「<b>氣壓梯度力</b>是讓空氣從高壓流向低壓的『推力』。三個重點：</p>
+      <ul>
+        <li>方向：<b>恆垂直於等壓線</b>，由<b>高壓指向低壓</b></li>
+        <li>大小：等壓線<b>愈密集</b>，氣壓梯度力<b>愈大</b>，風速愈快</li>
+        <li>它是<b>風的原動力</b>——沒有它，空氣不會水平運動</li>
+      </ul></div>
+      <div class="kp">📘 知識點解鎖：氣壓梯度力 ✔</div>
+      <p><b>觀察題</b>：在天氣圖 A 區等壓線密集、B 區等壓線稀疏，下列何者正確？</p>
+    `,
+    choices: [
+      { label: 'A. A 區風速大於 B 區', next: 'h1_right', effect: () => { state.kp.add('pgf'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'B. B 區風速大於 A 區', next: 'h1_wrong', effect: () => state.hp -= 10 },
+      { label: 'C. 兩區風速相同', next: 'h1_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  h1_right: { html: `<p class="ok">✅ 答對！</p><p>等壓線愈密 → 單位距離氣壓變化愈大 → 氣壓梯度力愈強 → 風速愈快。</p>`, choices: [{ label: '➡ 認識科氏力', next: 'h2_cor' }] },
+  h1_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 等壓線密 = 短距離氣壓差大 = 推力大 = 風強。</div>`, choices: [{ label: '↩ 重新思考', next: 'h1_pgf' }] },
+
+  h2_cor: {
+    html: `
+      <h2>④ 科氏力（Coriolis Force）</h2>
+      <p>機長拋出一個問題：「如果只有氣壓梯度力，風應該垂直等壓線、直直地從高壓吹到低壓。但實際上，風卻是<b>平行於等壓線</b>。為什麼？」</p>
+      <div class="npc">👨‍✈️ <b>機長</b>：「因為地球<b>自轉</b>！法國氣象學家科里奧利提出：在自轉的地球上，水平移動的物體會出現<b>偏轉的假想力</b>。」</div>
+      <p>科氏力三個重點：</p>
+      <ul>
+        <li>方向：<b>恆垂直於物體運動方向</b>。北半球向<b>右偏</b>，南半球向<b>左偏</b></li>
+        <li>大小：<b>緯度愈高愈大</b>，赤道為 0；運動速度愈快愈大</li>
+        <li>它<b>只改變方向、不改變速率</b>；運動距離太短或時間太短就觀察不到</li>
+      </ul>
+      <div class="hint">💡 科氏力來源：地球不同緯度的自轉<b>線速度</b>不同（赤道 1600 km/h、北緯 60° 800 km/h、極點 0）。物體南北移動時，會因「自帶速度」與「當地速度」不同而看起來偏向。</div>
+      <div class="kp">📘 知識點解鎖：科氏力 ✔</div>
+      <p><b>判斷題</b>：北半球地面有一空氣塊朝<b>正北方</b>運動，科氏力會把它推往哪個方向？</p>
+    `,
+    choices: [
+      { label: 'A. 東方', next: 'h2_right', effect: () => { state.kp.add('cor'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'B. 西方', next: 'h2_wrong', effect: () => state.hp -= 10 },
+      { label: 'C. 南方', next: 'h2_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  h2_right: { html: `<p class="ok">✅ 答對！</p><p>北半球科氏力恆向運動方向<b>右側</b>偏。朝正北運動 → 右側 = 東方。</p>`, choices: [{ label: '➡ 認識地轉風', next: 'h3_geo' }] },
+  h2_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 「面對運動方向，把右手伸出去」——那就是北半球科氏力偏轉的方向。</div>`, choices: [{ label: '↩ 重新判斷', next: 'h2_cor' }] },
+
+  h3_geo: {
+    html: `
+      <h2>⑤ 地轉風（高空風）</h2>
+      <p>機長指著機上的<b>高空氣象圖</b>，箭頭的風向都<b>平行於等壓線</b>。</p>
+      <div class="diagram">L 低壓 ────────────────
+     ──── PGF ↓
+         (氣壓梯度力)
+       ←──── 風向 平行等壓線
+                ↑ CF
+              (科氏力)
+H 高壓 ────────────────</div>
+      <p>距地面 <b>1 公里以上</b>，摩擦力幾乎可忽略。此時風只受兩個力：</p>
+      <ul>
+        <li><b>氣壓梯度力</b>（高壓→低壓，垂直等壓線）</li>
+        <li><b>科氏力</b>（垂直於風向）</li>
+      </ul>
+      <p>兩力<b>方向相反、大小相等</b>達到平衡時，風向<b>平行於等壓線</b>——這就是<b>地轉風（geostrophic wind）</b>，又稱<b>高空風</b>。</p>
+      <div class="hint">💡 北半球地轉風口訣：<b>背風而立，低壓在左、高壓在右</b>（白貝洛定律）。</div>
+      <div class="kp">📘 知識點解鎖：地轉風 ✔</div>
+    `,
+    choices: [
+      { label: '➡ 認識地面風與摩擦力', next: 'h4_fric' }
+    ]
+  },
+
+  h4_fric: {
+    html: `
+      <h2>⑥ 摩擦力與地面風</h2>
+      <p>偵察機下降到 500 公尺低空。風一下變得亂七八糟，機身搖晃。</p>
+      <div class="npc">👨‍✈️ <b>機長</b>：「<b>摩擦力</b>來了——地表的山脈、建築、樹林會拖慢空氣。」</div>
+      <p>摩擦力性質：</p>
+      <ul>
+        <li>方向：<b>與風向相反</b>（拖後腿）</li>
+        <li>效果：使風速變慢，並讓風向<b>偏離等壓線，斜向低壓</b></li>
+        <li>影響範圍：地面到約 1 公里高度（行星邊界層）</li>
+      </ul>
+      <p>地面附近的風受 <b>氣壓梯度力 + 科氏力 + 摩擦力</b> 三力平衡，稱為<b>地面風</b>。它與等壓線<b>斜交</b>，由高壓斜指向低壓。</p>
+      <div class="kp">📘 知識點解鎖：摩擦力 ✔／地面風 ✔</div>
+      <p><b>觀察題</b>：與高空地轉風相比，地面風有什麼差異？</p>
+    `,
+    choices: [
+      { label: 'A. 地面風較快，方向平行等壓線', next: 'h4_wrong', effect: () => state.hp -= 10 },
+      { label: 'B. 地面風較慢，方向斜越等壓線指向低壓', next: 'h4_right', effect: () => { state.kp.add('fric'); state.kp.add('surface'); state.hp = Math.min(100, state.hp + 10); } },
+      { label: 'C. 地面風方向與地轉風完全相反', next: 'h4_wrong', effect: () => state.hp -= 10 }
+    ]
+  },
+  h4_right: { html: `<p class="ok">✅ 答對！</p><p>摩擦力既降低風速、也改變風向，使地面風出現「橫越等壓線、斜指低壓」的型態。低壓中心因此會輻合，形成上升氣流（連結 4-4 雲雨）。</p>`, choices: [{ label: '⚔️ 挑戰 Boss', next: 'boss1', boss: true }] },
+  h4_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 摩擦力 = 風速變慢 + 風向偏離等壓線（傾向低壓）。</div>`, choices: [{ label: '↩ 重新思考', next: 'h4_fric' }] },
+
+  // ========== Boss ==========
+  boss1: {
+    html: `
+      <h2>⚔️ Boss 戰　第 1 題（力的辨識）</h2>
+      <p>下圖為北半球地面某處空氣運動的受力情況（α 代表風與等壓線夾角）：</p>
+      <div class="diagram">      乙↖   ↑甲
+              ●→丙────── 1012
+        α                 1008
+      丁↓                 1004
+       空氣運動方向 ← ●</div>
+      <p>哪個箭頭代表<b>氣壓梯度力</b>？</p>
+    `,
+    choices: [
+      { label: 'A. 甲（垂直等壓線、由低指高）', next: 'b1_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 乙（斜上）', next: 'b1_wrong', effect: () => state.hp -= 20 },
+      { label: 'C. 丙（垂直等壓線、由高指低）', next: 'b1_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'D. 丁（與運動方向相反）', next: 'b1_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b1_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 氣壓梯度力：垂直等壓線、由<b>高壓指向低壓</b>。注意圖中 1012 > 1008 > 1004。</div>`, choices: [{ label: '↩ 重答', next: 'boss1' }] },
+  b1_right: { html: `<p class="ok">✅ 正確！</p><p>氣壓梯度力恆垂直等壓線、由高壓指向低壓。</p>`, choices: [{ label: '➡ 進入第 2 題', next: 'boss2' }] },
+
+  boss2: {
+    html: `
+      <h2>⚔️ Boss 戰　第 2 題（科氏力應用）</h2>
+      <p>下列關於科氏力的敘述，何者<b>錯誤</b>？</p>
+    `,
+    choices: [
+      { label: 'A. 科氏力大小與緯度有關，赤道為 0', next: 'b2_wrong_a', effect: () => state.hp -= 20 },
+      { label: 'B. 北半球氣流向右偏，南半球向左偏', next: 'b2_wrong_b', effect: () => state.hp -= 20 },
+      { label: 'C. 科氏力會改變氣流的速率', next: 'b2_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'D. 物體運動時間或距離太短時，科氏力影響可忽略', next: 'b2_wrong_d', effect: () => state.hp -= 20 }
+    ]
+  },
+  b2_wrong_a: { html: `<p class="ng">❌ A 是正確敘述（不是錯誤）。</p><div class="hint">💡 題目問「錯誤」的——找出講錯的那個。</div>`, choices: [{ label: '↩ 重答', next: 'boss2' }] },
+  b2_wrong_b: { html: `<p class="ng">❌ B 是正確敘述。</p>`, choices: [{ label: '↩ 重答', next: 'boss2' }] },
+  b2_wrong_d: { html: `<p class="ng">❌ D 是正確敘述。</p>`, choices: [{ label: '↩ 重答', next: 'boss2' }] },
+  b2_right: { html: `<p class="ok">✅ 正確！C 是錯誤敘述。</p><p>科氏力<b>只改變方向、不改變速率</b>（永遠垂直於運動方向，不做功）。</p>`, choices: [{ label: '➡ 進入第 3 題', next: 'boss3' }] },
+
+  boss3: {
+    html: `
+      <h2>⚔️ Boss 戰　第 3 題（氣旋方向）</h2>
+      <p>颱風（熱帶氣旋）為強烈的<b>低壓系統</b>。請判斷：</p>
+      <p>在<b>北半球</b>，從衛星雲圖俯瞰，颱風的氣流方向應為？</p>
+    `,
+    choices: [
+      { label: 'A. 順時針方向旋入', next: 'b3_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 逆時針方向旋入', next: 'b3_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'C. 直接從外圍直線吹向中心', next: 'b3_wrong', effect: () => state.hp -= 20 },
+      { label: 'D. 從中心向外輻散', next: 'b3_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b3_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 北半球氣流向右偏 → 從四周流入中心的氣流被偏轉成<b>逆時針</b>旋入（南半球則順時針）。</div>`, choices: [{ label: '↩ 重答', next: 'boss3' }] },
+  b3_right: { html: `<p class="ok">✅ 正確！</p><p>北半球低壓 = <b>逆時針</b>輻合上升；高壓 = <b>順時針</b>輻散下沉。南半球相反。</p>`, choices: [{ label: '➡ 進入最後第 4 題', next: 'boss4' }] },
+
+  boss4: {
+    html: `
+      <h2>⚔️ Boss 戰　第 4 題（綜合題）</h2>
+      <p>關於<b>地轉風</b>與<b>地面風</b>的比較，下列敘述何者正確？（綜合判斷）</p>
+    `,
+    choices: [
+      { label: 'A. 地轉風受 PGF、科氏力、摩擦力三力平衡', next: 'b4_wrong', effect: () => state.hp -= 20 },
+      { label: 'B. 地面風方向平行於等壓線', next: 'b4_wrong', effect: () => state.hp -= 20 },
+      { label: 'C. 地轉風方向平行等壓線；地面風與等壓線斜交且偏向低壓', next: 'b4_right', effect: () => state.hp = Math.min(100, state.hp + 10) },
+      { label: 'D. 摩擦力會使地面風速度比高空地轉風更快', next: 'b4_wrong', effect: () => state.hp -= 20 }
+    ]
+  },
+  b4_wrong: { html: `<p class="ng">❌ 不對。</p><div class="hint">💡 地轉風：高空、無摩擦、兩力平衡、平行等壓線。地面風：低空、三力平衡、與等壓線斜交、風速較慢。</div>`, choices: [{ label: '↩ 重答', next: 'boss4' }] },
+  b4_right: {
+    html: `<p class="ok">✅ 完全正確！</p><p>這正是大氣運動最核心的概念：高空兩力平衡 vs. 低空三力平衡。</p>
+      <div class="kp">🏅 獲得徽章：<b>風暴駕馭徽章</b></div>`,
+    choices: [{ label: '🎉 過關！', next: 'end', effect: () => { state.badges.push('風暴駕馭徽章'); state.items.push('氣象偵察機飛行紀錄'); } }]
+  },
+
+  end: {
+    html: `
+      <h2>🏅 第三關過關！</h2>
+      <p>體力：<b><span id="endHp"></span></b>　／　徽章：<b><span id="endBadges"></span></b></p>
+      <div class="npc">👨‍✈️ <b>機長</b>：「這關是整章最硬的。你撐過來了——下一站，是中央氣象局作業中心，學著畫天氣圖、預報天氣。」</div>
+      <hr>
+      <h3>📝 學習回顧</h3>
+      <ol>
+        <li>絕熱膨脹降溫 vs. 絕熱壓縮升溫的物理原因。</li>
+        <li>列出 4 種讓空氣上升的機制，並各舉一例。</li>
+        <li>氣壓梯度力的方向？大小與什麼有關？</li>
+        <li>科氏力的方向、大小、特性（記住「只改方向不改速率」）。</li>
+        <li>地轉風 vs. 地面風的力學差異與風向差異。</li>
+        <li>北半球氣旋（低壓）與反氣旋（高壓）的旋轉方向？</li>
+      </ol>
+    `,
+    choices: [
+      { label: '🔄 重新挑戰本關', next: 'start', effect: () => { state.hp = 100; state.badges = []; state.items = []; state.kp = new Set(); } }
+    ]
+  }
+
+};
+
+const origGo = go;
+window.go = function(id) {
+  origGo(id);
+  if (id === 'end') {
+    const eh = document.getElementById('endHp');
+    const eb = document.getElementById('endBadges');
+    if (eh) eh.textContent = state.hp;
+    if (eb) eb.textContent = state.badges.join('、');
+  }
+};
+
+go('start');
+</script>
+</body>
+</html>
