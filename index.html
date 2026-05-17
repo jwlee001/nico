@@ -1,2 +1,173 @@
-<a href="./地科-ch4/">前往地科第四章</a>
-<a href="./地科-ch5/">前往地科第五章</a>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中心得與自主學習：地球科學</title>
+    <style>
+        /* 基礎設定 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "Microsoft JhengHei";
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+            margin: 0;
+            padding: 0;
+            color: #334155;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* 頂部橫幅 */
+        header {
+            background-color: #1e3a8a;
+            color: white;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* 主內容區 */
+        main {
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+        }
+
+        .welcome-text {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            color: #475569;
+        }
+
+        /* 章節圖卡外框 */
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        /* 單個章節圖卡 */
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 滑鼠移上去的特效，高中生很吃這種流暢的微互動 */
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border-color: #3b82f6;
+        }
+
+        /* 卡片裝飾色條 */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+        }
+
+        .card-ch4::before { background: #3b82f6; } /* 藍色系 */
+        .card-ch5::before { background: #10b981; } /* 綠色系 */
+
+        .card h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.4rem;
+            color: #1e293b;
+        }
+
+        .card p {
+            margin: 0 0 1.5rem 0;
+            font-size: 0.95rem;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* 按鈕樣式 */
+        .card-btn {
+            background-color: #f1f5f9;
+            color: #1e3a8a;
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: background-color 0.2s;
+        }
+
+        .card:hover .card-btn {
+            background-color: #1e3a8a;
+            color: white;
+        }
+
+        /* 頁尾 */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>地球科學自主學習網</h1>
+        <p>探索地球與宇宙的奧秘 🚀</p>
+    </header>
+
+    <main>
+        <p class="welcome-text">點擊下方章節圖卡，開啟你的地科學習之旅！</p>
+        
+        <div class="card-container">
+            <a href="./地科-ch4/" class="card card-ch4">
+                <div>
+                    <h2>第 4 章：大氣與海洋的變動</h2>
+                    <p>探索我們賴以生存的大氣層、氣候變化，以及神祕海洋的洋流與潮汐規律。</p>
+                </div>
+                <div class="card-btn">進入學習 ➔</div>
+            </a>
+
+            <a href="./地科-ch5/" class="card card-ch5">
+                <div>
+                    <h2>第 5 章：地球與太空科學</h2>
+                    <p>從我們立足的地球出發，航向太陽系與浩瀚星空，解開宇宙運行的星象密碼。</p>
+                </div>
+                <div class="card-btn">進入學習 ➔</div>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 地科自主學習筆記. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
