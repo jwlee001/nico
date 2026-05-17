@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高中心得與自主學習：地球科學</title>
+    <title>高中心得與自主學習成果展現</title>
     <style>
         /* 基礎設定 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "Microsoft JhengHei";
-            background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+            background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
             margin: 0;
             padding: 0;
             color: #334155;
@@ -40,7 +40,7 @@
 
         /* 主內容區 */
         main {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 3rem auto;
             padding: 0 1.5rem;
             flex: 1;
@@ -77,12 +77,15 @@
             overflow: hidden;
         }
 
-        /* 滑鼠移上去的特效，高中生很吃這種流暢的微互動 */
+        /* 滑鼠移上去的特效 */
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            border-color: #3b82f6;
         }
+        
+        .card-ch4:hover { border-color: #3b82f6; }
+        .card-Ch5:hover { border-color: #10b981; }
+        .card-grammer:hover { border-color: #8b5cf6; }
 
         /* 卡片裝飾色條 */
         .card::before {
@@ -94,8 +97,9 @@
             height: 6px;
         }
 
-        .card-ch4::before { background: #3b82f6; } /* 藍色系 */
-        .card-Ch5::before { background: #10b981; } /* 綠色系 */
+        .card-ch4::before { background: #3b82f6; }   /* 藍色系 - 大氣 */
+        .card-Ch5::before { background: #10b981; }   /* 綠色系 - 海洋 */
+        .card-grammer::before { background: #8b5cf6; } /* 紫色系 - 英文文法 */
 
         .card h2 {
             margin: 0 0 0.5rem 0;
@@ -119,13 +123,12 @@
             border-radius: 8px;
             font-weight: bold;
             font-size: 0.95rem;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
 
-        .card:hover .card-btn {
-            background-color: #1e3a8a;
-            color: white;
-        }
+        .card-ch4:hover .card-btn { background-color: #3b82f6; color: white; }
+        .card-Ch5:hover .card-btn { background-color: #10b981; color: white; }
+        .card-grammer:hover .card-btn { background-color: #8b5cf6; color: white; }
 
         /* 頁尾 */
         footer {
@@ -139,19 +142,18 @@
 <body>
 
     <header>
-        <h1>地球科學自主學習網</h1>
-        <p>探索地球與宇宙的奧秘 🚀</p>
+        <h1>高中自主學習成果筆記</h1>
+        <p>跨學科知識探索與精進紀錄 🚀</p>
     </header>
 
     <main>
-        <p class="welcome-text">點擊下方章節圖卡，開啟你的地科學習之旅！</p>
+        <p class="welcome-text">點擊下方多元主題圖卡，開啟你的學習之旅！</p>
         
         <div class="card-container">
             <a href="./地科-ch4/" class="card card-ch4">
                 <div>
                     <h2>第 4 章：變動的大氣</h2>
-                    <p>大氣的結構與分層；絕對溼度、相對溼度與露點的定義與應用；大氣水平運動的控制因素與影響；大氣垂直運動的控制因素與
-  影響；氣象觀測的方式和地面天氣圖的繪製。</p>
+                    <p>大氣的結構與分層；絕對溼度、相對溼度與露點的應用；大氣水平與垂直運動的控制因素；氣象觀測與地面天氣圖繪製。</p>
                 </div>
                 <div class="card-btn">進入學習 ➔</div>
             </a>
@@ -159,7 +161,15 @@
             <a href="./地科-Ch5/" class="card card-Ch5">
                 <div>
                     <h2>第 5 章：變動的海洋</h2>
-                    <p>海洋變動含能量循環、海水溫鹽分布、波浪、海流、潮汐、大氣–海洋交互作用。</p>
+                    <p>海洋變動含能量循環、海水溫鹽分布、波浪、海流、潮汐、大氣與海洋的交互作用。</p>
+                </div>
+                <div class="card-btn">進入學習 ➔</div>
+            </a>
+
+            <a href="./Grammer/" class="card card-grammer">
+                <div>
+                    <h2>英文文法特訓 (Grammar)</h2>
+                    <p>核心文法觀念拆解、重要句型結構分析，透過系統化的整理，大幅提升英文寫作與閱讀的理解力。</p>
                 </div>
                 <div class="card-btn">進入學習 ➔</div>
             </a>
@@ -167,7 +177,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 地科自主學習筆記. All rights reserved.</p>
+        <p>&copy; 2026 高中自主學習筆記成果展現. All rights reserved.</p>
     </footer>
 
 </body>
