@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>連接詞之謎 - 校園推理 RPG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif; background: #0d1117; color: #e6edf3; overflow-x: hidden; }
+  body { background: radial-gradient(ellipse at top, #1a2332 0%, #0d1117 70%); min-height: 100vh; padding: 12px; }
+  .app { max-width: 780px; margin: 0 auto; }
+  .header { background: linear-gradient(135deg, #1f6feb 0%, #6e40c9 100%); border-radius: 14px; padding: 14px 18px; box-shadow: 0 6px 24px rgba(31,111,235,0.3); margin-bottom: 12px; }
+  .header h1 { font-size: 18px; margin-bottom: 4px; }
+  .header .sub { font-size: 12px; opacity: 0.85; }
+  .stats { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .stat { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 4px 10px; font-size: 12px; }
+  .stat b { color: #ffd166; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .level-card { background: linear-gradient(145deg, #21262d, #161b22); border: 2px solid #30363d; border-radius: 12px; padding: 14px 10px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; }
+  .level-card.locked { opacity: 0.45; cursor: not-allowed; }
+  .level-card.done { border-color: #2ea043; background: linear-gradient(145deg, #1c3a24, #0f2515); }
+  .level-card.current { border-color: #ffd166; animation: glow 1.6s infinite; }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 8px #ffd166; } 50% { box-shadow: 0 0 18px #ffd166; } }
+  .level-card .num { font-size: 22px; font-weight: bold; color: #58a6ff; }
+  .level-card.done .num { color: #2ea043; }
+  .level-card .name { font-size: 13px; margin-top: 4px; line-height: 1.3; }
+  .level-card .badge { position: absolute; top: 4px; right: 6px; font-size: 11px; }
+  .boss { grid-column: 1 / -1; background: linear-gradient(135deg, #8b1a1a, #3d0a0a); border-color: #ff6b6b; }
+  .boss .num { color: #ff6b6b; }
+  .story { background: rgba(110,64,201,0.15); border-left: 4px solid #6e40c9; padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; line-height: 1.7; font-size: 14px; }
+  .knowledge { background: rgba(31,111,235,0.1); border: 1px solid #1f6feb; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .knowledge h3 { color: #58a6ff; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .knowledge .point { margin: 8px 0; padding-left: 8px; line-height: 1.7; font-size: 14px; border-left: 2px solid #1f6feb; padding-left: 10px; }
+  .knowledge code { background: #0d1117; color: #ffa657; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; }
+  .knowledge .tip { background: rgba(255,209,102,0.1); border-left: 3px solid #ffd166; padding: 8px 10px; margin-top: 8px; font-size: 13px; border-radius: 4px; }
+  .question { font-size: 15px; line-height: 1.7; margin: 10px 0 14px; }
+  .question .q-text { background: #0d1117; padding: 12px; border-radius: 8px; border-left: 3px solid #58a6ff; }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice { background: #21262d; border: 2px solid #30363d; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: 0.15s; font-size: 14px; line-height: 1.5; user-select: none; }
+  .choice:active { transform: scale(0.98); }
+  .choice:hover { border-color: #58a6ff; background: #2a3140; }
+  .choice.correct { border-color: #2ea043; background: rgba(46,160,67,0.2); }
+  .choice.wrong { border-color: #f85149; background: rgba(248,81,73,0.2); }
+  .choice.disabled { pointer-events: none; opacity: 0.6; }
+  .fill-input { width: 100%; padding: 12px 14px; background: #0d1117; border: 2px solid #30363d; border-radius: 10px; color: #e6edf3; font-size: 15px; font-family: inherit; }
+  .fill-input:focus { outline: none; border-color: #58a6ff; }
+  .drag-zone { display: flex; flex-wrap: wrap; gap: 8px; min-height: 60px; padding: 10px; background: #0d1117; border: 2px dashed #30363d; border-radius: 10px; margin: 8px 0; }
+  .drag-zone.target { border-color: #58a6ff; background: rgba(31,111,235,0.05); }
+  .word { background: linear-gradient(135deg, #1f6feb, #388bfd); color: white; padding: 8px 14px; border-radius: 8px; font-size: 14px; cursor: grab; user-select: none; touch-action: none; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+  .word.dragging { opacity: 0.5; cursor: grabbing; }
+  .word.placed { background: linear-gradient(135deg, #2ea043, #3fb950); }
+  .btn { background: linear-gradient(135deg, #1f6feb, #388bfd); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.15s; width: 100%; margin-top: 10px; font-family: inherit; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.secondary { background: linear-gradient(135deg, #30363d, #484f58); }
+  .btn.danger { background: linear-gradient(135deg, #da3633, #f85149); }
+  .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-row .btn { margin-top: 0; }
+  .feedback { padding: 12px; border-radius: 10px; margin: 10px 0; font-size: 14px; line-height: 1.6; display: none; }
+  .feedback.show { display: block; animation: pop 0.3s; }
+  @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .feedback.ok { background: rgba(46,160,67,0.15); border-left: 4px solid #2ea043; }
+  .feedback.no { background: rgba(248,81,73,0.15); border-left: 4px solid #f85149; }
+  .hp-bar { background: #21262d; height: 10px; border-radius: 5px; overflow: hidden; margin: 8px 0; }
+  .hp-fill { height: 100%; background: linear-gradient(90deg, #f85149, #ffd166, #2ea043); transition: width 0.4s; }
+  .progress-text { font-size: 12px; text-align: right; color: #8b949e; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 99; }
+  .modal.show { display: flex; }
+  .modal-box { background: #161b22; border: 2px solid #ffd166; border-radius: 14px; padding: 24px; max-width: 460px; width: 100%; text-align: center; }
+  .modal-box h2 { color: #ffd166; margin-bottom: 12px; font-size: 22px; }
+  .modal-box p { line-height: 1.7; margin-bottom: 14px; font-size: 14px; }
+  .fanboy-show { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+  .fanboy-show .key { background: linear-gradient(135deg, #ffd166, #ff8c42); color: #1a1a1a; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  th, td { padding: 8px; border: 1px solid #30363d; text-align: left; }
+  th { background: #21262d; color: #58a6ff; }
+  .hint-btn { background: rgba(255,209,102,0.15); border: 1px solid #ffd166; color: #ffd166; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 8px; }
+  .hidden { display: none !important; }
+  @media (max-width: 480px) {
+    .header h1 { font-size: 16px; }
+    .question { font-size: 14px; }
+    .choice { font-size: 13px; padding: 10px 12px; }
+    .level-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); }
+    .level-card .name { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>📖 連接詞之謎 · 校園推理 RPG</h1>
+    <div class="sub">第九章 副詞子句 Part 1 · 對等連接詞 FANBOYS</div>
+    <div class="stats">
+      <div class="stat">❤️ HP <b id="hp">100</b></div>
+      <div class="stat">⭐ EXP <b id="exp">0</b></div>
+      <div class="stat">🗝️ 連接詞之鑰 <b id="keys">0</b>/7</div>
+      <div class="stat">🏆 進度 <b id="prog">0</b>/9</div>
+    </div>
+  </div>
+
+  <div id="screen-home" class="panel">
+    <div class="story">
+      🏫 <b>校園推理檔案 #009</b><br>
+      你是「文法解謎社」的新成員。今早社辦的密室警報響起 ——<br>
+      存放畢業考機密考題的保險箱被打開了，七把刻著 <code>F·A·N·B·O·Y·S</code> 的鑰匙散落於校園各處。<br>
+      唯一的線索：「凡能識破連接詞之謎者，可得真相之鑰。」<br>
+      <br>學長交給你一份手繪地圖。八個關卡，一場推理。準備好了嗎？
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+    <button class="btn secondary" onclick="resetGame()" style="margin-top:14px;">🔄 重新開始（清除進度）</button>
+  </div>
+
+  <div id="screen-level" class="panel hidden">
+    <div id="levelContent"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h2 id="modalTitle"></h2>
+    <p id="modalText"></p>
+    <button class="btn" onclick="closeModal()">繼續</button>
+  </div>
+</div>
+
+<script>
+// ===== 知識點 & 關卡資料 =====
+const LEVELS = [
+  {
+    id: 1,
+    name: "圖書館之鑰：連接詞的本質",
+    icon: "📚",
+    story: "你溜進圖書館頂樓，舊書架上一本《文法秘錄》自己翻開了。第一頁寫著：「連接詞，是文字之間的火車車廂連接器⋯⋯」",
+    knowledge: `
+      <h3>📖 線索卡 1：連接詞是什麼？</h3>
+      <div class="point">連接詞像<b>火車車廂之間的連接器</b>，能把<b>字、片語、子句、句子</b>連在一起。沒有它，文字只能各自孤立存在。</div>
+      <div class="point">連接詞分成兩大類：
+        <ul style="margin:6px 0 0 20px;line-height:1.8;">
+          <li><b>對等連接詞</b>（Coordinating）：句1<code>,</code> <code>and/but/or...</code> 句2</li>
+          <li><b>從屬連接詞</b>（Subordinating）：句1 <code>when/if/because...</code> 句2（中間<b>不放</b>逗點）</li>
+        </ul>
+      </div>
+      <div class="tip">⚠️ 從屬連接詞若把整個副詞子句移到句首，後面才需要逗點：<br><code>When I got home, my mom was cooking.</code></div>
+    `,
+    questions: [
+      { type: "mc", q: "下列哪一句的<b>標點使用正確</b>？",
+        choices: ["I was tired, but I kept walking.", "I was tired but, I kept walking.", "I was tired but I, kept walking.", "I was tired, but, I kept walking."],
+        answer: 0, explain: "對等連接詞 but 前面要加逗點：句1, but 句2。" },
+      { type: "mc", q: "下列何者是<b>從屬連接詞</b>（不應在前面加逗點）？",
+        choices: ["and", "but", "because", "so"], answer: 2,
+        explain: "because、when、if、although 等屬於從屬連接詞，放句中時前面通常不加逗點。" },
+      { type: "sort", q: "請依正確順序排出這句話：",
+        words: ["When", "it", "rains,", "I", "stay", "home."],
+        answer: ["When", "it", "rains,", "I", "stay", "home."],
+        explain: "從屬連接詞 When 領頭的副詞子句移到句首，子句結尾要加逗點。" }
+    ]
+  },
+  {
+    id: 2,
+    name: "操場之鑰：召喚 FANBOYS",
+    icon: "🏃",
+    story: "操場跑道盡頭，刻著七個字母 F·A·N·B·O·Y·S。風吹來一張紙條：「念出我們的名字，鑰匙就會出現。」",
+    knowledge: `
+      <h3>📖 線索卡 2：七大對等連接詞 FANBOYS</h3>
+      <div class="fanboy-show">
+        <span class="key">F = for</span><span class="key">A = and</span><span class="key">N = nor</span>
+        <span class="key">B = but</span><span class="key">O = or</span><span class="key">Y = yet</span><span class="key">S = so</span>
+      </div>
+      <table>
+        <tr><th>連接詞</th><th>意義</th><th>用法重點</th></tr>
+        <tr><td>for</td><td>因為（推測）</td><td>只連接句子，前面要逗點</td></tr>
+        <tr><td>and</td><td>而且</td><td>累積</td></tr>
+        <tr><td>nor</td><td>也不</td><td>後面要倒裝</td></tr>
+        <tr><td>but</td><td>但是</td><td>對比</td></tr>
+        <tr><td>or</td><td>或者</td><td>選擇</td></tr>
+        <tr><td>yet</td><td>但是</td><td>=but，較轉折</td></tr>
+        <tr><td>so</td><td>所以</td><td>只連接句子，前面要逗點</td></tr>
+      </table>
+    `,
+    questions: [
+      { type: "mc", q: "FANBOYS 中代表「也不」的是哪一個？",
+        choices: ["for", "nor", "but", "yet"], answer: 1, explain: "N = nor，後面常用倒裝句。" },
+      { type: "fill", q: "FANBOYS 中表示「但是」的有兩個字：but 和 ___（填一個 3 字母單字）",
+        answer: ["yet"], explain: "yet 也是對等連接詞，意思和 but 相近。" },
+      { type: "mc", q: "下列哪一個<b>不是</b> FANBOYS？",
+        choices: ["so", "because", "yet", "for"], answer: 1,
+        explain: "because 是從屬連接詞，不屬於 FANBOYS。" }
+    ]
+  },
+  {
+    id: 3,
+    name: "教室之鑰：對等才能連接",
+    icon: "🪑",
+    story: "黑板上寫著一句不對勁的句子。粉筆自己滾過來，要你「修正前後不對等的地方」⋯⋯",
+    knowledge: `
+      <h3>📖 線索卡 3：and / or / but 必須前後對等</h3>
+      <div class="point">對等連接詞連接的兩邊，<b>詞性與結構要相同</b>：</div>
+      <div class="point">✅ 字 + 字：<code>English <b>and</b> Chinese are my favorite subjects.</code></div>
+      <div class="point">✅ 片語 + 片語：<code>You can go there by bus <b>or</b> by bike.</code><br>
+        <span style="color:#ffd166;">⚠️ 介系詞 by 不可省略！介系詞+名詞是密不可分的結構。</span></div>
+      <div class="point">✅ 子句 + 子句：<code>I love her, <b>but</b> her husband doesn't love me.</code></div>
+      <div class="tip">💡 and = 累積；or = 二選一；but = 對比、前後相反</div>
+    `,
+    questions: [
+      { type: "mc", q: "下列何者<b>對等結構正確</b>？",
+        choices: [
+          "You can go there by bus or bike.",
+          "You can go there by bus or by bike.",
+          "You can go by bus or to bike.",
+          "You can go by bus and by walking."
+        ], answer: 1,
+        explain: "介系詞 by 必須重複，不能省略：by bus or by bike。" },
+      { type: "sort", q: "排出正確句子：",
+        words: ["English", "and", "Chinese", "are", "my", "favorite", "subjects."],
+        answer: ["English", "and", "Chinese", "are", "my", "favorite", "subjects."],
+        explain: "兩個科目相加 → 主詞為複數，動詞用 are。" },
+      { type: "mc", q: "<code>She is smart, _____ her brother is lazy.</code> 應填？",
+        choices: ["and", "or", "but", "so"], answer: 2,
+        explain: "前後相反、形成對比 → 用 but。" }
+    ]
+  },
+  {
+    id: 4,
+    name: "走廊之鑰：祈使句的咒語",
+    icon: "🚪",
+    story: "走廊盡頭一扇門寫著：「Study hard, ___ one day you will succeed.」門縫透出光：填對字，門就開。",
+    knowledge: `
+      <h3>📖 線索卡 4：and / or 與祈使句連用</h3>
+      <div class="point"><b>祈使句, and + 句</b> = 「<b>那麼…就會…</b>」（= If 條件句）<br>
+        <code>Study hard, <b>and</b> one day you will succeed.</code><br>
+        = If you study hard, one day you will succeed.</div>
+      <div class="point"><b>祈使句, or + 句</b> = 「<b>否則…就會…</b>」（= If…not / Unless）<br>
+        <code>Study harder, <b>or</b> you will fail.</code><br>
+        = If you don't study harder, you will fail.</div>
+      <div class="tip">🔑 訣竅：and 是「順著做就有好結果」；or 是「不做就完蛋」。</div>
+    `,
+    questions: [
+      { type: "mc", q: "<code>Watch your step, _____ you'll fall.</code>",
+        choices: ["and", "or", "but", "for"], answer: 1,
+        explain: "「小心腳步，否則你會跌倒」→ or。" },
+      { type: "mc", q: "<code>Take an aspirin, _____ you'll feel better.</code>",
+        choices: ["and", "or", "but", "nor"], answer: 0,
+        explain: "「吃顆阿斯匹靈，那麼你會感覺好一點」→ and。" },
+      { type: "fill", q: "<code>Hurry up, ___ you'll miss the bus.</code>（填一個字）",
+        answer: ["or"], explain: "「快一點，否則你會錯過公車」→ or。" }
+    ]
+  },
+  {
+    id: 5,
+    name: "社辦之鑰：重複的魔力",
+    icon: "🔁",
+    story: "社辦黑板出現自動書寫的字跡：「colder and colder... again and again...」這些重複的字有什麼祕密？",
+    knowledge: `
+      <h3>📖 線索卡 5：and 連接相同字 / or 表「也就是說」</h3>
+      <div class="point"><b>and 連接相同字（尤其比較級）</b>表「越來越…」或加強語氣：
+        <ul style="margin:6px 0 0 20px;line-height:1.8;">
+          <li><code>It's getting colder <b>and</b> colder.</code> 天氣越來越冷</li>
+          <li><code>Jack makes the same mistake again <b>and</b> again.</code> 一再地（= repeatedly）</li>
+          <li>= over and over again</li>
+        </ul>
+      </div>
+      <div class="point"><b>or 也可翻作「也就是說 / 又稱之為」</b>（補充說明）：<br>
+        <code>This building is called a hothouse, <b>or</b> a greenhouse.</code><br>
+        這種建築叫暖房，<b>也就是</b>溫室。</div>
+    `,
+    questions: [
+      { type: "fill", q: "天氣越來越冷：It's getting colder ___ colder.（填一個字）",
+        answer: ["and"], explain: "比較級 and 比較級 = 越來越…。" },
+      { type: "mc", q: "<code>This is called a hothouse, <b>or</b> a greenhouse.</code> 此處的 or 意思是？",
+        choices: ["或者", "否則", "也就是說", "選擇一個"], answer: 2,
+        explain: "or 在補充說明、同義替換時 = 「也就是說、又稱之為」。" },
+      { type: "sort", q: "排出「他一再地犯同樣的錯誤」：",
+        words: ["He", "makes", "the", "same", "mistake", "again", "and", "again."],
+        answer: ["He", "makes", "the", "same", "mistake", "again", "and", "again."],
+        explain: "again and again = 一再地 = repeatedly。" }
+    ]
+  },
+  {
+    id: 6,
+    name: "保健室之鑰：so 與 for 的逗點",
+    icon: "🏥",
+    story: "保健室護士留下兩張病歷：「I woke up late so I was late.」「Mike must be ill for he looks pale.」她說：缺了一個東西，這兩句才會痊癒⋯⋯",
+    knowledge: `
+      <h3>📖 線索卡 6：so / for 只連接句子，前面<b>必須</b>有逗點</h3>
+      <div class="point"><b>so = 所以</b>（結果）<br>
+        <code>I woke up late<b>,</b> so I was late for school.</code></div>
+      <div class="point"><b>for = 因為</b>（表<b>推測</b>原因，較少口語使用）<br>
+        <code>Mike must be ill<b>,</b> for he looks pale.</code><br>
+        （我推測 Mike 一定生病了，因為他臉色蒼白）</div>
+      <div class="tip">⚠️ <b>有逗 vs 沒逗，意思不同！</b>
+        <ul style="margin:6px 0 0 20px;">
+          <li><code>so</code> 有逗點 → 對等連接詞「所以」</li>
+          <li><code>so</code> 沒逗點 → = so that「以便、如此一來」（從屬連接詞，表目的）</li>
+          <li><code>for</code> 沒逗點 → 介系詞，後面接名詞</li>
+        </ul>
+      </div>
+      <div class="tip">⚠️ <b>because 與 so 不可連用</b>：英文邏輯是「結果在前，原因在後」，<code>We have to hurry because we are late.</code></div>
+    `,
+    questions: [
+      { type: "mc", q: "下列何者<b>標點正確</b>？",
+        choices: [
+          "I woke up late so I was late.",
+          "I woke up late, so I was late.",
+          "I woke up late so, I was late.",
+          "I, woke up late so I was late."
+        ], answer: 1, explain: "so 當對等連接詞，前面必須有逗點。" },
+      { type: "mc", q: "<code>Mike must be ill, ___ he looks pale.</code>（推測原因）",
+        choices: ["because", "so", "for", "and"], answer: 2,
+        explain: "表「推測」原因用 for（must / for 常搭配）。" },
+      { type: "mc", q: "<b>哪一句是錯的</b>？",
+        choices: [
+          "We are late, so we have to hurry.",
+          "Because we are late, we have to hurry.",
+          "Because we are late, so we have to hurry.",
+          "We have to hurry because we are late."
+        ], answer: 2, explain: "because 與 so 不可同時出現。" },
+      { type: "fill", q: "請補上正確標點 + 連接詞：It rained heavily ___ ___ Martin was wet through.（提示：所以）",
+        answer: [", so", ",so"], explain: "對等連接詞 so 前面必須有逗點。" }
+    ]
+  },
+  {
+    id: 7,
+    name: "禮堂之鑰：so + 倒裝 = 也是",
+    icon: "🎭",
+    story: "禮堂舞台燈光亮起，兩個布偶輪流登場。第一個說：「Cindy is a college student.」第二個說：「___ is Ellen.」要怎麼讓他們和聲？",
+    knowledge: `
+      <h3>📖 線索卡 7：so + 倒裝句 = 「…也是」</h3>
+      <div class="point">國中版（too）：<code>Cindy is a college student, and Ellen is, too.</code></div>
+      <div class="point">高中版（so 倒裝）：<code>Cindy is a college student, <b>and so is Ellen</b>.</code></div>
+      <div class="point">公式：<b>, and so + 助動詞/be動詞 + 主詞</b><br>
+        <ul style="margin:6px 0 0 20px;line-height:1.8;">
+          <li>be 動詞 → so + is/are/was/were + S</li>
+          <li>have/has + p.p. → so + have/has + S</li>
+          <li>一般動詞 → so + do/does/did + S</li>
+        </ul>
+      </div>
+      <div class="tip">💡 例：<code>I have been to New York, and so has Ken.</code></div>
+    `,
+    questions: [
+      { type: "mc", q: "<code>Cindy is a college student, and ___ Ellen.</code>",
+        choices: ["so is", "so does", "is so", "so was"], answer: 0,
+        explain: "be 動詞 → so + is + S（主詞 Ellen 在後）。" },
+      { type: "sort", q: "排出「我去過紐約，Ken 也去過」：",
+        words: ["I", "have", "been", "to", "New", "York,", "and", "so", "has", "Ken."],
+        answer: ["I", "have", "been", "to", "New", "York,", "and", "so", "has", "Ken."],
+        explain: "完成式 → so + has + 主詞。" },
+      { type: "fill", q: "<code>Tom likes coffee, and so ___ Mary.</code>（填一個字）",
+        answer: ["does"], explain: "一般動詞 likes（第三人稱單數）→ so + does + S。" }
+    ]
+  },
+  {
+    id: 8,
+    name: "頂樓之鑰：nor 的黑暗倒裝",
+    icon: "🌙",
+    story: "頂樓鐵門上刻著：「I won't go, ___ ___ my wife.」夜風裡彷彿有人說：「肯定句用 so，否定句用我⋯⋯」",
+    knowledge: `
+      <h3>📖 線索卡 8：nor + 倒裝 = 「…也不」</h3>
+      <div class="point">與 so 對應，但<b>用於否定句</b>。公式：<br>
+        <b>否定句, nor + 助動詞 + 主詞</b>（倒裝）</div>
+      <div class="point">例：<br>
+        <code>I won't go to the party, <b>nor will my wife</b>.</code><br>
+        <span style="color:#ffd166;">⚠️ 不可寫 nor won't！</span>nor 已含否定，再加 won't 會雙重否定。
+      </div>
+      <div class="point"><b>nor vs neither</b>：
+        <ul style="margin:6px 0 0 20px;line-height:1.8;">
+          <li><b>nor</b> = 連接詞 → 可直接連兩句：<code>..., nor will my wife.</code></li>
+          <li><b>neither</b> = 副詞 → 不能連句，要加 and：<code>..., and neither will my wife.</code></li>
+        </ul>
+      </div>
+      <div class="tip">🔍 進階：句子前半即使「字面肯定」但語意否定（如 missed = didn't catch）也可接 nor：<br>
+        <code>Nancy missed the train, nor did I catch it.</code></div>
+    `,
+    questions: [
+      { type: "mc", q: "<code>I won't go to the party, ___ ___ my wife.</code>",
+        choices: ["nor will", "nor won't", "and so will", "or will"], answer: 0,
+        explain: "nor 已含否定，不可再 won't；用 nor + 助動詞 + 主詞。" },
+      { type: "mc", q: "<code>Ben can't speak Japanese, and ___ can I.</code>",
+        choices: ["nor", "neither", "so", "either"], answer: 1,
+        explain: "前面有 and 了 → 用副詞 neither。若無 and，則用連接詞 nor。" },
+      { type: "sort", q: "排出「Nancy 沒趕上火車，我也沒趕上」：",
+        words: ["Nancy", "missed", "the", "train,", "nor", "did", "I", "catch", "it."],
+        answer: ["Nancy", "missed", "the", "train,", "nor", "did", "I", "catch", "it."],
+        explain: "missed 語意 = didn't catch（否定），故可接 nor + 倒裝。" },
+      { type: "fill", q: "<code>I am not going shopping, ___ ___ my husband.</code>（兩個字，提示：nor + be）",
+        answer: ["nor is", "Nor is"], explain: "nor + is + 主詞（be 動詞倒裝）。" }
+    ]
+  },
+  {
+    id: 99,
+    name: "最終 Boss：保險箱密碼",
+    icon: "👹",
+    boss: true,
+    story: "你收齊七把鑰匙，回到社辦保險箱前。鑰匙孔自己排成一道謎題 ——「答對所有題，真相就會浮現。」<br>⚠️ Boss 戰：答錯會扣血，HP 歸零要重來！",
+    knowledge: `
+      <h3>👹 Boss 提示：綜合應用</h3>
+      <div class="point">這一戰會混合所有知識點：FANBOYS、逗點規則、祈使句、so/nor 倒裝、推測 for、so 有無逗點⋯⋯</div>
+      <div class="tip">💪 沉住氣，每一題都先問自己：<br>
+        1. 兩邊是<b>句子</b>還是只是<b>字/片語</b>？<br>
+        2. 邏輯是<b>並列、轉折、選擇、因果</b>？<br>
+        3. 後半是<b>肯定</b>還是<b>否定</b>？</div>
+    `,
+    questions: [
+      { type: "mc", q: "①<code>The room must be empty, ___ no one answers the door.</code>",
+        choices: ["so", "for", "and", "but"], answer: 1,
+        explain: "must（推測）+ for（推測原因）是經典搭配。" },
+      { type: "mc", q: "②<code>Be quiet, ___ the baby will wake up.</code>",
+        choices: ["and", "or", "for", "so"], answer: 1,
+        explain: "祈使句 + or = 否則。" },
+      { type: "fill", q: "③ 越來越熱：It's getting hotter ___ hotter.（一個字）",
+        answer: ["and"], explain: "比較級 and 比較級。" },
+      { type: "sort", q: "④ 排出：「Tom 不喜歡咖啡，Jerry 也不喜歡」",
+        words: ["Tom", "doesn't", "like", "coffee,", "nor", "does", "Jerry."],
+        answer: ["Tom", "doesn't", "like", "coffee,", "nor", "does", "Jerry."],
+        explain: "nor + 助動詞 does + 主詞 Jerry。" },
+      { type: "mc", q: "⑤ 下列哪句<b>標點完全正確</b>？",
+        choices: [
+          "She is tired, but she keeps working.",
+          "She is tired but, she keeps working.",
+          "She is tired, but, she keeps working.",
+          "She, is tired but she keeps working."
+        ], answer: 0, explain: "對等連接詞 but 前面要逗點，後面不要。" },
+      { type: "fill", q: "⑥ <code>Mary loves art, and so ___ John.</code>（填 1 字）",
+        answer: ["does"], explain: "一般動詞（loves）→ so + does + S。" },
+      { type: "mc", q: "⑦ 下列哪句是<b>錯的</b>？",
+        choices: [
+          "Because it rained, we stayed home.",
+          "It rained, so we stayed home.",
+          "Because it rained, so we stayed home.",
+          "We stayed home because it rained."
+        ], answer: 2, explain: "because 和 so 不可同時出現。" },
+      { type: "sort", q: "⑧ 排出：「努力讀書，那麼你會成功」",
+        words: ["Study", "hard,", "and", "you", "will", "succeed."],
+        answer: ["Study", "hard,", "and", "you", "will", "succeed."],
+        explain: "祈使句 + and = 那麼…就會…。" }
+    ]
+  }
+];
+
+// ===== 遊戲狀態 =====
+let state = {
+  hp: 100, exp: 0, keys: 0,
+  done: [], // 已完成的關卡 id
+  current: null, // 當前關卡 id
+  qIndex: 0, // 當前題目索引
+  answered: false
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem("connRpg_v1");
+    if (s) state = JSON.parse(s);
+  } catch (e) {}
+}
+function saveState() {
+  try { localStorage.setItem("connRpg_v1", JSON.stringify(state)); } catch (e) {}
+}
+function resetGame() {
+  if (!confirm("確定重置所有進度？")) return;
+  state = { hp: 100, exp: 0, keys: 0, done: [], current: null, qIndex: 0, answered: false };
+  saveState();
+  renderHome();
+}
+
+// ===== UI 渲染 =====
+function updateStats() {
+  document.getElementById("hp").textContent = state.hp;
+  document.getElementById("exp").textContent = state.exp;
+  document.getElementById("keys").textContent = Math.min(state.keys, 7);
+  document.getElementById("prog").textContent = state.done.length;
+}
+
+function renderHome() {
+  document.getElementById("screen-home").classList.remove("hidden");
+  document.getElementById("screen-level").classList.add("hidden");
+  const grid = document.getElementById("levelGrid");
+  grid.innerHTML = "";
+  LEVELS.forEach((lv, idx) => {
+    const card = document.createElement("div");
+    card.className = "level-card" + (lv.boss ? " boss" : "");
+    const done = state.done.includes(lv.id);
+    const prevDone = idx === 0 || state.done.includes(LEVELS[idx - 1].id);
+    let locked = !prevDone;
+    if (lv.boss) locked = state.keys < 7;
+    if (done) card.classList.add("done");
+    else if (!locked) card.classList.add("current");
+    else card.classList.add("locked");
+    card.innerHTML = `
+      <div class="badge">${done ? "✅" : locked ? "🔒" : "⚔️"}</div>
+      <div class="num">${lv.boss ? "BOSS" : "關 " + lv.id}</div>
+      <div style="font-size:22px;margin:4px 0;">${lv.icon}</div>
+      <div class="name">${lv.name}</div>
+    `;
+    if (!locked) card.onclick = () => startLevel(lv.id);
+    grid.appendChild(card);
+  });
+  updateStats();
+}
+
+function startLevel(id) {
+  state.current = id;
+  state.qIndex = 0;
+  state.answered = false;
+  if (LEVELS.find(l => l.id === id).boss) state.hp = 100;
+  saveState();
+  renderLevel();
+}
+
+function renderLevel() {
+  document.getElementById("screen-home").classList.add("hidden");
+  document.getElementById("screen-level").classList.remove("hidden");
+  const lv = LEVELS.find(l => l.id === state.current);
+  const total = lv.questions.length;
+  const q = lv.questions[state.qIndex];
+
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <button class="btn secondary" style="width:auto;padding:6px 12px;margin:0;font-size:12px;" onclick="renderHome()">← 返回地圖</button>
+      <div style="font-size:13px;color:#8b949e;">${lv.icon} ${lv.name}</div>
+    </div>
+  `;
+
+  if (state.qIndex === 0 && !state.answered) {
+    html += `<div class="story">${lv.story}</div>`;
+    html += `<div class="knowledge">${lv.knowledge}</div>`;
+    html += `<button class="btn" onclick="state.answered=false;state.qIndex=0;showQuestion()">開始挑戰 →</button>`;
+    document.getElementById("levelContent").innerHTML = html;
+    updateStats();
+    return;
+  }
+
+  document.getElementById("levelContent").innerHTML = html + renderQuestion(q, total);
+  setupQuestionHandlers(q);
+  updateStats();
+}
+
+function showQuestion() {
+  const lv = LEVELS.find(l => l.id === state.current);
+  const q = lv.questions[state.qIndex];
+  const total = lv.questions.length;
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <button class="btn secondary" style="width:auto;padding:6px 12px;margin:0;font-size:12px;" onclick="renderHome()">← 返回地圖</button>
+      <div style="font-size:13px;color:#8b949e;">${lv.icon} ${lv.name}</div>
+    </div>
+    ${renderQuestion(q, total)}
+  `;
+  document.getElementById("levelContent").innerHTML = html;
+  setupQuestionHandlers(q);
+  updateStats();
+}
+
+function renderQuestion(q, total) {
+  const idx = state.qIndex;
+  const bar = `
+    <div class="hp-bar"><div class="hp-fill" style="width:${((idx)/total)*100}%"></div></div>
+    <div class="progress-text">題目 ${idx + 1} / ${total}</div>
+  `;
+  let body = `<div class="question"><div class="q-text">${q.q}</div></div>`;
+  if (q.type === "mc") {
+    body += `<div class="choices" id="choices">` +
+      q.choices.map((c, i) => `<div class="choice" data-i="${i}">${String.fromCharCode(65 + i)}. ${c}</div>`).join("") +
+      `</div>`;
+  } else if (q.type === "fill") {
+    body += `<input type="text" class="fill-input" id="fillInput" placeholder="輸入答案..." autocomplete="off">`;
+    body += `<button class="btn" onclick="submitFill()">送出答案</button>`;
+  } else if (q.type === "sort") {
+    const shuffled = [...q.words].sort(() => Math.random() - 0.5);
+    body += `<div style="font-size:12px;color:#8b949e;margin-bottom:6px;">點擊單字依序加入答題區，點答題區可移除</div>`;
+    body += `<div class="drag-zone target" id="dropZone"></div>`;
+    body += `<div class="drag-zone" id="poolZone">` +
+      shuffled.map((w, i) => `<div class="word" data-w="${w}" data-i="${i}">${w}</div>`).join("") +
+      `</div>`;
+    body += `<button class="btn" onclick="submitSort()">送出答案</button>`;
+  }
+  body += `<div class="feedback" id="feedback"></div>`;
+  return bar + body;
+}
+
+function setupQuestionHandlers(q) {
+  if (q.type === "mc") {
+    document.querySelectorAll("#choices .choice").forEach(el => {
+      el.onclick = () => {
+        if (el.classList.contains("disabled")) return;
+        const i = parseInt(el.dataset.i);
+        handleAnswer(i === q.answer, q, el);
+      };
+    });
+  } else if (q.type === "fill") {
+    const input = document.getElementById("fillInput");
+    input.focus();
+    input.onkeydown = (e) => { if (e.key === "Enter") submitFill(); };
+  } else if (q.type === "sort") {
+    setupSortable();
+  }
+}
+
+function setupSortable() {
+  const pool = document.getElementById("poolZone");
+  const drop = document.getElementById("dropZone");
+  pool.querySelectorAll(".word").forEach(w => {
+    w.onclick = () => {
+      w.classList.add("placed");
+      drop.appendChild(w);
+      w.onclick = () => {
+        w.classList.remove("placed");
+        pool.appendChild(w);
+        setupSortable(); // 重綁
+      };
+    };
+  });
+}
+
+function submitFill() {
+  const lv = LEVELS.find(l => l.id === state.current);
+  const q = lv.questions[state.qIndex];
+  const val = document.getElementById("fillInput").value.trim();
+  if (!val) return;
+  const ok = q.answer.some(a => a.toLowerCase() === val.toLowerCase());
+  handleAnswer(ok, q);
+}
+
+function submitSort() {
+  const lv = LEVELS.find(l => l.id === state.current);
+  const q = lv.questions[state.qIndex];
+  const drop = document.getElementById("dropZone");
+  const placed = Array.from(drop.querySelectorAll(".word")).map(w => w.dataset.w);
+  if (placed.length !== q.answer.length) {
+    alert("還有單字未排入！");
+    return;
+  }
+  const ok = placed.join(" ") === q.answer.join(" ");
+  handleAnswer(ok, q);
+}
+
+function handleAnswer(ok, q, el) {
+  const fb = document.getElementById("feedback");
+  if (el) el.classList.add(ok ? "correct" : "wrong");
+  document.querySelectorAll(".choice").forEach(c => c.classList.add("disabled"));
+  if (ok) {
+    state.exp += 10;
+    fb.className = "feedback ok show";
+    fb.innerHTML = `✅ <b>答對了！</b> +10 EXP<br><span style="font-size:13px;opacity:0.9;">${q.explain || ""}</span>`;
+  } else {
+    const lv = LEVELS.find(l => l.id === state.current);
+    const dmg = lv.boss ? 25 : 10;
+    state.hp = Math.max(0, state.hp - dmg);
+    fb.className = "feedback no show";
+    fb.innerHTML = `❌ <b>答錯了！</b> -${dmg} HP<br><span style="font-size:13px;opacity:0.9;">${q.explain || ""}</span>`;
+    // 顯示正解
+    if (q.type === "mc" && el) {
+      document.querySelectorAll("#choices .choice").forEach(c => {
+        if (parseInt(c.dataset.i) === q.answer) c.classList.add("correct");
+      });
+    }
+  }
+  saveState();
+  updateStats();
+  // 加按鈕
+  const btn = document.createElement("button");
+  btn.className = "btn";
+  btn.textContent = (state.qIndex + 1 < LEVELS.find(l => l.id === state.current).questions.length) ? "下一題 →" : "完成關卡 🎉";
+  btn.onclick = nextStep;
+  fb.appendChild(document.createElement("br"));
+  fb.appendChild(btn);
+
+  if (state.hp <= 0) {
+    setTimeout(() => {
+      alert("💀 HP 歸零！Boss 戰失敗，請重新挑戰。");
+      state.hp = 100;
+      state.qIndex = 0;
+      state.answered = false;
+      saveState();
+      renderHome();
+    }, 800);
+  }
+}
+
+function nextStep() {
+  const lv = LEVELS.find(l => l.id === state.current);
+  if (state.qIndex + 1 < lv.questions.length) {
+    state.qIndex++;
+    state.answered = true;
+    showQuestion();
+  } else {
+    // 通關
+    if (!state.done.includes(lv.id)) {
+      state.done.push(lv.id);
+      if (!lv.boss) state.keys++;
+    }
+    saveState();
+    showLevelComplete(lv);
+  }
+}
+
+function showLevelComplete(lv) {
+  if (lv.boss) {
+    showModal("🏆 真相揭曉！",
+      `<b>恭喜你成為文法解謎社的傳奇！</b><br><br>
+      七把 FANBOYS 之鑰已全數歸位，保險箱中並沒有考題 —— 而是一封寫給你的信：<br>
+      <i>「能識破連接詞之謎的人，便能讀懂英文的邏輯。歡迎成為下一任社長。」</i><br><br>
+      最終戰績：<br>
+      ⭐ EXP：${state.exp}<br>
+      ❤️ 剩餘 HP：${state.hp}<br>
+      🗝️ 連接詞之鑰：7/7`);
+  } else {
+    showModal(`🗝️ 獲得 ${lv.icon} 之鑰！`,
+      `<b>關卡 ${lv.id} 完成！</b><br><br>
+      你獲得了一把刻著「<b>${["F","A","N","B","O","Y","S"][state.keys - 1] || "?"}</b>」的鑰匙。<br>
+      集滿 7 把後可挑戰最終 Boss！<br><br>
+      目前進度：${state.keys}/7 把鑰匙`);
+  }
+}
+
+function showModal(title, text) {
+  document.getElementById("modalTitle").innerHTML = title;
+  document.getElementById("modalText").innerHTML = text;
+  document.getElementById("modal").classList.add("show");
+}
+function closeModal() {
+  document.getElementById("modal").classList.remove("show");
+  state.qIndex = 0;
+  state.answered = false;
+  saveState();
+  renderHome();
+}
+
+// 啟動
+loadState();
+renderHome();
+</script>
+</body>
+</html>
