@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day of the Dead – English Adventure!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #1a0533 0%, #2d0a5e 50%, #1a0533 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .deco {
+            position: fixed;
+            font-size: 38px;
+            opacity: 0.12;
+            pointer-events: none;
+            animation: floatDeco 6s ease-in-out infinite;
+        }
+        @keyframes floatDeco {
+            0%,100% { transform: translateY(0) rotate(0deg); }
+            50%      { transform: translateY(-18px) rotate(8deg); }
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            padding: 18px 20px 14px;
+            background: rgba(0,0,0,0.35);
+            border-bottom: 3px solid #ff6b9d;
+        }
+        .header h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2em;
+            color: #ff6b9d;
+            text-shadow: 0 0 20px rgba(255,107,157,.5);
+        }
+        .header .subtitle { color: #ffd700; font-size: .9em; margin-top: 4px; }
+
+        /* ── Stats bar ── */
+        .stats-bar {
+            display: none;
+            justify-content: space-around;
+            padding: 12px 20px;
+            background: rgba(255,255,255,.08);
+            backdrop-filter: blur(10px);
+        }
+        .stat-label { font-size: .72em; color: #b8a9d0; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 1.35em; font-weight: 800; color: #ffd700; }
+
+        /* ── Level dots ── */
+        .level-indicator {
+            display: none;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+        }
+        .level-dot {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: .75em; font-weight: 700;
+            transition: all .3s;
+            border: 2px solid transparent;
+        }
+        .level-dot.active    { background:#ff6b9d; border-color:#ffd700; transform:scale(1.2); box-shadow:0 0 15px rgba(255,107,157,.6); }
+        .level-dot.completed { background:#4caf50; border-color:#81c784; }
+
+        /* ── Container ── */
+        .game-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        /* ── Screens ── */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* START */
+        .start-screen { text-align: center; padding: 40px 20px; }
+        .skull-hero { font-size: 80px; animation: pulse 2s ease-in-out infinite; display: block; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        .start-screen h2 { font-family:'Fredoka One',cursive; font-size:2.4em; color:#ffd700; margin:20px 0 12px; }
+        .start-screen p  { color:#c8b8e8; line-height:1.7; margin-bottom:28px; }
+        .info-pills { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-bottom:28px; }
+        .info-pill  { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:20px; padding:6px 16px; font-size:.85em; color:#e8d8ff; }
+
+        /* GAME */
+        .level-card {
+            background: rgba(255,255,255,.05);
+            border-radius: 20px;
+            border: 2px solid rgba(255,107,157,.3);
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+        .level-title { font-family:'Fredoka One',cursive; font-size:1.45em; color:#ffd700; margin-bottom:4px; }
+        .level-type-badge {
+            display: inline-block;
+            padding: 4px 14px; border-radius: 20px;
+            font-size: .8em; font-weight: 700; margin-bottom: 18px;
+        }
+        .badge-order { background: linear-gradient(135deg,#ff6b9d,#c44dff); }
+        .badge-fill  { background: linear-gradient(135deg,#4ecdc4,#44a8ff); }
+
+        /* Q-dots */
+        .level-progress { display:flex; gap:10px; margin-bottom:18px; }
+        .q-dot {
+            width:12px; height:12px; border-radius:50%;
+            background:rgba(255,255,255,.2); transition:all .3s;
+        }
+        .q-dot.current   { background:#ffd700; transform:scale(1.35); }
+        .q-dot.correct   { background:#4caf50; }
+        .q-dot.incorrect { background:#f44336; }
+
+        /* Question */
+        .question-number { font-size:.82em; color:#b8a9d0; margin-bottom:6px; }
+        .question-text   { font-size:1.05em; font-weight:600; line-height:1.65; margin-bottom:18px; color:#f0e6ff; }
+
+        /* Word-order */
+        .zone-label { font-size:.75em; color:#b8a9d0; margin-bottom:6px; }
+        .answer-zone {
+            min-height: 58px;
+            background: rgba(0,0,0,.3);
+            border: 2px dashed #ff6b9d;
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex; flex-wrap: wrap; gap: 8px;
+            margin-bottom: 14px;
+            transition: border-color .3s, background .3s;
+        }
+        .answer-zone.correct   { border-color:#4caf50; background:rgba(76,175,80,.1); }
+        .answer-zone.incorrect { border-color:#f44336; background:rgba(244,67,54,.1); }
+        .answer-zone .placeholder { color:#b8a9d0; font-size:.85em; align-self:center; }
+
+        .word-pool { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+
+        .word-chip {
+            background: linear-gradient(135deg,#6a3093,#a044ff);
+            border: 2px solid rgba(255,255,255,.2);
+            color: white;
+            padding: 8px 14px; border-radius: 25px;
+            cursor: pointer; font-size:.88em; font-weight:600;
+            transition: all .2s; user-select:none;
+        }
+        .word-chip:hover:not(.used) { transform:translateY(-2px); box-shadow:0 5px 15px rgba(106,48,147,.5); }
+        .word-chip.in-answer { background:linear-gradient(135deg,#ff6b9d,#c44dff); }
+        .word-chip.used      { opacity:.28; cursor:not-allowed; pointer-events:none; }
+
+        /* Fill-in-blank */
+        .blank {
+            display: inline-block;
+            min-width: 90px;
+            border-bottom: 3px solid #ff6b9d;
+            color: #ff6b9d; font-weight: 700;
+            text-align: center; padding: 0 6px;
+            transition: all .3s;
+        }
+
+        .options-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .option-btn {
+            background: rgba(255,255,255,.07);
+            border: 2px solid rgba(255,255,255,.2);
+            color: white;
+            padding: 13px 18px; border-radius: 12px;
+            cursor: pointer; font-size:.92em; font-weight:600;
+            transition: all .2s; text-align:left;
+            font-family:'Nunito',sans-serif;
+        }
+        .option-btn:hover:not(:disabled) { background:rgba(255,107,157,.2); border-color:#ff6b9d; transform:translateY(-2px); }
+        .option-btn.correct   { background:rgba(76,175,80,.3);  border-color:#4caf50; color:#a5d6a7; }
+        .option-btn.incorrect { background:rgba(244,67,54,.3);  border-color:#f44336; color:#ef9a9a; }
+        .option-btn:disabled  { cursor:not-allowed; }
+        .opt-letter { color:#ffd700; font-weight:800; }
+
+        /* Feedback */
+        .feedback {
+            border-radius: 12px; padding: 13px 16px;
+            font-size:1em; font-weight:700; margin:12px 0;
+            display:none; animation:popIn .3s ease;
+        }
+        @keyframes popIn { 0%{transform:scale(.8);opacity:0} 100%{transform:scale(1);opacity:1} }
+        .feedback.show-correct   { display:block; background:rgba(76,175,80,.18);  border:2px solid #4caf50; color:#a5d6a7; }
+        .feedback.show-incorrect { display:block; background:rgba(244,67,54,.18);  border:2px solid #f44336; color:#ef9a9a; }
+        .feedback.show-warning   { display:block; background:rgba(255,152,0,.18);  border:2px solid #ff9800; color:#ffcc80; }
+        .correct-answer-box {
+            background:rgba(76,175,80,.1); border:1px solid rgba(76,175,80,.3);
+            border-radius:8px; padding:8px 12px; font-size:.88em; color:#a5d6a7;
+            margin-top:8px; font-weight:600;
+        }
+
+        /* Buttons */
+        .btn {
+            padding:11px 28px; border:none; border-radius:25px;
+            font-size:.95em; font-weight:700; cursor:pointer;
+            transition:all .2s; font-family:'Nunito',sans-serif;
+        }
+        .btn-primary { background:linear-gradient(135deg,#ff6b9d,#c44dff); color:white; box-shadow:0 4px 15px rgba(255,107,157,.4); }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(255,107,157,.6); }
+        .btn-check { background:linear-gradient(135deg,#ffd700,#ff8c00); color:#1a0533; }
+        .btn-check:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(255,215,0,.4); }
+        .btn-next  { background:linear-gradient(135deg,#4caf50,#2e7d32); color:white; display:none; }
+        .btn-next:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(76,175,80,.4); }
+        .btn-clear { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); color:#c8b8e8; padding:7px 18px; border-radius:20px; font-size:.82em; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .2s; }
+        .btn-clear:hover { background:rgba(255,255,255,.14); }
+        .button-row { display:flex; justify-content:center; gap:14px; margin-top:14px; flex-wrap:wrap; }
+
+        /* RESULTS */
+        .results-screen { text-align:center; padding:30px 20px; }
+        .results-screen h2 { font-family:'Fredoka One',cursive; font-size:2.4em; color:#ffd700; margin:18px 0 10px; }
+        .stars { font-size:3em; margin:12px 0; }
+        .score-big { font-size:4em; font-weight:800; color:#ff6b9d; margin:10px 0; line-height:1; }
+        .grade-message { font-size:1.15em; font-weight:700; color:#ffd700; margin:10px 0 24px; }
+        .score-details { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+        .score-detail { background:rgba(255,255,255,.06); border-radius:14px; padding:16px; }
+
+        /* Confetti */
+        .confetti-wrap { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:999; }
+        .cp {
+            position:absolute; top:-20px;
+            animation:fall linear forwards;
+        }
+        @keyframes fall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(105vh) rotate(720deg);opacity:0} }
+
+        @media(max-width:560px) {
+            .options-grid   { grid-template-columns:1fr; }
+            .score-details  { grid-template-columns:1fr; }
+            .header h1      { font-size:1.45em; }
+            .start-screen h2{ font-size:1.8em; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Background decorations -->
+<span class="deco" style="top:8%;left:3%;animation-delay:0s">🌸</span>
+<span class="deco" style="top:18%;right:4%;animation-delay:1.2s">💐</span>
+<span class="deco" style="top:65%;left:2%;animation-delay:2.4s">🌺</span>
+<span class="deco" style="top:78%;right:2%;animation-delay:.6s">🌻</span>
+<span class="deco" style="top:45%;left:1%;animation-delay:1.8s">✨</span>
+
+<div id="confettiWrap" class="confetti-wrap"></div>
+
+<!-- Header -->
+<div class="header">
+    <h1>💀 Day of the Dead Adventure! 💀</h1>
+    <div class="subtitle">Lesson 19 · Mexico's Fabulous Day of the Dead</div>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-bar" id="statsBar">
+    <div class="stat-item" style="text-align:center">
+        <div class="stat-label">⏱ Time</div>
+        <div class="stat-value" id="timerDisplay">0:00</div>
+    </div>
+    <div class="stat-item" style="text-align:center">
+        <div class="stat-label">⭐ Score</div>
+        <div class="stat-value" id="scoreDisplay">0</div>
+    </div>
+    <div class="stat-item" style="text-align:center">
+        <div class="stat-label">🎯 Level</div>
+        <div class="stat-value" id="levelDisplay">1 / 6</div>
+    </div>
+</div>
+
+<!-- Level indicator -->
+<div class="level-indicator" id="levelIndicator">
+    <div class="level-dot active" id="dot-0">1</div>
+    <div class="level-dot" id="dot-1">2</div>
+    <div class="level-dot" id="dot-2">3</div>
+    <div class="level-dot" id="dot-3">4</div>
+    <div class="level-dot" id="dot-4">5</div>
+    <div class="level-dot" id="dot-5">6</div>
+</div>
+
+<!-- ════════════════════════════════ SCREENS ════════════════════════════════ -->
+<div class="game-container">
+
+    <!-- START SCREEN -->
+    <div id="startScreen" class="screen active start-screen">
+        <span class="skull-hero">💀</span>
+        <h2>Welcome, English Explorer!</h2>
+        <p>
+            Journey through the colorful world of<br>
+            <strong style="color:#ffd700;">Mexico's Day of the Dead!</strong><br><br>
+            6 levels &nbsp;·&nbsp; 3 questions each<br>
+            Beat the clock and aim for a perfect score!
+        </p>
+        <div class="info-pills">
+            <span class="info-pill">🔤 Word Ordering (Levels 1 · 3 · 5)</span>
+            <span class="info-pill">✏️ Fill in the Blank (Levels 2 · 4 · 6)</span>
+        </div>
+        <button class="btn btn-primary" onclick="startGame()" style="font-size:1.15em;padding:14px 40px;">
+            ▶ Start Adventure!
+        </button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="screen">
+        <div class="level-card">
+            <div class="level-title"  id="levelTitle">Level 1</div>
+            <div class="level-type-badge badge-order" id="levelBadge">🔤 Word Ordering</div>
+
+            <div class="level-progress">
+                <div class="q-dot current" id="qdot-0"></div>
+                <div class="q-dot"         id="qdot-1"></div>
+                <div class="q-dot"         id="qdot-2"></div>
+            </div>
+
+            <div id="questionArea"></div>
+
+            <div class="feedback" id="feedbackBox"></div>
+
+            <div class="button-row">
+                <button class="btn btn-check" id="checkBtn" onclick="checkWordOrder()" style="display:none;">✓ Check Answer</button>
+                <button class="btn btn-next"  id="nextBtn"  onclick="nextQuestion()">Next ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="resultsScreen" class="screen results-screen">
+        <span style="font-size:80px">🎊</span>
+        <h2>Adventure Complete!</h2>
+        <div class="stars" id="starsDisplay">⭐⭐⭐</div>
+        <div class="score-big" id="finalScore">18 / 18</div>
+        <div class="grade-message" id="gradeMessage">Perfect! You're a Day of the Dead Master!</div>
+
+        <div class="score-details">
+            <div class="score-detail">
+                <div class="stat-label">⏱ Total Time</div>
+                <div class="stat-value" id="finalTime">0:00</div>
+            </div>
+            <div class="score-detail">
+                <div class="stat-label">✅ Correct</div>
+                <div class="stat-value" id="finalCorrect">18</div>
+            </div>
+            <div class="score-detail">
+                <div class="stat-label">📊 Accuracy</div>
+                <div class="stat-value" id="finalAccuracy">100%</div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="restartGame()" style="font-size:1.05em;padding:13px 36px;">
+            🔄 Play Again!
+        </button>
+    </div>
+
+</div><!-- /game-container -->
+
+<!-- ════════════════════════════════ SCRIPT ════════════════════════════════ -->
+<script>
+// ─────────────────────────── GAME DATA ───────────────────────────
+const LEVELS = [
+    // ── LEVEL 1  Word Order (Easy) ──────────────────────────────
+    {
+        id: 1, type: 'order',
+        title: 'Level 1 · Word Ordering',
+        badge: '🔤 Word Ordering',
+        questions: [
+            { chunks: ['For two days in early November,', 'Mexico celebrates', 'those who have passed away', 'with the Day of the Dead.'] },
+            { chunks: ['This holiday', 'takes place', 'on November 1 and 2.'] },
+            { chunks: ['On the surface,', 'it shares', 'some aspects', 'with Halloween.'] }
+        ]
+    },
+    // ── LEVEL 2  Fill in Blank (Easy) ───────────────────────────
+    {
+        id: 2, type: 'fill',
+        title: 'Level 2 · Fill in the Blank',
+        badge: '✏️ Fill in the Blank',
+        questions: [
+            {
+                before: 'However, instead of going to costume parties, people celebrate the Day of the Dead by taking a walk to the local',
+                blank: 'cemetery', after: '.',
+                options: ['park', 'cemetery', 'school', 'market'], correct: 1
+            },
+            {
+                before: "Day of the Dead is about remembering deceased family members, but it's not supposed to be a day of",
+                blank: 'sadness', after: '.',
+                options: ['fun', 'joy', 'sadness', 'eating'], correct: 2
+            },
+            {
+                before: 'The first day is the Day of the Little Angels, and it is specifically about children who have',
+                blank: 'died', after: '.',
+                options: ['grown up', 'moved away', 'died', 'visited'], correct: 2
+            }
+        ]
+    },
+    // ── LEVEL 3  Word Order (Medium) ────────────────────────────
+    {
+        id: 3, type: 'order',
+        title: 'Level 3 · Word Ordering',
+        badge: '🔤 Word Ordering',
+        questions: [
+            { chunks: ['Families', 'make altars', 'for the deceased children', 'and lay out', 'their favorite toys', 'on them.'] },
+            { chunks: ["On the next day,", "it's time", 'to pay a visit', 'to the cemetery.'] },
+            { chunks: ['This is a happy time', 'and takes on aspects', 'of a street fair', 'in addition to', 'a spiritual event.'] }
+        ]
+    },
+    // ── LEVEL 4  Fill in Blank (Medium) ─────────────────────────
+    {
+        id: 4, type: 'fill',
+        title: 'Level 4 · Fill in the Blank',
+        badge: '✏️ Fill in the Blank',
+        questions: [
+            {
+                before: 'Families have a duty to clean the graves of their relatives and cover them with',
+                blank: 'flowers', after: '.',
+                options: ['candles', 'flowers', 'food', 'toys'], correct: 1
+            },
+            {
+                before: 'Street stalls sell sweet waffles and other',
+                blank: 'tasty', after: 'snacks.',
+                options: ['bitter', 'sour', 'tasty', 'spicy'], correct: 2
+            },
+            {
+                before: 'In some urban neighborhoods, children go door to',
+                blank: 'door', after: 'to get candy, like Halloween in the US.',
+                options: ['house', 'store', 'door', 'market'], correct: 2
+            }
+        ]
+    },
+    // ── LEVEL 5  Word Order (Hard) ───────────────────────────────
+    {
+        id: 5, type: 'order',
+        title: 'Level 5 · Word Ordering',
+        badge: '🔤 Word Ordering',
+        questions: [
+            { chunks: ['They bring candles', 'for the deceased', 'and place them', 'on the elaborate altars.'] },
+            { chunks: ['The hosts', 'feed them', 'a meal', 'in return.'] },
+            { chunks: ['There might even be rides or party games,', 'reinforcing', 'the festive atmosphere.'] }
+        ]
+    },
+    // ── LEVEL 6  Fill in Blank (Challenge) ──────────────────────
+    {
+        id: 6, type: 'fill',
+        title: 'Level 6 · Fill in the Blank',
+        badge: '✏️ Fill in the Blank',
+        questions: [
+            {
+                before: 'In Ocotepec, near Mexico City, people walk around town visiting people who have lost family members',
+                blank: 'during', after: 'that year.',
+                options: ['before', 'during', 'after', 'since'], correct: 1
+            },
+            {
+                before: "Rather, it's a time for people to",
+                blank: 'celebrate', after: 'the lives that people previously lived while they were still with us.',
+                options: ['forget', 'change', 'celebrate', 'ignore'], correct: 2
+            },
+            {
+                before: 'They bring candles for the deceased and place them on the',
+                blank: 'elaborate', after: 'altars.',
+                options: ['simple', 'small', 'elaborate', 'old'], correct: 2
+            }
+        ]
+    }
+];
+
+// ─────────────────────────── STATE ───────────────────────────────
+let curLevel   = 0;
+let curQ       = 0;
+let score      = 0;
+let secs       = 0;
+let timerID    = null;
+let answered   = false;
+let levelRes   = [];       // boolean per question in current level
+
+// word-order helpers
+let pool       = [];       // shuffled chunks (strings)
+let placed     = [];       // array of pool indices in placed order
+
+// ─────────────────────────── UTILITIES ───────────────────────────
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+function fmtTime(s) {
+    return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+function esc(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────── TIMER ───────────────────────────────
+function startTimer() {
+    secs = 0;
+    document.getElementById('timerDisplay').textContent = '0:00';
+    timerID = setInterval(() => {
+        secs++;
+        document.getElementById('timerDisplay').textContent = fmtTime(secs);
+    }, 1000);
+}
+
+// ─────────────────────────── GAME FLOW ───────────────────────────
+function startGame() {
+    curLevel = 0; curQ = 0; score = 0; levelRes = [];
+
+    show('gameScreen');
+    hide('startScreen');
+    document.getElementById('statsBar').style.display     = 'flex';
+    document.getElementById('levelIndicator').style.display = 'flex';
+
+    updateStats();
+    startTimer();
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const lv = LEVELS[curLevel];
+    const q  = lv.questions[curQ];
+    answered = false;
+
+    // header
+    document.getElementById('levelTitle').textContent = lv.title;
+    const badge = document.getElementById('levelBadge');
+    badge.textContent  = lv.badge;
+    badge.className    = 'level-type-badge ' + (lv.type === 'order' ? 'badge-order' : 'badge-fill');
+
+    // q-dots
+    for (let i = 0; i < 3; i++) {
+        const d = document.getElementById('qdot-'+i);
+        d.className = 'q-dot';
+        if (i < curQ && levelRes[i] !== undefined)
+            d.classList.add(levelRes[i] ? 'correct' : 'incorrect');
+        else if (i === curQ)
+            d.classList.add('current');
+    }
+
+    // clear feedback
+    const fb = document.getElementById('feedbackBox');
+    fb.className   = 'feedback';
+    fb.innerHTML   = '';
+
+    // buttons
+    document.getElementById('checkBtn').style.display = lv.type === 'order' ? 'inline-block' : 'none';
+    document.getElementById('nextBtn').style.display  = 'none';
+
+    if (lv.type === 'order') renderOrder(q);
+    else                      renderFill(q);
+}
+
+function nextQuestion() {
+    curQ++;
+    if (curQ >= 3) {
+        curLevel++;
+        curQ = 0;
+        levelRes = [];
+        if (curLevel >= LEVELS.length) { showResults(); return; }
+    }
+    updateStats();
+    loadQuestion();
+}
+
+function updateStats() {
+    document.getElementById('scoreDisplay').textContent = score;
+    document.getElementById('levelDisplay').textContent = `${curLevel+1} / 6`;
+    for (let i = 0; i < 6; i++) {
+        const d = document.getElementById('dot-'+i);
+        d.className = 'level-dot';
+        if (i < curLevel)       d.classList.add('completed');
+        else if (i === curLevel) d.classList.add('active');
+    }
+}
+
+// ─────────────────────────── WORD ORDER ──────────────────────────
+function renderOrder(q) {
+    pool   = shuffle([...q.chunks]);
+    placed = [];
+
+    document.getElementById('questionArea').innerHTML = `
+        <div class="question-number">Question ${curQ+1} of 3</div>
+        <div class="question-text">Arrange the word chunks to form a correct sentence:</div>
+        <div class="zone-label">Your answer — click a chip to remove it:</div>
+        <div class="answer-zone" id="answerZone"></div>
+        <div class="zone-label">Word bank — click to add:</div>
+        <div class="word-pool" id="wordPool"></div>
+        <button class="btn-clear" onclick="clearOrder()">🗑 Clear All</button>
+    `;
+    paintChips();
+}
+
+function paintChips() {
+    const used = new Set(placed);
+
+    // answer zone
+    const az = document.getElementById('answerZone');
+    if (placed.length === 0) {
+        az.innerHTML = '<span class="placeholder">Click the chunks below to build your sentence…</span>';
+    } else {
+        az.innerHTML = placed.map((pi, ai) =>
+            `<span class="word-chip in-answer" onclick="removeChip(${ai})">${esc(pool[pi])}</span>`
+        ).join('');
+    }
+
+    // word pool
+    document.getElementById('wordPool').innerHTML = pool.map((text, pi) =>
+        `<span class="word-chip ${used.has(pi)?'used':''}" onclick="addChip(${pi})">${esc(text)}</span>`
+    ).join('');
+}
+
+function addChip(pi) {
+    if (answered || placed.includes(pi)) return;
+    placed.push(pi);
+    paintChips();
+}
+function removeChip(ai) {
+    if (answered) return;
+    placed.splice(ai, 1);
+    paintChips();
+}
+function clearOrder() {
+    if (answered) return;
+    placed = [];
+    paintChips();
+}
+
+function checkWordOrder() {
+    if (answered) return;
+
+    if (placed.length !== pool.length) {
+        showFeedback('warning', '⚠️ Please place ALL the chunks first!');
+        return;
+    }
+
+    const lv = LEVELS[curLevel];
+    const q  = lv.questions[curQ];
+    const userArr = placed.map(pi => pool[pi]);
+    const ok  = JSON.stringify(userArr) === JSON.stringify(q.chunks);
+
+    answered = true;
+    levelRes[curQ] = ok;
+
+    // lock chips
+    document.querySelectorAll('.word-chip').forEach(c => c.style.pointerEvents = 'none');
+    document.getElementById('answerZone').classList.add(ok ? 'correct' : 'incorrect');
+    document.getElementById('checkBtn').style.display = 'none';
+    document.getElementById('nextBtn').style.display  = 'inline-block';
+
+    markQDot(curQ, ok);
+
+    if (ok) {
+        score++;
+        document.getElementById('scoreDisplay').textContent = score;
+        showFeedback('correct', '🎉 Excellent! Perfect sentence!');
+        confetti();
+    } else {
+        showFeedback('incorrect',
+            '❌ Not quite. The correct sentence is:',
+            q.chunks.join(' ')
+        );
+    }
+}
+
+// ─────────────────────────── FILL IN BLANK ───────────────────────
+function renderFill(q) {
+    const sent = `${esc(q.before)} <span class="blank" id="blankSpan">___</span> ${esc(q.after)}`;
+    const opts = q.options.map((o, i) => {
+        const letter = ['A','B','C','D'][i];
+        return `<button class="option-btn" id="opt${i}" onclick="pickOpt(${i})">
+                    <span class="opt-letter">${letter}.</span> ${esc(o)}
+                </button>`;
+    }).join('');
+
+    document.getElementById('questionArea').innerHTML = `
+        <div class="question-number">Question ${curQ+1} of 3</div>
+        <div class="question-text">${sent}</div>
+        <div class="options-grid">${opts}</div>
+    `;
+}
+
+function pickOpt(idx) {
+    if (answered) return;
+
+    const q  = LEVELS[curLevel].questions[curQ];
+    const ok = idx === q.correct;
+
+    answered = true;
+    levelRes[curQ] = ok;
+
+    // lock all buttons
+    for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById('opt'+i);
+        btn.disabled = true;
+        if (i === q.correct)           btn.classList.add('correct');
+        else if (i === idx && !ok)     btn.classList.add('incorrect');
+    }
+
+    // update blank span
+    const blankSpan = document.getElementById('blankSpan');
+    if (blankSpan) {
+        blankSpan.textContent    = ok ? q.blank : q.options[idx];
+        blankSpan.style.color    = ok ? '#4caf50' : '#f44336';
+        blankSpan.style.borderColor = ok ? '#4caf50' : '#f44336';
+    }
+
+    document.getElementById('nextBtn').style.display = 'inline-block';
+    markQDot(curQ, ok);
+
+    if (ok) {
+        score++;
+        document.getElementById('scoreDisplay').textContent = score;
+        showFeedback('correct', '🎉 Excellent! That\'s correct!');
+        confetti();
+    } else {
+        showFeedback('incorrect',
+            `❌ Not quite. The correct answer is: "<strong>${esc(q.blank)}</strong>"`
+        );
+    }
+}
+
+// ─────────────────────────── RESULTS ─────────────────────────────
+function showResults() {
+    clearInterval(timerID);
+    show('resultsScreen');
+    hide('gameScreen');
+    document.getElementById('statsBar').style.display      = 'none';
+    document.getElementById('levelIndicator').style.display = 'none';
+
+    const total = 18;
+    const pct   = Math.round(score / total * 100);
+
+    document.getElementById('finalScore').textContent    = `${score} / ${total}`;
+    document.getElementById('finalTime').textContent     = fmtTime(secs);
+    document.getElementById('finalCorrect').textContent  = score;
+    document.getElementById('finalAccuracy').textContent = `${pct}%`;
+
+    let stars, msg;
+    if (pct === 100)      { stars = '⭐⭐⭐'; msg = '🏆 Perfect Score! You\'re a Day of the Dead Master!'; }
+    else if (pct >= 83)   { stars = '⭐⭐⭐'; msg = '🎉 Excellent! Amazing performance!'; }
+    else if (pct >= 67)   { stars = '⭐⭐';  msg = '👍 Great work! Keep it up!'; }
+    else if (pct >= 50)   { stars = '⭐';   msg = '😊 Good effort! Try again to improve!'; }
+    else                  { stars = '💪';   msg = '📖 Keep studying! You can do it!'; }
+
+    document.getElementById('starsDisplay').textContent  = stars;
+    document.getElementById('gradeMessage').textContent  = msg;
+    confetti(40);
+}
+
+function restartGame() {
+    hide('resultsScreen');
+    show('startScreen');
+}
+
+// ─────────────────────────── HELPERS ─────────────────────────────
+function show(id) { document.getElementById(id).classList.add('active'); }
+function hide(id) { document.getElementById(id).classList.remove('active'); }
+
+function markQDot(i, ok) {
+    const d = document.getElementById('qdot-'+i);
+    d.className = 'q-dot ' + (ok ? 'correct' : 'incorrect');
+}
+
+function showFeedback(type, msg, detail) {
+    const fb = document.getElementById('feedbackBox');
+    const cls = { correct:'show-correct', incorrect:'show-incorrect', warning:'show-warning' }[type];
+    fb.className  = 'feedback ' + cls;
+    fb.innerHTML  = msg + (detail ? `<div class="correct-answer-box">${esc(detail)}</div>` : '');
+
+    if (type === 'warning') {
+        setTimeout(() => { fb.className = 'feedback'; fb.innerHTML = ''; }, 2200);
+    }
+}
+
+function confetti(count = 18) {
+    const wrap   = document.getElementById('confettiWrap');
+    const colors = ['#ff6b9d','#ffd700','#4ecdc4','#c44dff','#ff8c00','#81c784','#44a8ff'];
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            const p = document.createElement('div');
+            p.className = 'cp';
+            p.style.left             = Math.random() * 100 + 'vw';
+            p.style.width            = (Math.random() * 9 + 5) + 'px';
+            p.style.height           = (Math.random() * 9 + 5) + 'px';
+            p.style.background       = colors[Math.floor(Math.random() * colors.length)];
+            p.style.borderRadius     = Math.random() > .5 ? '50%' : '3px';
+            p.style.animationDuration= (Math.random() * 1.8 + 1.4) + 's';
+            wrap.appendChild(p);
+            setTimeout(() => p.remove(), 3500);
+        }, i * 55);
+    }
+}
+</script>
+</body>
+</html>
