@@ -83,10 +83,11 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
         
-        .card-ch4:hover     { border-color: #3b82f6; }
-        .card-Ch5:hover     { border-color: #10b981; }
+        .card-ch4:hover      { border-color: #3b82f6; }
+        .card-Ch5:hover      { border-color: #10b981; }
         .card-grammer:hover { border-color: #8b5cf6; }
         .card-reading:hover { border-color: #f59e0b; }
+        .card-l09:hover     { border-color: #f43f5e; } /* 新增 L09 懸停顏色 */
 
         /* 卡片裝飾色條 */
         .card::before {
@@ -102,6 +103,7 @@
         .card-Ch5::before     { background: #10b981; }   /* 綠色系 - 海洋 */
         .card-grammer::before { background: #8b5cf6; }   /* 紫色系 - 英文文法 */
         .card-reading::before { background: #f59e0b; }   /* 琥珀色系 - 閱讀 */
+        .card-l09::before     { background: #f43f5e; }   /* 玫瑰紅 - 國文 */
 
         .card h2 {
             margin: 0 0 0.5rem 0;
@@ -132,6 +134,7 @@
         .card-Ch5:hover .card-btn     { background-color: #10b981; color: white; }
         .card-grammer:hover .card-btn { background-color: #8b5cf6; color: white; }
         .card-reading:hover .card-btn { background-color: #f59e0b; color: white; }
+        .card-l09:hover .card-btn     { background-color: #f43f5e; color: white; }
 
         /* 頁尾 */
         footer {
@@ -153,6 +156,7 @@
         <p class="welcome-text">點擊下方多元主題圖卡，開啟你的學習之旅！</p>
         
         <div class="card-container">
+            <!-- 地科 Ch4 -->
             <a href="./地科-ch4/" class="card card-ch4">
                 <div>
                     <h2>第 4 章：變動的大氣</h2>
@@ -161,6 +165,7 @@
                 <div class="card-btn">進入學習 ➔</div>
             </a>
 
+            <!-- 地科 Ch5 -->
             <a href="./地科-Ch5/" class="card card-Ch5">
                 <div>
                     <h2>第 5 章：變動的海洋</h2>
@@ -169,6 +174,7 @@
                 <div class="card-btn">進入學習 ➔</div>
             </a>
 
+            <!-- 英文文法 -->
             <a href="./Grammer/Grammer_9-1.html" class="card card-grammer">
                 <div>
                     <h2>英文文法特訓 (Grammar)</h2>
@@ -177,10 +183,20 @@
                 <div class="card-btn">進入學習 ➔</div>
             </a>
 
+            <!-- 閱讀精華 -->
             <a href="./ReadingHighlight/lesson19_game.html" class="card card-reading">
                 <div>
                     <h2>閱讀精華摘錄 (Reading Highlight)</h2>
                     <p>精選文章重點整理、關鍵詞彙與段落解析，培養深度閱讀習慣與快速提取核心論點的能力。</p>
+                </div>
+                <div class="card-btn">進入學習 ➔</div>
+            </a>
+
+            <!-- 國文 L09 -->
+            <a href="./Chinese/L09_青春並不消逝只是遷徙.html" class="card card-l09">
+                <div>
+                    <h2>L09：青春並不消逝只是遷徙</h2>
+                    <p>探討青春的流變與生命軌跡，透過文學作品深度解析成長的意義。包含課文重點整理、修辭美感分析與自我反思紀錄。</p>
                 </div>
                 <div class="card-btn">進入學習 ➔</div>
             </a>
