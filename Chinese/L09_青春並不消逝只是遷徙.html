@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>青春並不消逝，只是遷徙｜時光迴廊的記憶使者</title>
+<style>
+  :root {
+    --ink: #1c1008;
+    --parchment: #f4e8cc;
+    --parchment-dark: #e8d4a8;
+    --red: #8b1a1a;
+    --gold: #b8860b;
+    --gold-light: #daa520;
+    --jade: #2d6a4f;
+    --mist: #c8d8c8;
+    --shadow: rgba(28,16,8,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Noto Serif TC', serif;
+    background: #1c1008;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #app {
+    width: 100%;
+    max-width: 680px;
+    min-height: 100vh;
+    background: var(--parchment);
+    background-image:
+      radial-gradient(ellipse at top, #f9f0dc 0%, var(--parchment) 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(180,150,80,0.06) 29px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── decorative border ── */
+  #app::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 680px;
+    height: 100%; pointer-events: none; z-index: 999;
+    border: 3px solid var(--gold);
+    box-shadow: inset 0 0 0 6px rgba(184,134,11,0.15);
+  }
+
+  /* ══ TITLE SCREEN ══ */
+  #screen-title {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; padding: 40px 24px; text-align: center;
+  }
+  .title-seal {
+    width: 88px; height: 88px;
+    border: 3px solid var(--red);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: var(--red);
+    margin-bottom: 24px;
+    box-shadow: 2px 2px 0 var(--red), inset 0 0 8px rgba(139,26,26,0.12);
+    letter-spacing: 2px;
+    writing-mode: vertical-rl;
+    font-weight: bold;
+  }
+  .title-main {
+    font-size: 26px; font-weight: bold;
+    color: var(--red); letter-spacing: 4px;
+    margin-bottom: 8px; line-height: 1.4;
+  }
+  .title-sub {
+    font-size: 13px; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 6px;
+  }
+  .title-author {
+    font-size: 13px; color: #666;
+    margin-bottom: 32px; letter-spacing: 2px;
+  }
+  .divider {
+    width: 180px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 16px auto;
+  }
+  .title-desc {
+    font-size: 14px; line-height: 1.9; color: #444;
+    max-width: 380px; margin-bottom: 36px;
+  }
+  .map-grid {
+    display: grid; grid-template-columns: repeat(5,1fr);
+    gap: 10px; width: 100%; max-width: 360px; margin-bottom: 32px;
+  }
+  .map-node {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--gold);
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 10px; color: #888;
+    cursor: pointer; transition: all .2s;
+    background: rgba(255,255,255,0.4);
+    padding: 2px;
+    text-align: center; line-height: 1.2;
+  }
+  .map-node.unlocked { color: var(--ink); background: rgba(255,255,255,0.7); cursor: pointer; }
+  .map-node.unlocked:hover { background: #fff; border-color: var(--red); color: var(--red); }
+  .map-node.completed { background: var(--jade); border-color: var(--jade); color: #fff; }
+  .map-node.locked { opacity: .45; cursor: not-allowed; }
+  .map-node .node-num { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+  .btn-start {
+    background: var(--red); color: #fff;
+    border: none; padding: 14px 48px;
+    font-size: 16px; letter-spacing: 4px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px;
+    box-shadow: 3px 3px 0 #5a0000;
+    transition: all .15s;
+  }
+  .btn-start:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #5a0000; }
+  .btn-start:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #5a0000; }
+
+  /* ══ LEVEL SCREEN ══ */
+  #screen-level { display: none; min-height: 100vh; padding-bottom: 40px; }
+  .level-header {
+    background: var(--red);
+    padding: 16px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .level-header-left { display: flex; align-items: center; gap: 12px; }
+  .level-badge {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 3px; display: flex;
+    align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: bold;
+  }
+  .level-title-text { color: #fff; }
+  .level-title-text .lv-num { font-size: 11px; opacity: .8; letter-spacing: 2px; }
+  .level-title-text .lv-name { font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+  .btn-back {
+    background: none; border: 1.5px solid rgba(255,255,255,0.5);
+    color: #fff; padding: 6px 14px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    letter-spacing: 1px; border-radius: 2px;
+  }
+  .progress-bar-wrap { height: 5px; background: var(--parchment-dark); }
+  .progress-bar { height: 100%; background: var(--gold); transition: width .4s; }
+
+  /* ── sections ── */
+  .section { padding: 24px 20px; }
+  .section + .section { border-top: 1px dashed rgba(184,134,11,0.3); }
+  .section-tag {
+    display: inline-block; font-size: 11px; letter-spacing: 3px;
+    color: #fff; background: var(--gold); padding: 2px 10px;
+    margin-bottom: 14px;
+  }
+  .section-tag.red { background: var(--red); }
+  .section-tag.jade { background: var(--jade); }
+
+  /* narrative */
+  .narrative-box {
+    background: rgba(255,255,255,0.55);
+    border-left: 3px solid var(--gold);
+    padding: 16px 18px; font-size: 15px;
+    line-height: 2; color: #2a1a00;
+    border-radius: 0 4px 4px 0;
+  }
+  .narrative-box .npc-name {
+    font-size: 12px; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 8px;
+    display: block;
+  }
+
+  /* knowledge card */
+  .knowledge-card {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--gold-light);
+    border-radius: 4px; padding: 16px 18px;
+    font-size: 14px; line-height: 1.9;
+  }
+  .knowledge-card h4 {
+    color: var(--red); font-size: 14px;
+    letter-spacing: 2px; margin-bottom: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid rgba(184,134,11,0.3);
+  }
+  .knowledge-card ul { padding-left: 18px; }
+  .knowledge-card li { margin-bottom: 6px; }
+  .knowledge-card .kw { color: var(--red); font-weight: bold; }
+  .knowledge-card table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .knowledge-card th {
+    background: rgba(184,134,11,0.15);
+    padding: 6px 8px; text-align: left;
+    border: 1px solid rgba(184,134,11,0.3);
+    font-weight: normal; letter-spacing: 1px;
+  }
+  .knowledge-card td {
+    padding: 6px 8px; border: 1px solid rgba(184,134,11,0.2);
+    vertical-align: top;
+  }
+  .quote-box {
+    background: rgba(45,106,79,0.08);
+    border: 1px dashed var(--jade);
+    border-radius: 4px; padding: 12px 16px;
+    font-size: 14px; line-height: 1.9;
+    margin-top: 10px; color: #1a3a2a;
+  }
+
+  /* quiz */
+  .quiz-wrap { display: flex; flex-direction: column; gap: 28px; }
+  .quiz-item {}
+  .quiz-q {
+    font-size: 15px; line-height: 1.8;
+    margin-bottom: 14px; color: var(--ink);
+    font-weight: bold;
+  }
+  .quiz-q .q-num {
+    display: inline-block; width: 24px; height: 24px;
+    background: var(--red); color: #fff;
+    font-size: 12px; border-radius: 2px;
+    text-align: center; line-height: 24px;
+    margin-right: 8px; font-weight: normal;
+  }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice-btn {
+    background: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(184,134,11,0.4);
+    padding: 12px 16px; font-size: 14px;
+    line-height: 1.6; cursor: pointer;
+    font-family: inherit; text-align: left;
+    border-radius: 3px; transition: all .15s;
+    color: var(--ink);
+  }
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--gold); background: rgba(255,255,255,0.9);
+  }
+  .choice-btn.correct {
+    background: rgba(45,106,79,0.15);
+    border-color: var(--jade); color: var(--jade);
+  }
+  .choice-btn.wrong {
+    background: rgba(139,26,26,0.1);
+    border-color: var(--red); color: var(--red);
+  }
+  .choice-btn:disabled { cursor: default; }
+  .feedback-box {
+    margin-top: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.7;
+    border-radius: 3px; display: none;
+  }
+  .feedback-box.correct {
+    background: rgba(45,106,79,0.1);
+    border-left: 3px solid var(--jade);
+    color: var(--jade); display: block;
+  }
+  .feedback-box.wrong {
+    background: rgba(139,26,26,0.08);
+    border-left: 3px solid var(--red);
+    color: #8b1a1a; display: block;
+  }
+
+  /* level complete */
+  .level-complete {
+    display: none; text-align: center;
+    padding: 32px 20px;
+  }
+  .complete-seal {
+    width: 100px; height: 100px;
+    border: 3px solid var(--jade);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+    color: var(--jade); writing-mode: vertical-rl;
+    font-weight: bold; letter-spacing: 2px;
+    box-shadow: 3px 3px 0 rgba(45,106,79,0.3);
+  }
+  .complete-title { font-size: 20px; color: var(--jade); letter-spacing: 3px; margin-bottom: 8px; }
+  .complete-score { font-size: 14px; color: #666; margin-bottom: 24px; }
+  .btn-next {
+    background: var(--jade); color: #fff;
+    border: none; padding: 14px 40px;
+    font-size: 15px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px; box-shadow: 3px 3px 0 #1a4a2f;
+    margin: 8px; transition: all .15s;
+  }
+  .btn-next:hover { transform: translate(-1px,-1px); }
+  .btn-submit {
+    background: var(--red); color: #fff;
+    border: none; padding: 13px 36px;
+    font-size: 14px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px; box-shadow: 2px 2px 0 #5a0000;
+    margin-top: 20px; display: block; width: 100%;
+    transition: all .15s;
+  }
+  .btn-submit:hover { opacity: .9; }
+  .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+  .stars { font-size: 28px; margin-bottom: 8px; }
+  em { color: var(--red); font-style: normal; font-weight: bold; }
+
+  @media (max-width: 420px) {
+    .title-main { font-size: 22px; }
+    .knowledge-card { font-size: 13px; }
+    .quiz-q { font-size: 14px; }
+    .choice-btn { font-size: 13px; padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ TITLE SCREEN ══ -->
+<div id="screen-title">
+  <div class="title-seal">青春</div>
+  <div class="title-main">青春並不消逝<br>只是遷徙</div>
+  <div class="title-sub">時光迴廊的記憶使者</div>
+  <div class="title-author">張曼娟｜高中國文第二冊第九課</div>
+  <div class="divider"></div>
+  <div class="title-desc">
+    你化身為一位「記憶使者」，<br>
+    受命進入古老的時光迴廊，<br>
+    拼湊一位老師十五年的生命碎片。<br>
+    穿越歲月長河，方能領悟<br>「青春遷徙」的真義，<br>
+    獲得「歲月慈悲」的神印。
+  </div>
+  <div class="map-grid" id="map-grid"></div>
+  <button class="btn-start" onclick="startFromMap()">開始冒險</button>
+</div>
+
+<!-- ══ LEVEL SCREEN ══ -->
+<div id="screen-level">
+  <div class="level-header">
+    <div class="level-header-left">
+      <div class="level-badge" id="lv-badge">01</div>
+      <div class="level-title-text">
+        <div class="lv-num" id="lv-num-text">第一關</div>
+        <div class="lv-name" id="lv-name-text"></div>
+      </div>
+    </div>
+    <button class="btn-back" onclick="goTitle()">◀ 地圖</button>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  <div id="level-content"></div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ══════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════
+const LEVELS = [
+{
+  id: 1,
+  name: '使者受命·踏入迴廊',
+  tag: '第一關',
+  narrative: `【長老】\n古廟大門緊閉，石獸沉默守立兩旁。\n\n一位白髮長老緩步走來，聲若洪鐘：\n\n「使者，時光迴廊已久久封印。迴廊中封存著一位女子的記憶——她以文字為劍，以歲月為師，一生橫跨學院與人間。要解開封印，先告訴我，你對她了解多少？」\n\n長老緩緩攤開一卷泛黃的羊皮書，等待你的回答。`,
+  knowledge: {
+    title: '張曼娟其人其事',
+    content: `<ul>
+      <li><span class="kw">生卒</span>：1961年生，臺灣當代作家、學者</li>
+      <li><span class="kw">職位</span>：東吳大學教授（2005年以現代小說創作升等，臺灣首位）</li>
+      <li><span class="kw">25歲</span>：出版《海水正藍》，登暢銷榜，掀起「張曼娟現象」</li>
+      <li><span class="kw">創作特色</span>：散文為主，古典與現代交融，詩化意象，題材由個人內心逐步向外擴展</li>
+      <li><span class="kw">代表作</span>：《海水正藍》《青春》《女兒紅》《誰在銀閃閃的地方，等你》</li>
+      <li><span class="kw">本課出處</span>：〈青春並不消逝，只是遷徙〉，收錄於散文集《青春》</li>
+    </ul>
+    <div class="quote-box">💡 <em>「紫石作坊」</em>（1996年創立）是台灣第一個文學創作工作室；<em>「張曼娟小學堂」</em>（2005年創立）以私塾模式推廣文學教育。</div>`
+  },
+  quizzes: [
+    {
+      q: '張曼娟以什麼身分在東吳大學升等為教授？這在臺灣學術界具有什麼特殊意義？',
+      choices: [
+        '以電影劇本創作升等，是首位以影視作品升等的學者',
+        '以現代小說創作升等，是臺灣首位以此途徑升等的學者',
+        '以散文評論研究升等，開創了文學批評升等的先例',
+        '以古典文學論文升等，結合學術與創作雙重成就'
+      ],
+      answer: 1,
+      feedback: '正確！張曼娟在2005年以<em>現代小說創作</em>（非電影、非學術論文）升等教授，開創了台灣學術界的先例，意義重大。'
+    },
+    {
+      q: '下列哪一項描述最符合張曼娟的創作風格？',
+      choices: [
+        '以政治批判為主軸，文風犀利辛辣，直指社會弊病',
+        '以鄉土寫實為基調，描摹台灣農村生活的真實樣貌',
+        '古典與現代交融，善用詩化意象，題材由個人心靈向外擴展',
+        '以科幻想像為特色，結合歷史典故與未來敘事'
+      ],
+      answer: 2,
+      feedback: '正確！張曼娟的風格是「<em>古典與現代交融、詩化意象</em>」，題材由自我心靈向外拓展至社會、歷史、生老病死等面向。'
+    },
+    {
+      q: '〈青春並不消逝，只是遷徙〉收錄於哪一部散文集？',
+      choices: ['《海水正藍》', '《水問》', '《青春》', '《女兒紅》'],
+      answer: 2,
+      feedback: '正確！本課出自散文集<em>《青春》</em>，以青春、生命無常、歲月為核心主題。'
+    }
+  ]
+},
+{
+  id: 2,
+  name: '秘閣尋典·文體秘笈',
+  tag: '第二關',
+  narrative: `【古籍閣守衛】\n穿過廟門，眼前是一座堆滿卷軸的古籍閣。\n\n一道金色封印橫亙在最高層書架前，守衛冷聲開口：\n\n「此閣收藏的，是遊走於散文與小說之間的秘笈——<em>小說體散文</em>。你若分不清它與普通散文的差異，便取不走這卷軸。」\n\n封印嗡嗡作響，等待破解。`,
+  knowledge: {
+    title: '小說體散文｜四大秘笈',
+    content: `<table>
+      <tr><th>比較項目</th><th>傳統散文</th><th>小說體散文</th></tr>
+      <tr><td>內容真實性</td><td>強調真實</td><td>真實體驗為基礎</td></tr>
+      <tr><td>結構</td><td>較鬆散，隨筆式</td><td>有意識安排起承轉合</td></tr>
+      <tr><td>人物塑造</td><td>較淡化</td><td>立體鮮明，有心理描寫</td></tr>
+      <tr><td>讀起來的感受</td><td>如讀日記或雜感</td><td>如讀短篇小說</td></tr>
+    </table>
+    <div class="quote-box">
+      <b>四大特徵：</b><br>
+      ①&nbsp;<em>情節的鋪陳與營造</em>——有懸念、伏筆、高潮<br>
+      ②&nbsp;<em>人物的刻劃與塑造</em>——對話、行動、心理描寫精心設計<br>
+      ③&nbsp;<em>場景的描寫與渲染</em>——細膩描摹氛圍，有如身歷其境<br>
+      ④&nbsp;<em>敘事結構的安排</em>——雙線交織、時空跳接、今昔對比
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '關於「小說體散文」，下列何項描述最為精確？',
+      choices: [
+        '完全虛構人物與情節，但以散文形式書寫，追求藝術美感',
+        '以真實體驗為基礎，運用小說手法（情節、人物、場景）使散文具故事張力',
+        '以學術論文為架構，穿插個人散文式抒情，為現代文體新創',
+        '本質上是小說，為迴避版權而偽裝成散文'
+      ],
+      answer: 1,
+      feedback: '正確！小說體散文的核心定義：<em>真實體驗為基礎（散文本質）+ 小說創作手法（藝術形式）</em>，兩者缺一不可。'
+    },
+    {
+      q: '本課「第二段幼子形象」照應「第六、七段青年形象」，這是小說體散文哪項特徵的具體展現？',
+      choices: [
+        '情節的鋪陳與營造（伏筆與照應）',
+        '場景的描寫與渲染（氛圍烘托）',
+        '人物的刻劃與塑造（心理描寫）',
+        '傳統散文的隨筆特性'
+      ],
+      answer: 0,
+      feedback: '正確！幼子→青年的前後照應，正是<em>情節的鋪陳與營造</em>中「伏筆」技法的展現，製造閱讀時的驚喜感。'
+    },
+    {
+      q: '課文「第一部分（博士班）→第二部分（年近40任教）」的結構，屬於小說體散文的哪項敘事策略？',
+      choices: [
+        '人物的立體刻劃', '場景的細膩渲染', '時空跳接（今昔對比）', '語錄體問答'
+      ],
+      answer: 2,
+      feedback: '正確！課文跨越約15年的時空，是典型的<em>時空跳接（今昔對比）</em>，為小說體散文敘事結構的重要技法。'
+    }
+  ]
+},
+{
+  id: 3,
+  name: '青春之時·偉岸老師',
+  tag: '第三關',
+  narrative: `【時光碎片·第一道】\n封印破解，卷軸展開，一道光芒將你吸入——\n\n你墜入1986年的大學走廊。\n\n陽光灑落，一位高大壯碩的男子正從遠處走來。他行動從容，微微含笑，背後跟著一個背著雙肩書包、睜著黑眼睛盯著你的小男孩。\n\n【記憶守護者】：「這是25歲的她第一次見到老師。要解開這段記憶，你必須讀懂這片刻的文字密碼。」`,
+  knowledge: {
+    title: '第一、二段｜文句解析',
+    content: `<ul>
+      <li>「那一年我二十五歲，剛考上博士班……那裡是我小小的<em>桃花源</em>。」<br>→ <b>借代</b>：以「桃花源」代指安樂、理想、遠離塵囂之地</li>
+      <li>「老師像一座植滿綠楊垂柳的<em>堤岸</em>……一大一小兩艘船棲泊」<br>→ <b>譬喻（明喻）</b>：老師=堤岸（翼護全家）；妻與子=船（栖泊其中）</li>
+      <li>「小男孩……睜著好奇的黑眼睛盯著我們瞧，並不畏生。」<br>→ <b>伏筆</b>：不怕生的個性，照應第七段光采煥發的青年</li>
+    </ul>
+    <div class="quote-box">📌 <em>偉岸</em>一詞的三個面向：<br>
+      ① 外貌——高大壯碩（曾是體育系）<br>
+      ② 舉止——行動從容、微微含笑<br>
+      ③ 家庭角色——翼護妻兒，如植滿綠楊的堤岸
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「那裡是我小小的桃花源」，句中「桃花源」使用的修辭手法為何？',
+      choices: ['譬喻（明喻）', '借代', '象徵', '轉化（擬人）'],
+      answer: 1,
+      feedback: '正確！「桃花源」在此以<em>借代</em>手法，借指安樂、理想、遠離塵囂的學院生活，並非真正的桃花源地點。'
+    },
+    {
+      q: '「老師像一座植滿綠楊垂柳的堤岸，他在微笑裡，輕輕擁著妻與子，一大一小兩艘船棲泊，所以，他是個偉岸男子。」這段文字使用哪種譬喻類型？',
+      choices: [
+        '借喻——只出現喻體（堤岸），不見本體',
+        '明喻——本體（老師）與喻體（堤岸）並列，有「像」字',
+        '略喻——省略喻詞，直接以喻體代替本體',
+        '轉化——將無生命的堤岸賦予人的情感'
+      ],
+      answer: 1,
+      feedback: '正確！有「<em>老師像……堤岸</em>」，本體（老師）、喻詞（像）、喻體（堤岸）俱全，屬於<em>明喻</em>。'
+    },
+    {
+      q: '第二段描寫老師幼子「睜著好奇的黑眼睛，並不畏生」，這段描寫在全文中的作用是？',
+      choices: [
+        '烘托師母賢慧的形象，為後文師母去世埋下情感鋪墊',
+        '作為伏筆，照應後文老師小兒子成為作者學生時的光采形象',
+        '借代作者自己的好奇心，暗示她對師家的羨慕',
+        '以孩童的純真反襯老師學識的深邃'
+      ],
+      answer: 1,
+      feedback: '正確！這是精心設計的<em>伏筆</em>——瘦小不怕生的幼子，照應第六、七段煥發光彩的青年，前後呼應，增強敘事張力。'
+    }
+  ]
+},
+{
+  id: 4,
+  name: '秋雨忽至·命運之刃',
+  tag: '第四關',
+  narrative: `【時光碎片·第二道】\n記憶碎片開始震動。\n\n晴朗的天色驟然變暗——「開學前下了一場雨，秋天忽然來了。」\n\n一把無形的劍劈開了那幸福的堤岸。\n\n【記憶守護者】悲聲說道：「師母走了。一年之後，老師倒下了。那個年輕的她，也走進了自己的風暴。她哭著走出醫院，質問蒼天：『這是什麼天意？』」\n\n使者，你能讀懂這命運之刃嗎？`,
+  knowledge: {
+    title: '第三、四段｜文句解析',
+    content: `<ul>
+      <li>「<em>開學前下了一場雨，秋天忽然來了。</em>」<br>→ <b>烘托</b>：以秋雨驟至，烘托師母病逝的噩耗與悲涼氛圍</li>
+      <li>「我陷在因情感而引起的<em>強烈風暴</em>中」<br>→ <b>借喻</b>：只出現喻體「風暴」，省略「情感風波如同風暴」的本體對比，直接以喻體代替</li>
+      <li>「走出醫院……<em>這是怎樣荒謬而殘酷的人生啊。</em>」<br>→ 呈現作者面對無常的悲慨，與文末「歲月慈悲」形成<b>映襯</b></li>
+    </ul>
+    <div class="quote-box">⚔️ 第一部分的情感弧線：<br>
+      安逸青春（桃花源）→ 幸福想望（偉岸堤岸）→ 師母驟逝（秋雨忽至）→ 老師中風（質問天意）<br><br>
+      作者心境：<em>相信幸福</em> → <em>震驚質問</em> → 「荒謬而殘酷」
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「開學前下了一場雨，秋天忽然來了」在文中最主要的作用是？',
+      choices: [
+        '描寫台灣秋季氣候，增添地方色彩',
+        '以秋天的到來象徵作者青春即將結束',
+        '以景物烘托師母病逝的悲涼氛圍，製造情感轉折',
+        '借代開學的繁忙，暗示學業壓力加重'
+      ],
+      answer: 2,
+      feedback: '正確！這是「<em>以景烘情</em>」的手法，秋雨＝噩耗與悲涼，在師母病逝的消息來臨之前，先以天氣的驟變預告命運的轉折。'
+    },
+    {
+      q: '「我陷在因情感而引起的強烈風暴中」，句中「強烈風暴」的修辭手法為何？',
+      choices: [
+        '明喻——以風暴比喻情感風波，有完整的比喻結構',
+        '略喻——省略喻詞，直接說情感=風暴',
+        '借喻——只出現喻體「風暴」，省略本體與喻詞',
+        '象徵——風暴象徵人生無常的宿命'
+      ],
+      answer: 2,
+      feedback: '正確！句中看不到「情感風波<em>如同</em>風暴」的本體對比，直接以「風暴」替代情感困境，是<em>借喻</em>。'
+    },
+    {
+      q: '「這是怎樣荒謬而殘酷的人生啊」在全文結構中，與哪一個句子形成最強烈的映襯？',
+      choices: [
+        '「我很安逸於古典世界與學院生活，那裡是我小小的桃花源」',
+        '「與青春恍然相逢的剎那，我看見了歲月的慈悲」',
+        '「老師像一座植滿綠楊垂柳的堤岸」',
+        '「他說出一個名字。忽然一個名字被說出來。」'
+      ],
+      answer: 1,
+      feedback: '正確！「荒謬而殘酷的人生」（悲慨質問）對應文末「<em>歲月的慈悲</em>」（頓悟超脫），前後形成強烈<em>映襯</em>，是全文情感轉化的核心。'
+    }
+  ]
+},
+{
+  id: 5,
+  name: '字音迷宮·破解封印',
+  tag: '第五關',
+  narrative: `【文字守衛·迷宮入口】\n時光迴廊深處，有一座字形構成的迷宮。\n\n黑色文字在牆壁上流動，變幻莫測。守衛冷冷說道：\n\n「這裡的每一塊磚，都是一個字的音與形。辨認錯誤，迷宮便會旋轉，你將迷失其中。」\n\n使者深吸一口氣，踏入迷宮……`,
+  knowledge: {
+    title: '字音字形辨析',
+    content: `<b>一、「撒」的字音辨析</b>
+    <table>
+      <tr><th>字音</th><th>字義</th><th>例詞</th></tr>
+      <tr><td>ㄙㄚ（一聲）</td><td>施展、放開、排出</td><td>撒嬌、撒手不管、撒尿</td></tr>
+      <tr><td>ㄙㄚˇ（三聲）</td><td>散布、分散</td><td>撒胡椒粉、撒傳單</td></tr>
+    </table>
+    <br><b>二、字形辨析（相同偏旁）</b>
+    <table>
+      <tr><th>偏旁</th><th>字音</th><th>詞例</th></tr>
+      <tr><td>童旁</td><td>▲ㄔㄨㄥ</td><td><em>憧</em>憬</td></tr>
+      <tr><td></td><td>▲ㄊㄨㄥˊ</td><td><em>瞳</em>孔</td></tr>
+      <tr><td>玄旁</td><td>▲ㄒㄩㄢˋ</td><td>頭暈目<em>眩</em>、<em>炫</em>耀</td></tr>
+      <tr><td></td><td>▲ㄒㄧㄢˊ</td><td>琴<em>絃</em>、船<em>舷</em></td></tr>
+      <tr><td>長旁</td><td>▲ㄔㄤˋ</td><td><em>悵</em>然、惆<em>悵</em></td></tr>
+      <tr><td></td><td>▲ㄓㄤˇ</td><td><em>漲</em>價、水位暴<em>漲</em></td></tr>
+    </table>
+    <div class="quote-box">📌 <em>「恍然」</em>的三種用法（▲考題重點）：<br>
+      ① 忽然覺悟——恍然大悟<br>
+      ② 茫然迷糊——恍然凝思，日不暇食<br>
+      ③ 彷彿——恍然如隔世
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「他在走廊上撒嬌似地笑著」，此處「撒」的正確讀音為何？',
+      choices: ['ㄙㄚ（一聲）', 'ㄙㄚˇ（三聲）', 'ㄕㄚ（一聲）', 'ㄙㄚˋ（四聲）'],
+      answer: 0,
+      feedback: '正確！「撒嬌」的「撒」讀<em>ㄙㄚ（一聲）</em>，表示「施展、表現」之意。讀三聲ㄙㄚˇ時才表示「散布、分散」。'
+    },
+    {
+      q: '「小男孩睜著好奇的黑眼睛」，「瞳孔」的「瞳」字正確讀音為？',
+      choices: ['ㄔㄨㄥ', 'ㄊㄨㄥˊ', 'ㄓㄨㄤˋ', 'ㄔㄨㄤˊ'],
+      answer: 1,
+      feedback: '正確！「瞳」讀<em>ㄊㄨㄥˊ</em>（童旁，但讀音不同於童）。注意同偏旁的「憧憬」讀ㄔㄨㄥ，需分辨清楚。'
+    },
+    {
+      q: '「與青春恍然相逢的剎那」，此處「恍然」的意思最接近？',
+      choices: ['忽然覺悟的樣子（恍然大悟）', '茫然迷糊的狀態', '彷彿、好像（如隔世）', '慌亂失措的樣子'],
+      answer: 2,
+      feedback: '正確！「與青春<em>恍然</em>相逢」中的「恍然」意為「<em>彷彿、好像</em>」，如同隔世重逢般的虛幻感受，並非「覺悟」之意。'
+    },
+    {
+      q: '「惆悵」的「悵」字正確讀音為？',
+      choices: ['ㄓㄤˇ', 'ㄔㄤ', 'ㄔㄤˋ', 'ㄔㄤˊ'],
+      answer: 2,
+      feedback: '正確！「悵」讀<em>ㄔㄤˋ（四聲）</em>，表示失意、不舒暢的情緒。注意「長旁」家族：漲（ㄓㄤˇ）、悵（ㄔㄤˋ）、倀（ㄔㄤ），各有不同讀音。'
+    }
+  ]
+},
+{
+  id: 6,
+  name: '修辭武庫·七式心法',
+  tag: '第六關',
+  narrative: `【武學殿堂·掌門考驗】\n走出迷宮，眼前是一座巍峨的武學殿堂。\n\n殿堂掌門手持一卷修辭秘笈，沉聲說道：\n\n「文字是劍，修辭是劍法。張曼娟的文章中藏有七式心法——<em>借代、映襯、轉化、譬喻、象徵、回文</em>。能辨識這些招式，才算真正讀懂了這篇文章。」\n\n殿堂大門緩緩開啟，試煉正式開始。`,
+  knowledge: {
+    title: '七式修辭心法',
+    content: `<table>
+      <tr><th>修辭</th><th>例句</th><th>辨析要點</th></tr>
+      <tr><td><em>借代</em></td><td>「桃花源」→安樂學院生活</td><td>以相關事物代替本體</td></tr>
+      <tr><td><em>映襯</em></td><td>「荒謬殘酷」↔「歲月慈悲」</td><td>對比強化情感差異</td></tr>
+      <tr><td><em>轉化（形象化）</em></td><td>「彷彿有著一個老靈魂」</td><td>將抽象（老靈魂）賦予具體形象</td></tr>
+      <tr><td><em>轉化（擬人）</em></td><td>「青春……遷徙到他那裡」</td><td>賦予青春人的行為（遷徙）</td></tr>
+      <tr><td><em>譬喻（明喻）</em></td><td>「老師像一座……堤岸」</td><td>本體＋喻詞（像）＋喻體</td></tr>
+      <tr><td><em>象徵</em></td><td>「天黑下去，星星爬上天空」</td><td>黑暗=困境；星星=希望</td></tr>
+      <tr><td><em>回文</em></td><td>「他說出一個名字。忽然一個名字被說出來。」</td><td>前後句重複同一語意，慎重反覆</td></tr>
+    </table>`
+  },
+  quizzes: [
+    {
+      q: '「暮色掩進教學大樓，天就要黑了，然後星星會亮起來。」這句話使用的修辭手法為？',
+      choices: ['借代', '映襯', '象徵', '轉化（形象化）'],
+      answer: 2,
+      feedback: '正確！「天黑」<em>象徵</em>人生的困阨與無常，「星星亮起」象徵光明與希望，以自然景象寄托深層的人生意義，屬於象徵手法。'
+    },
+    {
+      q: '「他說出一個名字。忽然一個名字被說出來。」這個句子的修辭特色是？',
+      choices: [
+        '映襯——前後兩句形成強烈對比',
+        '回文——前後句重複同一語意，以慎重反覆強調衝擊感',
+        '排比——以相似句型列舉不同事物',
+        '誇飾——誇大一個名字帶來的震撼'
+      ],
+      answer: 1,
+      feedback: '正確！這是<em>回文</em>手法。「他說出一個名字」和「忽然一個名字被說出來」表達同一事件，以慎重的重複強調這個名字對作者造成的深刻衝擊。'
+    },
+    {
+      q: '「明明是青春的臉孔，流利地報告著的時候，卻彷彿有著一個老靈魂，隱隱流露出淺淺的滄桑。」這裡使用的修辭手法為？',
+      choices: [
+        '轉化（形象化）——將抽象的「老靈魂」/「滄桑」賦予可感的形象',
+        '譬喻（明喻）——以老靈魂比喻男學生的外貌',
+        '借代——以「老靈魂」代替某位特定人物',
+        '誇飾——誇大男學生的老成程度'
+      ],
+      answer: 0,
+      feedback: '正確！「老靈魂」、「滄桑」都是抽象概念，作者將其具象化，使讀者能「感受到」這個男學生的特質，屬於<em>轉化（形象化）</em>手法。'
+    },
+    {
+      q: '「青春從不曾消逝，只是從我這裡，遷徙到他那裡。」此句最主要的修辭手法為？',
+      choices: ['象徵', '轉化（擬人）', '借代', '映襯'],
+      answer: 1,
+      feedback: '正確！「青春」是無生命的抽象概念，作者賦予它人的行為——「<em>遷徙</em>」，屬於<em>轉化（擬人）</em>手法，同時也是全文的點題句。'
+    }
+  ]
+},
+{
+  id: 7,
+  name: '智慧殿堂·成語問道',
+  tag: '第七關',
+  narrative: `【智慧長老·問道儀式】\n修辭武庫的封印解開，一道古樸的石門緩緩升起。\n\n內有一位白袍長老，面前擺放著十二塊玉石，每塊刻著一個成語。\n\n長老微笑說道：「記憶使者，成語是先人智慧的結晶。這些字句凝縮了千百年的人情世故——考驗你是否真正融會貫通。」\n\n石門問道，即刻開始。`,
+  knowledge: {
+    title: '本課成語精要（▲=考試重點）',
+    content: `<table>
+      <tr><th>成語</th><th>釋義</th></tr>
+      <tr><td><em>▲玉樹臨風</em></td><td>形容人風度瀟灑、秀美多姿</td></tr>
+      <tr><td>意氣風發</td><td>形容志氣昂揚的樣子</td></tr>
+      <tr><td><em>▲否極泰來</em></td><td>情況壞到極點後好運終將來到</td></tr>
+      <tr><td><em>▲應接不暇</em></td><td>人事繁忙，窮於應付</td></tr>
+      <tr><td><em>▲侃侃而談</em></td><td>說話從容不迫的樣子</td></tr>
+      <tr><td><em>▲岌岌可危</em></td><td>形容非常危險（本課指眼淚即將落下）</td></tr>
+      <tr><td><em>▲寄人籬下</em></td><td>借居他人門下，依賴他人生活</td></tr>
+      <tr><td>春風化雨</td><td>比喻師長和藹親切的教育</td></tr>
+      <tr><td><em>▲程門立雪</em></td><td>比喻尊敬師長和虔誠向學（典故：宋楊時冒雪立於程頤門前）</td></tr>
+      <tr><td><em>▲絳帳授徒</em></td><td>師長立講座傳道授業（典故：東漢馬融以絳紗帳隔絕外物而授徒）</td></tr>
+    </table>`
+  },
+  quizzes: [
+    {
+      q: '「程門立雪」典故中，在風雪中立於老師門前等待的人是誰？這個成語比喻何義？',
+      choices: [
+        '蘇軾，比喻在逆境中堅持學習',
+        '楊時，比喻尊敬師長和虔誠向學',
+        '馬融，比喻師長認真傳道授業',
+        '諸葛亮，比喻三顧茅廬的誠意'
+      ],
+      answer: 1,
+      feedback: '正確！典故出自宋代：<em>楊時</em>去拜訪老師程頤，程頤午睡，楊時冒雪在門外等候，積雪盈尺仍不離去。後比喻<em>尊師重道、虔誠向學</em>。'
+    },
+    {
+      q: '課文中形容男學生「煥發著光亮、自信的神態」，若用本課成語描述他上台報告的樣子，最貼切的是？',
+      choices: ['岌岌可危', '寄人籬下', '侃侃而談', '程門立雪'],
+      answer: 2,
+      feedback: '正確！「<em>侃侃而談</em>」意為說話從容不迫，符合「流利地報告、煥發光亮自信」的描述。「岌岌可危」形容危險，與此不符。'
+    },
+    {
+      q: '「否極泰來」中「泰」字所指為何？全句的意思是？',
+      choices: [
+        '泰山——比喻重如泰山的壓力終將解除',
+        '安泰——情況壞到極點後，好運終將來臨',
+        '泰國——指境外的好運氣終將到來',
+        '泰然——心情壞到極點後逐漸恢復平靜'
+      ],
+      answer: 1,
+      feedback: '正確！「否」（ㄆㄧˇ）為《易經》卦名，象徵閉塞不通；「泰」同為卦名，象徵<em>順暢吉祥</em>。全句意為：情況壞到極點後，好運終將來臨。'
+    }
+  ]
+},
+{
+  id: 8,
+  name: '煥發青春·記憶重逢',
+  tag: '第八關',
+  narrative: `【時光碎片·第三道】\n時光迴廊再次啟動，將你拉向十五年後——\n\n你站在大學課堂的後排。台上一位女老師靜靜看著前排一個沉默的男學生，若有所思。\n\n下課後，他走到走廊上，說出了一個名字。\n\n【記憶守護者】輕聲說：「那個拿著書包、不怕生的小男孩，現在就站在她面前，二十四歲，正當青春。」`,
+  knowledge: {
+    title: '第五至七段｜文句解析',
+    content: `<ul>
+      <li>「<em>他說出一個名字。忽然一個名字被說出來。</em>」<br>→ <b>回文</b>手法：慎重地以一個名字喚醒作者塵封的記憶，強調這個名字帶來的衝擊感</li>
+      <li>「那一段被<em>煙塵封鎖</em>的記憶啊，雲霧散盡，身形偉岸……忽然無比清晰地走到我的面前來。」<br>→ <b>轉化（形象化）</b>兼<b>借喻</b>：抽象的「記憶」被具象化，呼應前文「噴吐煙霧的老師」</li>
+    </ul>
+    <div class="quote-box">📌 <b>前後照應對比表</b><br><br>
+      <b>第二段（幼子）</b>→ 「約莫十歲，脫下鞋子，睜著好奇的黑眼睛，並不畏生」<br>
+      <b>第六段（青年）</b>→ 「沉默寡言，卻專注熱切」<br>
+      <b>第七段（身分）</b>→ 「煥發著光亮、自信，一個名字將記憶喚醒」<br><br>
+      ⚡ 兩個形象的對照：<em>瘦弱的小男孩</em> → <em>光采煥發的青年</em>，這正是「青春遷徙」的具體呈現。
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '第五段作者說自己「大學專任第十一年，年近四十」，這與第一部分的「二十五歲博士班」相距多少年？這段時間跨度在文體上屬於哪種敘事手法？',
+      choices: [
+        '約十年，屬於倒敘（補述法）',
+        '約十五年，屬於時空跳接（今昔對比）',
+        '約二十年，屬於順敘（按時間順序）',
+        '約五年，屬於插敘（插入回憶）'
+      ],
+      answer: 1,
+      feedback: '正確！25歲→年近40，跨越<em>約15年</em>。課文在兩個時空之間跳接，是小說體散文典型的<em>時空跳接（今昔對比）</em>手法。'
+    },
+    {
+      q: '第七段「他說出一個名字。忽然一個名字被說出來。」使用了「回文」修辭，這樣的設計最主要達到什麼效果？',
+      choices: [
+        '製造幽默感，讓讀者感受到作者的輕鬆心情',
+        '以慎重的反覆強調，突顯這個名字對作者的震撼衝擊',
+        '模擬對話的真實感，讓讀者如臨其境',
+        '填充字數，避免敘述過於簡短'
+      ],
+      answer: 1,
+      feedback: '正確！回文手法在此的作用是「<em>慎重的強調</em>」——同一件事說兩遍，讓讀者感受到作者的心跳暫停、記憶湧現的那一刻，是精心設計的敘事節奏。'
+    },
+    {
+      q: '第六段描寫男學生「沉默寡言，卻專注熱切地參與」，這與第二段幼子「並不畏生」形成什麼關係？這樣的寫法反映了小說體散文哪項特徵？',
+      choices: [
+        '兩者形成映襯，反映「場景的描寫與渲染」特徵',
+        '兩者形成前後照應（伏筆與收束），反映「情節的鋪陳與營造」特徵',
+        '兩者毫無關聯，只是獨立的人物刻劃',
+        '兩者形成借代關係，以幼子代替青年'
+      ],
+      answer: 1,
+      feedback: '正確！幼子形象是<em>伏筆</em>，青年形象是<em>照應</em>，兩者相呼應，體現小說體散文「<em>情節的鋪陳與營造</em>」的精心設計。'
+    }
+  ]
+},
+{
+  id: 9,
+  name: '雙線解密·時空迴旋',
+  tag: '第九關',
+  narrative: `【迴廊核心·全景俯瞰】\n時光迴廊的最高點，一片玻璃天花板映照出整條走廊的全貌。\n\n【記憶守護者】說：「使者，你已看過了所有的碎片。現在你要從高空俯瞰這一切——看清這篇文章的雙線結構，理解兩條線如何交織出主題。」\n\n光芒從走廊兩端同時射出，形成一道交叉的金色光網。`,
+  knowledge: {
+    title: '雙線交織·前後照應結構圖',
+    content: `<div class="quote-box">
+      <b>兩條敘事線：</b><br>
+      🔴 <em>老師線</em>：老師偉岸形象 → 師母驟逝 → 老師中風 → 老師小兒子成為作者學生<br>
+      🔵 <em>作者線</em>：博士班安逸青春 → 遭遇情感工作風暴 → 年近40任教大學 → 頓悟青春遷徙
+    </div>
+    <br>
+    <b>前後照應完整對照表：</b>
+    <table>
+      <tr><th>第一部分（25歲）</th><th>第二部分（年近40）</th></tr>
+      <tr><td>作者是老師的學生</td><td>作者成為大學老師</td></tr>
+      <tr><td>老師的幼子不怕生、靜靜觀察</td><td>男學生沉默專注，熱切參與</td></tr>
+      <tr><td>幸福的想望（偉岸堤岸）</td><td>見證生命的傳承（青春遷徙）</td></tr>
+      <tr><td>「荒謬而殘酷的人生」</td><td>「與歲月慈悲相逢」</td></tr>
+    </table>`
+  },
+  quizzes: [
+    {
+      q: '課文採用雙線交織的敘事結構。下列哪一項，是「老師線」與「作者線」共同突出的主題？',
+      choices: [
+        '師生之間的知識傳授，強調教育的重要性',
+        '青春的無常與歲月的慈悲——命運在不同人身上流動傳承',
+        '台灣1980年代的大學生活與校園文化',
+        '女性在學術界突破的奮鬥歷程'
+      ],
+      answer: 1,
+      feedback: '正確！兩條線都在呈現「<em>青春與無常</em>」：老師線——幸福碎裂後青春傳至下一代；作者線——自己也從學生成為師者。交織的目的正是凸顯<em>歲月的流動與生命的傳承</em>。'
+    },
+    {
+      q: '若要概括本文「前後照應」最核心的一組對比，應選哪一項？',
+      choices: [
+        '作者的桃花源（博士班） vs 作者的風暴（情感困境）',
+        '師母的美麗 vs 師母的病逝',
+        '幼子「不畏生的黑眼睛」 vs 青年「煥發光亮自信的神態」',
+        '老師的偉岸 vs 老師的中風'
+      ],
+      answer: 2,
+      feedback: '正確！「<em>不畏生的幼子→光采煥發的青年</em>」是全文最精心設計的前後照應，也是「青春遷徙」主旨的具體化：瘦弱→光采，正是生命傳承的最佳象徵。'
+    },
+    {
+      q: '「作者在第一部分是老師的學生；在第二部分，作者成為大學老師，老師的兒子成為她的學生」，這樣的結構設計，在小說體散文中最主要呈現哪種特徵？',
+      choices: [
+        '場景的描寫與渲染——細膩呈現校園環境的變化',
+        '情節的鋪陳與營造——前後呼應的設計製造敘事驚喜',
+        '人物的心理描寫——深入刻劃作者的內心獨白',
+        '借代修辭——以老師代替老師的兒子'
+      ],
+      answer: 1,
+      feedback: '正確！這個師生角色的循環互換，是作者有意識的「<em>情節鋪陳</em>」設計，讓讀者在閱讀到第七段時產生驚喜的「恍然大悟」感，是小說體散文最精彩的敘事張力所在。'
+    }
+  ]
+},
+{
+  id: 10,
+  name: '歲月慈悲·青春遷徙',
+  tag: '第十關',
+  narrative: `【最終殿堂·頓悟時刻】\n暮色緩緩掩進教學大樓。\n\n走廊上，作者與那個青年相對而立。她看見了——老師的影子，自己青春的倒影，還有歲月深處那一份慈悲。\n\n【記憶守護者】最後說道：\n\n「使者，你走過了十五年的記憶長廊。現在，請告訴我——你真的讀懂了這篇文章嗎？」\n\n最後的封印，等待破解。`,
+  knowledge: {
+    title: '第八段｜主旨與心境轉變',
+    content: `<div class="quote-box">
+      📌 <b>全文情感弧線：</b><br>
+      相信幸福（安逸桃花源）<br>
+      ↓<br>
+      失落震驚（師母驟逝、老師中風）<br>
+      ↓<br>
+      悲慨質問（「荒謬而殘酷的人生」）<br>
+      ↓<br>
+      頓悟超脫（「<em>歲月的慈悲</em>」）
+    </div>
+    <br>
+    <b>三個核心思想：</b>
+    <ul>
+      <li><em>人世無常</em>——幸福無法永恆，命運難以掌控</li>
+      <li><em>生命循環</em>——青春/知識/情感在不同人身上傳承延續</li>
+      <li><em>歲月慈悲</em>——歲月雖帶來病痛與死亡，卻也安排了跨越時光的重逢，讓人見證傳承</li>
+    </ul>
+    <div class="quote-box">
+      ✨ 點題句：「<em>青春從不曾消逝，只是從我這裡，遷徙到他那裡。</em>」<br><br>
+      ✨ 收束句：「與青春恍然相逢的剎那，我看見了<em>歲月的慈悲</em>。」
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「青春從不曾消逝，只是從我這裡，遷徙到他那裡。」這句話中，「青春遷徙」的完整傳遞路線為何？',
+      choices: [
+        '師母的青春→老師→作者→老師的兒子（四代傳承）',
+        '老師的青春與風采→作者（博士班習得）；作者的青春→老師的小兒子（大學課堂），呈現生命傳承的循環',
+        '作者的青春→師母→老師的小兒子（跳代傳承）',
+        '青春不會遷徙，每個人各自擁有自己的青春，互不相干'
+      ],
+      answer: 1,
+      feedback: '正確！這是全文最精彩的洞見——<em>老師的風采→作者繼承（博士班）</em>；<em>作者的青春→老師小兒子繼承（大學課堂）</em>。青春以人際脈絡為載體，代代流動，從未真正消逝。'
+    },
+    {
+      q: '作者在第四段說「這是怎樣荒謬而殘酷的人生」，在第八段卻說「我看見了歲月的慈悲」。這兩句形成的手法，以及心境轉變的原因，何者敘述最完整？',
+      choices: [
+        '形成借代，原因是作者年齡增長後變得消極接受',
+        '形成映襯（對比），原因是走廊重逢讓作者領悟——歲月雖殘酷，卻也安排了跨越十五年的重逢，讓她見證青春的傳承與生命的韌性',
+        '形成回文，原因是作者重複見到了同樣的場景',
+        '形成象徵，原因是天黑後星星出現帶來光明希望'
+      ],
+      answer: 1,
+      feedback: '正確！兩句形成<em>映襯（對比）</em>。心境轉變的關鍵在於：走廊的重逢讓作者從「個人視角」（自己的痛苦）提升到「全景視角」（青春的流動傳承），因此看見了歲月的<em>慈悲</em>——它一方面帶走幸福，一方面又以新的生命重逢作為補償。'
+    },
+    {
+      q: '綜合全文，作者最想傳達的人生體悟，下列何項表述最為完整且精確？',
+      choices: [
+        '人生充滿痛苦，唯有靠宗教信仰才能找到慰藉與出口',
+        '人世雖有無常與悲苦，但青春的生命能量不會消滅，而是以傳承的方式在人際間流動；歲月殘酷，卻也慈悲地安排了生命的循環與重逢',
+        '老師是人生中最重要的影響者，師生情誼能超越一切時間的考驗',
+        '年輕時不應過於依戀幸福的幻象，因為一切終將逝去'
+      ],
+      answer: 1,
+      feedback: '正確！這是全文的核心主旨：<em>人世無常（悲）+ 生命循環（轉）+ 歲月慈悲（悟）</em>，三者缺一不可。作者並非悲觀，而是從悲苦中提煉出對生命韌性的深刻信念。'
+    },
+    {
+      q: '本課文體為「小說體散文」，在本文中最能體現其與「一般抒情散文」差異的特點是？',
+      choices: [
+        '作者以第一人稱敘事，抒發個人情感——這是一般抒情散文也會使用的方式',
+        '文中有精心設計的三次情節轉折（師母驟逝、老師中風、老師幼子揭露身分），以及前後照應的伏筆結構，使散文讀起來如同短篇小說',
+        '文章使用大量詩化意象和成語，語言特別優美精煉',
+        '以問答對話推動敘事，模仿古典語錄體的形式'
+      ],
+      answer: 1,
+      feedback: '正確！小說體散文最關鍵的特徵正是「<em>精心設計的情節轉折＋伏筆照應結構</em>」——讀者會被「幼子→青年揭露身分」這樣的情節設計深深抓住，而這正是一般抒情散文所沒有的敘事張力。'
+    }
+  ]
+}
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const state = {
+  progress: JSON.parse(localStorage.getItem('l09_progress') || '{}'),
+  currentLevel: 0,
+  answered: {},
+  correctCount: 0
+};
+function saveProgress() {
+  localStorage.setItem('l09_progress', JSON.stringify(state.progress));
+}
+function isUnlocked(id) { return id === 1 || state.progress[(id-1)] === 'done'; }
+function isCompleted(id) { return state.progress[id] === 'done'; }
+
+// ══════════════════════════════════════════════
+//  MAP RENDER
+// ══════════════════════════════════════════════
+function renderMap() {
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const node = document.createElement('div');
+    const done = isCompleted(lv.id);
+    const open = isUnlocked(lv.id);
+    node.className = 'map-node ' + (done ? 'completed' : open ? 'unlocked' : 'locked');
+    node.innerHTML = `<div class="node-num">${done ? '✓' : lv.id}</div><div style="font-size:9px;line-height:1.2">${lv.name.split('·')[1] || lv.name}</div>`;
+    if (open) node.onclick = () => startLevel(lv.id);
+    grid.appendChild(node);
+  });
+}
+
+function startFromMap() {
+  // find first incomplete unlocked
+  let target = 1;
+  for (let i = 1; i <= LEVELS.length; i++) {
+    if (!isCompleted(i) && isUnlocked(i)) { target = i; break; }
+  }
+  startLevel(target);
+}
+
+// ══════════════════════════════════════════════
+//  LEVEL
+// ══════════════════════════════════════════════
+function startLevel(id) {
+  const lv = LEVELS.find(l => l.id === id);
+  if (!lv) return;
+  state.currentLevel = id;
+  state.answered = {};
+  state.correctCount = 0;
+
+  document.getElementById('screen-title').style.display = 'none';
+  document.getElementById('screen-level').style.display = 'block';
+  document.getElementById('lv-badge').textContent = String(id).padStart(2,'0');
+  document.getElementById('lv-num-text').textContent = lv.tag;
+  document.getElementById('lv-name-text').textContent = lv.name;
+  document.getElementById('progress-bar').style.width = '0%';
+
+  const content = document.getElementById('level-content');
+  content.innerHTML = buildLevelHTML(lv);
+  window.scrollTo(0,0);
+}
+
+function buildLevelHTML(lv) {
+  // Format narrative
+  const narr = lv.narrative.replace(/\n/g,'<br>').replace(/【(.+?)】/g,'<span class="npc-name">【$1】</span>');
+
+  let quizHTML = '';
+  lv.quizzes.forEach((q, qi) => {
+    const choices = q.choices.map((c, ci) =>
+      `<button class="choice-btn" onclick="answerQ(${lv.id},${qi},${ci})" id="c${lv.id}_${qi}_${ci}">${String.fromCharCode(65+ci)}. ${c}</button>`
+    ).join('');
+    quizHTML += `
+      <div class="quiz-item" id="qi_${lv.id}_${qi}">
+        <div class="quiz-q"><span class="q-num">${qi+1}</span>${q.q}</div>
+        <div class="choices">${choices}</div>
+        <div class="feedback-box" id="fb_${lv.id}_${qi}"></div>
+      </div>`;
+  });
+
+  return `
+    <div class="section">
+      <div class="section-tag">情境導引</div>
+      <div class="narrative-box">${narr}</div>
+    </div>
+    <div class="section">
+      <div class="section-tag red">核心教學</div>
+      <div class="knowledge-card">
+        <h4>📜 ${lv.knowledge.title}</h4>
+        ${lv.knowledge.content}
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-tag jade">冒險挑戰</div>
+      <div class="quiz-wrap">${quizHTML}</div>
+    </div>
+    <div class="level-complete" id="lc_${lv.id}">
+      <div class="complete-seal">通關</div>
+      <div class="stars" id="stars_${lv.id}">★★★</div>
+      <div class="complete-title">關卡通關！</div>
+      <div class="complete-score" id="lc_score_${lv.id}"></div>
+      <button class="btn-next" onclick="goTitle()">返回地圖</button>
+      ${lv.id < LEVELS.length ? `<button class="btn-next" onclick="startLevel(${lv.id+1})">下一關 ▶</button>` : ''}
+    </div>`;
+}
+
+function answerQ(lvId, qi, ci) {
+  if (state.answered[qi] !== undefined) return;
+  const lv = LEVELS.find(l => l.id === lvId);
+  const q = lv.quizzes[qi];
+  const correct = ci === q.answer;
+
+  state.answered[qi] = correct;
+  if (correct) state.correctCount++;
+
+  // style buttons
+  for (let i = 0; i < q.choices.length; i++) {
+    const btn = document.getElementById(`c${lvId}_${qi}_${i}`);
+    btn.disabled = true;
+    if (i === q.answer) btn.classList.add('correct');
+    else if (i === ci && !correct) btn.classList.add('wrong');
+  }
+
+  // feedback
+  const fb = document.getElementById(`fb_${lvId}_${qi}`);
+  fb.className = 'feedback-box ' + (correct ? 'correct' : 'wrong');
+  fb.innerHTML = (correct ? '✓ ' : '✗ ') + q.feedback;
+
+  // update progress bar
+  const total = lv.quizzes.length;
+  const done = Object.keys(state.answered).length;
+  document.getElementById('progress-bar').style.width = (done/total*100) + '%';
+
+  // check if all answered
+  if (done === total) setTimeout(() => showComplete(lvId), 600);
+}
+
+function showComplete(lvId) {
+  const lv = LEVELS.find(l => l.id === lvId);
+  const total = lv.quizzes.length;
+  const correct = state.correctCount;
+  const pct = correct / total;
+  const stars = pct === 1 ? '★★★' : pct >= 0.6 ? '★★☆' : '★☆☆';
+
+  document.getElementById(`lc_${lvId}`).style.display = 'block';
+  document.getElementById(`stars_${lvId}`).textContent = stars;
+  document.getElementById(`lc_score_${lvId}`).textContent =
+    `答對 ${correct} / ${total} 題　${Math.round(pct*100)} 分`;
+
+  if (pct >= 0.6) {
+    state.progress[lvId] = 'done';
+    saveProgress();
+  }
+  document.getElementById(`lc_${lvId}`).scrollIntoView({behavior:'smooth'});
+}
+
+function goTitle() {
+  document.getElementById('screen-level').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'flex';
+  renderMap();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+renderMap();
+</script>
+</body>
+</html>
