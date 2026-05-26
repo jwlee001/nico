@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人民的參政｜民主競技場見習公民</title>
+<style>
+:root {
+  --ink: #0a1a2e;
+  --parchment: #e8eef4;
+  --parchment-dark: #ccd8e8;
+  --red:  #1a3d6e;
+  --gold: #2a6aa8;
+  --gold-light: #4a8ac8;
+  --jade: #0d2a4e;
+  --shadow: rgba(10,26,46,0.18);
+  --correct: #1a6a3a;
+  --wrong: #8b1a1a;
+  --star-on: #f5c518;
+  --star-off: #a0b8cc;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--parchment);
+  font-family: 'Noto Serif TC', 'Georgia', serif;
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#app {
+  width: 100%;
+  max-width: 680px;
+  padding: 16px;
+}
+
+/* ═══════════════════════════════════
+   TITLE SCREEN
+═══════════════════════════════════ */
+#screen-title {
+  text-align: center;
+  padding: 24px 0 40px;
+}
+
+.title-seal {
+  width: 72px;
+  height: 72px;
+  border: 3px solid var(--red);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 18px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  background: white;
+  box-shadow: 2px 2px 0 var(--red);
+  letter-spacing: 4px;
+}
+
+.title-main {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--red);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.title-sub {
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+
+.title-author {
+  font-size: 12px;
+  color: #4a6a8a;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.divider {
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 12px auto;
+}
+
+.title-desc {
+  font-size: 13px;
+  color: #2a4a6a;
+  line-height: 1.8;
+  max-width: 420px;
+  margin: 0 auto 24px;
+  padding: 12px 16px;
+  background: rgba(42,106,168,0.08);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  text-align: left;
+}
+
+/* MAP GRID */
+.map-section { margin: 20px 0; }
+
+.map-title {
+  font-size: 12px;
+  color: #4a6a8a;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.map-node {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  border: 2px solid transparent;
+  position: relative;
+  padding: 4px;
+}
+
+.map-node.locked {
+  background: #c4d0dc;
+  border-color: #a4b8cc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.map-node.unlocked {
+  background: white;
+  border-color: var(--gold);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.map-node.unlocked:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.map-node.done-1 { background: #d4dce8; border-color: var(--gold); }
+.map-node.done-2 { background: #b8cce0; border-color: var(--red); }
+.map-node.done-3 { background: var(--red); border-color: var(--jade); }
+.map-node.done-3 .node-num,
+.map-node.done-3 .node-name { color: white; }
+
+.node-num {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--red);
+  line-height: 1;
+}
+
+.node-name {
+  font-size: 9px;
+  color: #2a4a6a;
+  text-align: center;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.node-stars {
+  font-size: 11px;
+  margin-top: 2px;
+  letter-spacing: -1px;
+}
+
+.node-lock {
+  font-size: 16px;
+  color: #7a9ab8;
+}
+
+/* BUTTONS */
+.btn-start, .btn-home, .btn-next, .btn-retry, .btn-map {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 8px auto;
+  padding: 14px;
+  border: 2px solid var(--red);
+  border-radius: 10px;
+  background: var(--red);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+
+.btn-start:hover, .btn-next:hover { background: var(--jade); border-color: var(--jade); }
+
+.btn-home {
+  background: transparent;
+  color: var(--red);
+  font-size: 13px;
+  padding: 10px;
+}
+
+.btn-home:hover { background: var(--parchment-dark); }
+
+.btn-retry {
+  background: transparent;
+  color: var(--red);
+  max-width: 180px;
+}
+
+.btn-map {
+  max-width: 180px;
+  font-size: 13px;
+  padding: 10px;
+}
+
+/* ═══════════════════════════════════
+   LEVEL SCREEN
+═══════════════════════════════════ */
+#screen-level { padding: 12px 0 40px; }
+
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--parchment-dark);
+}
+
+.level-badge {
+  background: var(--red);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.level-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+  flex: 1;
+}
+
+.level-prog {
+  font-size: 12px;
+  color: #4a6a8a;
+  white-space: nowrap;
+}
+
+/* NARRATIVE */
+.narrative-box {
+  background: rgba(42,106,168,0.07);
+  border: 1px solid rgba(42,106,168,0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #1a3a5a;
+  position: relative;
+}
+
+.narrative-box::before {
+  content: '🗳️';
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+/* KNOWLEDGE CARD */
+.knowledge-card {
+  background: white;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.knowledge-card h4 {
+  font-size: 14px;
+  color: var(--red);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--parchment-dark);
+  letter-spacing: 1px;
+}
+
+.knowledge-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.knowledge-card ul li {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #0a1a2e;
+  padding: 2px 0;
+  border-bottom: 1px dashed rgba(42,106,168,0.15);
+}
+
+.knowledge-card ul li:last-child { border-bottom: none; }
+
+.kw {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--parchment-dark);
+  color: var(--red);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  margin-right: 3px;
+}
+
+.num-box {
+  display: inline-block;
+  background: var(--red);
+  color: white;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  margin: 0 2px;
+}
+
+/* QUIZ */
+.quiz-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px var(--shadow);
+  border: 1px solid var(--parchment-dark);
+}
+
+.quiz-num {
+  font-size: 11px;
+  color: #4a6a8a;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.quiz-q {
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.opts-list { list-style: none; }
+
+.opt-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--parchment);
+  border: 2px solid var(--parchment-dark);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1.6;
+}
+
+.opt-btn:hover:not(:disabled) {
+  background: rgba(42,106,168,0.1);
+  border-color: var(--gold);
+}
+
+.opt-btn.correct {
+  background: rgba(26,106,58,0.12);
+  border-color: var(--correct);
+  color: #0d3a20;
+  font-weight: 700;
+}
+
+.opt-btn.wrong {
+  background: rgba(139,26,26,0.08);
+  border-color: var(--wrong);
+  color: #5a0d0d;
+}
+
+.opt-btn:disabled { cursor: default; }
+
+.exp-box {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(42,106,168,0.06);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #0a2a4a;
+  display: none;
+}
+
+.exp-box.show { display: block; }
+
+/* PROGRESS BAR */
+.progress-bar-wrap {
+  background: var(--parchment-dark);
+  border-radius: 4px;
+  height: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+
+/* COMPLETE SCREEN */
+.complete-card {
+  background: white;
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 4px 16px var(--shadow);
+  margin: 20px 0;
+}
+
+.complete-stars {
+  font-size: 32px;
+  margin-bottom: 10px;
+  letter-spacing: 4px;
+}
+
+.complete-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--red);
+  margin-bottom: 6px;
+  letter-spacing: 2px;
+}
+
+.complete-score {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--gold);
+  margin: 10px 0;
+}
+
+.complete-msg {
+  font-size: 14px;
+  color: #2a4a6a;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.score-detail {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--parchment);
+  border-radius: 8px;
+}
+
+.score-item { text-align: center; }
+
+.score-label {
+  font-size: 11px;
+  color: #4a6a8a;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.score-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--red);
+}
+
+/* FINAL COMPLETE */
+.final-card {
+  text-align: center;
+  padding: 32px 20px 40px;
+}
+
+.final-seal {
+  width: 100px;
+  height: 100px;
+  border: 4px solid var(--red);
+  border-radius: 12px;
+  color: var(--red);
+  font-size: 18px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  background: white;
+  box-shadow: 4px 4px 0 var(--red);
+  letter-spacing: 6px;
+  animation: stamp .4s ease-out;
+}
+
+@keyframes stamp {
+  from { transform: scale(1.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.final-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--red);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.final-desc {
+  font-size: 14px;
+  color: #2a4a6a;
+  line-height: 1.8;
+  max-width: 380px;
+  margin: 0 auto 20px;
+}
+
+.stars-row {
+  font-size: 20px;
+  margin: 8px 0;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--red);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transition: transform .3s ease;
+  z-index: 999;
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 400px) {
+  .map-node .node-name { font-size: 8px; }
+  .map-node .node-num  { font-size: 16px; }
+  .quiz-q { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ TITLE SCREEN ══ -->
+  <div id="screen-title">
+    <div class="title-seal">民<br>選</div>
+    <div class="title-main">人民的參政</div>
+    <div class="title-sub">公民第一冊．第四章</div>
+    <div class="title-author">高中公民科｜民主競技場見習公民</div>
+    <div class="divider"></div>
+    <div class="title-desc">
+      你已取得憲政學院的「議政謀士印記」，現在正式踏入「民主競技場」。競技場設有六道考驗，從認識選票種類、破解選區陷阱，到學會罷免與公投的操作。通過全部六關，你將獲得「公民議政印記」。
+    </div>
+
+    <div class="map-section">
+      <div class="map-title">─── 六道考驗 ───</div>
+      <div class="map-grid" id="map-grid"></div>
+    </div>
+
+    <button class="btn-start" onclick="startFromMap()">🗳 進入競技場</button>
+    <button class="btn-home" onclick="goHome()">⌂ 回到首頁</button>
+  </div>
+
+  <!-- ══ LEVEL SCREEN ══ -->
+  <div id="screen-level" style="display:none"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────
+// 雲端同步設定
+// ─────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbxeJ2XzhzHsYUINJF-Q8wtU7LJFUJBZ6F8l2WxkDIvd8dZuoYougUIXe5fc6g7TX8SeQA/exec';
+
+// ─────────────────────────────────────
+// 關卡資料
+// ─────────────────────────────────────
+const LEVELS = [
+  {
+    id: 1,
+    name: '第一關·選票的起點',
+    narrative: '民主競技場大門緩緩開啟，守門人遞給你一張選票說：「公民的第一課，是認識手中的這張票——選舉制度的形式決定了誰能被選上。」',
+    knowledge: `
+      <h4>📋 選舉制度基礎</h4>
+      <ul>
+        <li><span class="kw">直接民主</span>：人民直接參與政治決策；古典代表：古希臘雅典公民大會</li>
+        <li><span class="kw">代議民主</span>：人民選出代表行使政治權力；現代主流形式</li>
+        <li><span class="kw">行政首長選舉</span>：單一選區相對多數決——得票最多即當選，容易產生棄保效應</li>
+        <li><span class="kw">SNTV 複數選區</span>：單記不可讓渡投票制，一選區可選出<strong>多位</strong>代表；我國縣市議員採用</li>
+        <li><span class="kw">婦女保障名額</span>：縣市議員每選區當選名額中，婦女須占 <span class="num-box">1/4</span> 以上</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '古希臘雅典城邦的公民大會，由全體公民直接參與政治決策。這屬於哪種民主形式？',
+        opts: ['A. 代議民主——由人民選出代表行使政治權力', 'B. 直接民主——由人民直接參與政治決策', 'C. 雙首長制——由兩位首長共同決策', 'D. 審議民主——由公民隨機抽籤討論'],
+        ans: 1,
+        exp: '直接民主是人民直接參與決策（雅典公民大會）；代議民主是人民選出代表行使權力，是現代多數國家採用的主流形式。'
+      },
+      {
+        q: '我國縣市議員選舉採用「SNTV 複數選區」制度。下列何者是此制度的特色？',
+        opts: ['A. 一個選區只選出一位代表，得票最多者當選', 'B. 一個選區可選出多位代表，依得票多寡排序當選', 'C. 全國視為一個選區，依政黨得票比例分配席次', 'D. 由各黨提名的候選人不公開，由選委會決定名單'],
+        ans: 1,
+        exp: 'SNTV（單記不可讓渡投票制）是複數選區制——一選區可選出多位代表；選民只能投給一個候選人，得票最多的數位候選人依序當選。'
+      },
+      {
+        q: '我國縣市議員選舉設有「婦女保障名額」。請問每一選區當選名額中，婦女應占多少比例以上？',
+        opts: ['A. 1/5（20%）', 'B. 1/4（25%）', 'C. 1/3（33%）', 'D. 1/2（50%）'],
+        ans: 1,
+        exp: '縣市議員選舉婦女保障名額為每選區 1/4；不分區立委婦女保障為 1/2（門檻更高）。這兩個數字容易混淆，要分清楚！'
+      }
+    ]
+  },
+  {
+    id: 2,
+    name: '第二關·立委選舉的密碼',
+    narrative: '你進入競技場的立委選舉模擬室，牆上掛著一張「113席分配圖」。守門人說：「你手上可能有兩張選票——一張投人，一張投黨。知道這兩張票怎麼算，才算懂立委選舉。」',
+    knowledge: `
+      <h4>📋 立委 113 席混合制</h4>
+      <ul>
+        <li><span class="kw">總席次</span>：113 席 ＝ <span class="num-box">區域 73</span> ＋ <span class="num-box">原住民 6</span> ＋ <span class="num-box">不分區 34</span></li>
+        <li><span class="tag">區域</span> 73 席：單一選區相對多數決，投給<strong>候選人</strong></li>
+        <li><span class="tag">原住民</span> 6 席：平地 3 + 山地 3，複數選區</li>
+        <li><span class="tag">不分區</span> 34 席：比例代表制，投給<strong>政黨</strong>；政黨得票率須達 <span class="num-box">5%</span> 門檻</li>
+        <li><span class="kw">不分區婦女保障</span>：各黨當選名單中，婦女不得低於 <span class="num-box">1/2</span></li>
+        <li><span class="kw">年齡對比（重要！）</span>：<br>
+          選舉投票：<strong>20 歲</strong>（憲法第 130 條）<br>
+          公投投票：<strong>18 歲</strong>（公投法）<br>
+          加入政黨：<strong>16 歲</strong>（政黨法）<br>
+          ※ 2022 年 18 歲公民權修憲複決未通過，選舉投票年齡仍維持 20 歲</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '我國第十一屆立法委員共 113 席，其中「不分區立委」共幾席？如何產生？',
+        opts: ['A. 30 席，由各縣市依人口比例分配', 'B. 34 席，依各政黨全國不分區選票比例分配', 'C. 40 席，由總統提名後經立法院同意', 'D. 34 席，由各政黨自行提名，不需達票數門檻'],
+        ans: 1,
+        exp: '113 席 = 區域 73 + 原住民 6 + 不分區 34；不分區依政黨得票率按比例分配，但政黨得票率須達 5% 門檻才可分配席次。'
+      },
+      {
+        q: '某政黨在不分區立委選舉中，全國得票率僅 4.8%，依我國規定，此政黨能獲得幾席不分區立委？',
+        opts: ['A. 依比例分配，約 1–2 席', 'B. 獲得 0 席，因未達 5% 得票門檻', 'C. 獲得最低保障 1 席', 'D. 視其黨員人數而定，不以得票率計算'],
+        ans: 1,
+        exp: '不分區立委設有 5% 得票門檻（防止國會過度碎片化）；未達門檻者不分配任何席次，所獲選票不計入分配。'
+      },
+      {
+        q: '某政黨在不分區立委選舉中當選 10 席，其名單上必須確保婦女占多少席次以上？',
+        opts: ['A. 3 席（1/3）', 'B. 4 席（2/5）', 'C. 5 席（1/2）', 'D. 不強制規定，由政黨自行決定'],
+        ans: 2,
+        exp: '不分區立委規定：各政黨當選名單中，婦女不得低於 1/2。例：當選 10 席 → 至少 5 席婦女。注意與縣市議員的 1/4 不同！'
+      }
+    ]
+  },
+  {
+    id: 3,
+    name: '第三關·選區的陷阱',
+    narrative: '你走入競技場的「選區地圖室」，牆上的選區地圖形狀奇異，像蟒蛇又像巨獸。守門人說：「手握重劃之筆的人，往往也握著選舉的結果——這就是傑利蟒螺的威力。」',
+    knowledge: `
+      <h4>📋 傑利蟒螺與選票陷阱</h4>
+      <ul>
+        <li><span class="kw">傑利蟒螺（Gerrymandering）</span>：執政黨操弄選區劃分以鞏固優勢</li>
+        <li><span class="tag">集中策略 packing</span>：把<strong>對手選票集中</strong>在少數選區 → 對手雖一區大贏，整體席次受損</li>
+        <li><span class="tag">分散策略 cracking</span>：把<strong>對手選票分散</strong>到多選區 → 對手每區都以微差落敗</li>
+        <li><span class="kw">票票等值原則</span>：各選區每席立委代表的選民數應大致相等，避免選票價值不均</li>
+        <li><span class="kw">選區重劃</span>：我國每 10 年依人口調整，由中選會公布</li>
+        <li><span class="kw">棄保效應</span>：選民擔心支持的候選人落選，<strong>策略性</strong>改投較有勝算者（相對多數決制度下易發生）</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '執政黨在重劃選區時，故意將反對黨的大量支持者集中劃入同一選區，使對方雖在該選區大贏，卻在其餘選區全面落敗。這種操弄策略稱為什麼？',
+        opts: ['A. 傑利蟒螺的分散策略（cracking）', 'B. 傑利蟒螺的集中策略（packing）', 'C. 棄保效應', 'D. 票票不等值現象'],
+        ans: 1,
+        exp: 'packing（集中）= 把對手選票集中在少數選區，對手雖一區大贏但整體席次受損。cracking（分散）= 把對手票分散到多選區，每區都輸一點點。'
+      },
+      {
+        q: '在行政首長選舉（相對多數決）中，選民甲本支持候選人乙，但認為乙勝算不高，因此改投勝算更高的候選人丙，希望避免自己支持的政治立場落敗。這種投票行為稱為什麼？',
+        opts: ['A. 傑利蟒螺', 'B. 裂票投票', 'C. 棄保效應', 'D. 比例代表制的策略投票'],
+        ans: 2,
+        exp: '棄保效應 = 策略性投票：選民放棄（棄）支持落後候選人，改投較有勝算的候選人（保），目的是避免票源分散讓對方獲勝。'
+      },
+      {
+        q: '「票票等值原則」是選區劃分的重要標準。此原則的核心精神是什麼？',
+        opts: ['A. 每位選民只能投一票，不得重複投票', 'B. 各選區應確保每位民意代表代表的選民數大致相等', 'C. 每個政黨分配到的席次應與其支持率相符', 'D. 男女選民的投票價值應相等'],
+        ans: 1,
+        exp: '票票等值原則要求各選區「代表性相當」——每席立委代表的選民數應大致相等，避免「一票價值差異懸殊」的選票不平等問題。'
+      }
+    ]
+  },
+  {
+    id: 4,
+    name: '第四關·收回授權',
+    narrative: '競技場的第四道門寫著「收回授權室」。守門人說：「選舉是人民授權，罷免是人民收回授權。2016 年修法後，這把收回的鑰匙變得更好用了——你知道門檻是多少嗎？」',
+    knowledge: `
+      <h4>📋 罷免制度</h4>
+      <ul>
+        <li><span class="kw">罷免</span>：人民在任期內提前收回授權的權利</li>
+        <li><span class="kw">罷免流程</span>：<br>
+          原選舉區選舉人 <span class="num-box">1%</span> 提案<br>
+          → 達 <span class="num-box">10%</span> 連署<br>
+          → 辦理投票</li>
+        <li><span class="kw">通過條件（2016 修法後）</span>：<br>
+          「同意票 &gt; 不同意票」<strong>且</strong>「同意票 ≥ 選舉人總數 <span class="num-box">1/4</span>」<br>
+          ※ 修法前門檻為 1/2，大幅降低</li>
+        <li><span class="kw">不適用對象</span>：<strong>不分區立委</strong>（非特定選區選出，無法由特定選區選民罷免）</li>
+        <li><span class="kw">被罷免後果</span>：自公告日起解除職務；4 年內不得再為同一公職候選人</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '依我國現行規定（2016 年修法後），罷免案投票通過的條件為何？',
+        opts: ['A. 同意票數超過全體選舉人 1/2 以上', 'B. 同意票多於不同意票，且同意票達原選舉區選舉人總數 1/4 以上', 'C. 同意票達全體選舉人 1/3 以上', 'D. 只需同意票多於不同意票即可'],
+        ans: 1,
+        exp: '2016 年修法將罷免通過門檻從 1/2 降至 1/4；須同時滿足「同意>不同意」且「同意≥選舉人 1/4」兩個條件，缺一不可。'
+      },
+      {
+        q: '下列哪一位民選公職人員，依法「不適用」罷免制度？',
+        opts: ['A. 縣市長', 'B. 縣市議員', 'C. 區域立法委員', 'D. 不分區立法委員'],
+        ans: 3,
+        exp: '不分區立委由政黨比例名單產生，並非特定選區選出，無法由特定選區選民進行罷免，故法律明定不適用罷免制度。'
+      },
+      {
+        q: '我國 2016 年罷免修法的最主要變化是什麼？',
+        opts: ['A. 連署門檻從 5% 提高到 10%', 'B. 通過門檻由「同意票達選舉人 1/2」降低為「同意票達選舉人 1/4」', 'C. 罷免投票改為線上進行', 'D. 取消不分區立委的罷免豁免'],
+        ans: 1,
+        exp: '2016 年修法的核心是將罷免通過門檻由 1/2 大幅降至 1/4，使罷免更容易成功。此後出現我國史上首件成功的立委罷免案。'
+      }
+    ]
+  },
+  {
+    id: 5,
+    name: '第五關·公民的直接決定',
+    narrative: '第五道考驗是「直接民主競技台」。守門人攤開三張門檻對比表說：「公投、罷免、修憲複決——三種直接民主工具的門檻各不同。你能分清楚嗎？這是最常考的比較題。」',
+    knowledge: `
+      <h4>📋 三種直接民主門檻比較（高頻考點）</h4>
+      <ul>
+        <li><span class="kw">公投（創制/複決）</span>：<br>
+          「同意票 &gt; 不同意票」<strong>且</strong>「同意票 ≥ 投票權人總數 <span class="num-box">1/4</span>」</li>
+        <li><span class="kw">罷免</span>：<br>
+          「同意票 &gt; 不同意票」<strong>且</strong>「同意票 ≥ 選舉人總數 <span class="num-box">1/4</span>」</li>
+        <li><span class="kw">修憲複決</span>（最嚴格！）：<br>
+          全體選舉人 <span class="num-box">1/2</span> 以上同意（不分母，是全體選舉人）</li>
+        <li><span class="tag">案例</span> 2021 年四公投：均未通過（四案同意票均未達 1/4 門檻）</li>
+        <li><span class="tag">案例</span> 2022 年 18 歲公民權修憲複決：未通過（未達全體選舉人 1/2），投票年齡仍維持 20 歲</li>
+        <li><span class="kw">公投優缺點</span>：優（直接表達民意）vs 缺（複雜議題難充分理解、可能被政黨操作）</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '我國公民投票（創制/複決）通過的條件為何？',
+        opts: ['A. 投票人數超過全體選舉人 1/2，且同意票過半', 'B. 同意票多於不同意票，且同意票達投票權人總數 1/4 以上', 'C. 同意票達全體選舉人 1/3 以上', 'D. 只需同意票多於不同意票即可'],
+        ans: 1,
+        exp: '公投通過條件（2018 年修法後）：「同意>不同意」且「同意≥投票權人總數 1/4」。注意：是「投票權人」（有投票資格者，含未投票），而非「實際投票人」。'
+      },
+      {
+        q: '公投、罷免與修憲複決三種機制的通過門檻，哪種「最為嚴格」？',
+        opts: ['A. 公投（同意票達投票權人 1/4）', 'B. 罷免（同意票達選舉人 1/4）', 'C. 修憲複決（同意票達全體選舉人 1/2）', 'D. 三者門檻相同'],
+        ans: 2,
+        exp: '修憲複決需全體選舉人 1/2 以上同意，遠嚴於罷免和公投的 1/4 門檻——這就是為什麼憲法修正非常困難，2022 年 18 歲公民權案便因此未通過。'
+      },
+      {
+        q: '2022 年 11 月 26 日，我國舉行「18 歲公民權修憲複決」。下列敘述何者正確？',
+        opts: ['A. 該案通過，現行選舉投票年齡已降至 18 歲', 'B. 該案未通過，因未達全體選舉人 1/2 同意門檻', 'C. 該案未通過，因同意票少於不同意票', 'D. 該案通過，但尚未完成立法程序'],
+        ans: 1,
+        exp: '修憲複決需全體選舉人 1/2 以上同意，該案實際得票未達此嚴格門檻，故未通過。我國選舉投票年齡目前仍維持 20 歲（憲法第 130 條）。'
+      }
+    ]
+  },
+  {
+    id: 6,
+    name: '第六關·多元參政途徑',
+    narrative: '最終考驗在「多元參政廣場」。守門人說：「民主不只是選舉。走上街頭、加入政黨、利益團體遊說……每一種方式都是公民行使權力的路徑。你都清楚嗎？」',
+    knowledge: `
+      <h4>📋 多元政治參與</h4>
+      <ul>
+        <li><span class="kw">利益團體 vs 政黨</span>：<strong>最大差別</strong>——政黨直接提名候選人參選，利益團體<strong>不</strong>直接提名</li>
+        <li><span class="tag">利益團體</span> 又稱壓力團體，達成目標方式：遊說、影響輿論、支持候選人（但不提名）</li>
+        <li><span class="kw">政黨法（2017 年）</span>：<br>
+          黨員年齡：年滿 <span class="num-box">16 歲</span>（低於投票年齡 20 歲）<br>
+          補助門檻：不分區得票率 <span class="num-box">3%</span> 以上<br>
+          補助金額：每年每票 <span class="num-box">50 元</span></li>
+        <li><span class="kw">社會運動</span>：「<strong>從下到上</strong>」的政治參與（選舉是「由上到下」授權）；公民自發集體倡議</li>
+        <li><span class="kw">政治社會化</span>：個人學習政治的過程，途徑：家庭、學校、媒體、政黨、網路</li>
+        <li><span class="kw">公共政策網路參與平台</span>：提點子 / 來監督 / 眾開講</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '利益團體（如董氏基金會）與政黨（如民進黨）最根本的區別是什麼？',
+        opts: ['A. 利益團體關注多元議題，政黨只關注特定議題', 'B. 利益團體可以向政府遊說，政黨不可以', 'C. 政黨直接提名候選人參選，利益團體不直接提名候選人', 'D. 政黨需要辦理法人登記，利益團體不需要'],
+        ans: 2,
+        exp: '政黨的核心特徵是「提名候選人參選以獲取執政機會」；利益團體只影響政策走向，不直接推派人選參選，這是兩者最根本的差異。'
+      },
+      {
+        q: '依我國《政黨法》（2017 年通過）的規定，加入政黨成為黨員的最低年齡為幾歲？',
+        opts: ['A. 18 歲', 'B. 20 歲', 'C. 16 歲', 'D. 14 歲'],
+        ans: 2,
+        exp: '政黨法規定黨員年齡須年滿 16 歲。記憶口訣：公投 18 歲 > 政黨 16 歲 < 選舉投票 20 歲——三個年齡各不同！'
+      },
+      {
+        q: '2016 年中華航空空服員因不滿公司更改工時計算方式，自發組織罷工行動，迫使政府與資方正視勞動權益。這是哪種政治參與形式？',
+        opts: ['A. 代議民主——透過代議士向國會反映意見', 'B. 公私協力——與政府合作解決公共問題', 'C. 社會運動——由公民主動發起，從下到上影響政府決策', 'D. 參與式預算——由人民直接決定公共支出'],
+        ans: 2,
+        exp: '社會運動是「從下到上」的政治參與——由公民主動集體倡議，施壓政府或企業改變政策，與「由上到下」的選舉授權恰好相反。'
+      }
+    ]
+  }
+];
+
+// ─────────────────────────────────────
+// 狀態管理
+// ─────────────────────────────────────
+const STORAGE_KEY = 'c4_progress';
+
+const state = {
+  progress: {},
+  current: null,
+  answers: [],
+};
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.progress = JSON.parse(raw);
+  } catch { state.progress = {}; }
+}
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+}
+
+function isUnlocked(id) {
+  if (id === 1) return true;
+  return !!state.progress[id - 1];
+}
+
+function getStars(correct, total) {
+  const pct = correct / total;
+  if (pct === 1) return '★★★';
+  if (pct >= 0.67) return '★★☆';
+  if (pct >= 0.6)  return '★☆☆';
+  return '';
+}
+
+// ─────────────────────────────────────
+// 地圖渲染
+// ─────────────────────────────────────
+function renderMap() {
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = '';
+
+  LEVELS.forEach(lv => {
+    const node = document.createElement('div');
+    const stars = state.progress[lv.id] || '';
+    const locked = !isUnlocked(lv.id);
+    let cls = locked ? 'locked' : 'unlocked';
+    if (stars === '★☆☆') cls = 'done-1';
+    if (stars === '★★☆') cls = 'done-2';
+    if (stars === '★★★') cls = 'done-3';
+
+    node.className = `map-node ${cls}`;
+
+    const shortName = lv.name.replace(/第.關·/, '');
+    if (locked) {
+      node.innerHTML = `<div class="node-lock">🔒</div><div class="node-name">${shortName}</div>`;
+    } else {
+      node.innerHTML = `
+        <div class="node-num">${lv.id}</div>
+        <div class="node-name">${shortName}</div>
+        ${stars ? `<div class="node-stars">${stars}</div>` : ''}
+      `;
+      node.onclick = () => startLevel(lv.id);
+    }
+    grid.appendChild(node);
+  });
+}
+
+// ─────────────────────────────────────
+// 起點
+// ─────────────────────────────────────
+function startFromMap() {
+  const firstUnplayed = LEVELS.find(lv => isUnlocked(lv.id) && !state.progress[lv.id]);
+  const id = firstUnplayed ? firstUnplayed.id : 1;
+  startLevel(id);
+}
+
+// ─────────────────────────────────────
+// 關卡畫面
+// ─────────────────────────────────────
+function startLevel(id) {
+  const lv = LEVELS.find(l => l.id === id);
+  if (!lv || !isUnlocked(id)) return;
+
+  state.current = id;
+  state.answers = new Array(lv.quizzes.length).fill(null);
+
+  document.getElementById('screen-title').style.display = 'none';
+  const scr = document.getElementById('screen-level');
+  scr.style.display = 'block';
+  renderLevel(lv);
+}
+
+function renderLevel(lv) {
+  const scr = document.getElementById('screen-level');
+  const answered = state.answers.filter(a => a !== null).length;
+  const pct = answered / lv.quizzes.length;
+
+  scr.innerHTML = `
+    <div class="level-header">
+      <div class="level-badge">${lv.name.split('·')[0]}</div>
+      <div class="level-name">${lv.name.split('·')[1] || ''}</div>
+      <div class="level-prog">${answered}/${lv.quizzes.length} 題</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" style="width:${pct * 100}%"></div>
+    </div>
+    <div class="narrative-box">${lv.narrative}</div>
+    <div class="knowledge-card">${lv.knowledge}</div>
+    ${lv.quizzes.map((q, i) => renderQuiz(q, i)).join('')}
+    <div id="submit-area" style="margin-top:16px"></div>
+  `;
+
+  updateSubmitArea(lv);
+}
+
+function renderQuiz(q, idx) {
+  const ans = state.answers[idx];
+  const answered = ans !== null;
+  const optsHtml = q.opts.map((opt, i) => {
+    let cls = '';
+    if (answered) {
+      if (i === q.ans) cls = 'correct';
+      else if (i === ans && i !== q.ans) cls = 'wrong';
+    }
+    return `<button class="opt-btn ${cls}" ${answered ? 'disabled' : ''}
+      onclick="selectAnswer(${idx}, ${i})">${opt}</button>`;
+  }).join('');
+
+  return `
+    <div class="quiz-card" id="quiz-${idx}">
+      <div class="quiz-num">第 ${idx + 1} 題 / 共 ${LEVELS.find(l => l.id === state.current).quizzes.length} 題</div>
+      <div class="quiz-q">${q.q}</div>
+      <div class="opts-list">${optsHtml}</div>
+      <div class="exp-box ${answered ? 'show' : ''}" id="exp-${idx}">
+        <span class="exp-icon">${ans === q.ans ? '✅ ' : '❌ '}</span>${q.exp}
+      </div>
+    </div>
+  `;
+}
+
+function selectAnswer(quizIdx, optIdx) {
+  if (state.answers[quizIdx] !== null) return;
+
+  state.answers[quizIdx] = optIdx;
+  const lv = LEVELS.find(l => l.id === state.current);
+  const quiz = lv.quizzes[quizIdx];
+  const card = document.getElementById(`quiz-${quizIdx}`);
+  const btns = card.querySelectorAll('.opt-btn');
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === quiz.ans) btn.classList.add('correct');
+    else if (i === optIdx && i !== quiz.ans) btn.classList.add('wrong');
+  });
+
+  const expBox = document.getElementById(`exp-${quizIdx}`);
+  expBox.classList.add('show');
+  expBox.querySelector('.exp-icon').textContent = optIdx === quiz.ans ? '✅ ' : '❌ ';
+
+  const answered = state.answers.filter(a => a !== null).length;
+  const pct = answered / lv.quizzes.length;
+  document.querySelector('.progress-bar-fill').style.width = (pct * 100) + '%';
+  document.querySelector('.level-prog').textContent = `${answered}/${lv.quizzes.length} 題`;
+
+  updateSubmitArea(lv);
+}
+
+function updateSubmitArea(lv) {
+  const area = document.getElementById('submit-area');
+  if (!area) return;
+  const allAnswered = state.answers.every(a => a !== null);
+  if (allAnswered) {
+    area.innerHTML = `<button class="btn-next" onclick="showComplete()">查看結果 →</button>`;
+  } else {
+    const unanswered = state.answers.filter(a => a === null).length;
+    area.innerHTML = `<div style="text-align:center;color:#4a6a8a;font-size:13px;padding:8px">
+      還有 ${unanswered} 題待作答</div>`;
+  }
+}
+
+// ─────────────────────────────────────
+// 完關畫面
+// ─────────────────────────────────────
+function showComplete() {
+  const lv = LEVELS.find(l => l.id === state.current);
+  const correct = state.answers.filter((a, i) => a === lv.quizzes[i].ans).length;
+  const total = lv.quizzes.length;
+  const pct = correct / total;
+  const stars = getStars(correct, total);
+  const passed = pct >= 0.6;
+
+  if (passed) {
+    state.progress[lv.id] = stars;
+    saveProgress();
+    syncToCloud();
+  }
+
+  const scr = document.getElementById('screen-level');
+  const nextId = lv.id + 1;
+  const hasNext = LEVELS.find(l => l.id === nextId);
+  const allDone = Object.keys(state.progress).length >= LEVELS.length;
+
+  if (allDone && passed) {
+    showFinalComplete();
+    return;
+  }
+
+  scr.innerHTML = `
+    <div class="complete-card">
+      <div class="complete-stars">${stars || '─'}</div>
+      <div class="complete-title">${lv.name}</div>
+      <div class="complete-score">${Math.round(pct * 100)}%</div>
+      <div class="score-detail">
+        <div class="score-item">
+          <span class="score-label">答對</span>
+          <span class="score-val">${correct}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">答錯</span>
+          <span class="score-val">${total - correct}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">總題</span>
+          <span class="score-val">${total}</span>
+        </div>
+      </div>
+      <div class="complete-msg">
+        ${passed
+          ? (stars === '★★★' ? '完美！滿分通關，公民之資！' : '通關成功！繼續前進吧。')
+          : `未達60%，需重新作答（需 ${Math.ceil(total * 0.6)} 題答對）`}
+      </div>
+      ${passed && hasNext
+        ? `<button class="btn-next" onclick="startLevel(${nextId})">進入 ${hasNext.name} →</button>`
+        : ''}
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+        <button class="btn-retry" onclick="startLevel(${lv.id})">↺ 重新挑戰</button>
+        <button class="btn-map" onclick="showTitleScreen()">⊞ 關卡地圖</button>
+      </div>
+    </div>
+  `;
+}
+
+function showFinalComplete() {
+  const totalStars = Object.values(state.progress).reduce((sum, s) => sum + (s.split('★').length - 1), 0);
+  const maxStars = LEVELS.length * 3;
+
+  document.getElementById('screen-level').innerHTML = `
+    <div class="final-card">
+      <div class="final-seal">公<br>民<br>議<br>政</div>
+      <div class="final-title">公民議政印記</div>
+      <div class="stars-row">${Object.values(state.progress).join(' ')}</div>
+      <div class="final-desc">
+        恭喜！你通過了民主競技場的六道考驗，從認識選票到掌握傑利蟒螺，從罷免門檻到公投比較，再到多元參政途徑。「公民議政印記」正式授予你——你已是真正掌握民主工具的公民！
+      </div>
+      <div style="font-size:13px;color:#4a6a8a;margin-bottom:16px">
+        總得星：${totalStars} / ${maxStars} ★
+      </div>
+      <button class="btn-map" onclick="showTitleScreen()">⊞ 回到關卡地圖</button>
+      <button class="btn-home" onclick="goHome()">⌂ 回到首頁</button>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────
+// 畫面切換
+// ─────────────────────────────────────
+function showTitleScreen() {
+  document.getElementById('screen-level').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'block';
+  renderMap();
+  window.scrollTo(0, 0);
+}
+
+// ─────────────────────────────────────
+// 雲端同步
+// ─────────────────────────────────────
+async function syncToCloud() {
+  const STUDENT_KEY = 'hc_student';
+  let s;
+  try { s = JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); }
+  catch { return { ok: false, reason: 'no_student' }; }
+  if (!s || !s.id) return { ok: false, reason: 'no_student' };
+  if (!API_URL || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return { ok: false, reason: 'no_url' };
+
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const params = new URLSearchParams({
+      action : 'set',
+      id     : s.id,
+      name   : s.name || '',
+      c4     : localStorage.getItem(STORAGE_KEY) || '{}',
+      t      : Date.now()
+    });
+    const res  = await fetch(API_URL + '?' + params.toString(), { signal: ctrl.signal });
+    clearTimeout(timer);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { return { ok: false, reason: 'bad_json', detail: text.slice(0, 120) }; }
+    return data.ok ? { ok: true } : { ok: false, reason: 'server_err', detail: data.error || '' };
+  } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') return { ok: false, reason: 'timeout' };
+    if (!navigator.onLine)        return { ok: false, reason: 'offline' };
+    return { ok: false, reason: 'network', detail: err.message };
+  }
+}
+
+function syncErrMsg(r) {
+  if (r.reason === 'timeout')     return '連線逾時，進度已存本機';
+  if (r.reason === 'offline')     return '裝置離線，進度已存本機';
+  if (r.reason === 'no_student')  return '請先在首頁登入';
+  if (r.reason === 'bad_json')    return 'Apps Script 回應異常：' + (r.detail || '');
+  if (r.reason === 'server_err')  return 'Apps Script 錯誤：' + (r.detail || '未知');
+  return '同步失敗（' + (r.detail || r.reason) + '）';
+}
+
+async function goHome() {
+  const btn = document.querySelector('.btn-home');
+  if (btn) { btn.textContent = '⏳ 同步中…'; btn.disabled = true; }
+  const result = await syncToCloud();
+  if (result.ok) {
+    if (btn) btn.textContent = '✓ 已存檔';
+    await new Promise(r => setTimeout(r, 600));
+  } else if (result.reason === 'no_student' || result.reason === 'no_url') {
+    if (btn) btn.textContent = '→ 返回首頁';
+    await new Promise(r => setTimeout(r, 400));
+  } else {
+    const msg = syncErrMsg(result);
+    if (btn) btn.textContent = '⚠ 同步失敗';
+    showToast(msg, 3000);
+    await new Promise(r => setTimeout(r, 3200));
+  }
+  window.location.href = 'index.html';
+}
+
+// ─────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────
+loadProgress();
+renderMap();
+</script>
+</body>
+</html>

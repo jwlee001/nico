@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>政府體制與民主治理｜憲政學院見習謀士</title>
+<style>
+:root {
+  --ink: #0d2a22;
+  --parchment: #e8f4f0;
+  --parchment-dark: #cde8df;
+  --red:  #1a5a4a;
+  --gold: #2a8a6a;
+  --gold-light: #4ab890;
+  --jade: #0d3d2e;
+  --shadow: rgba(13,42,34,0.18);
+  --correct: #1a7a3a;
+  --wrong: #8b1a1a;
+  --star-on: #f5c518;
+  --star-off: #aac8c0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--parchment);
+  font-family: 'Noto Serif TC', 'Georgia', serif;
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#app {
+  width: 100%;
+  max-width: 680px;
+  padding: 16px;
+}
+
+/* ═══════════════════════════════════
+   TITLE SCREEN
+═══════════════════════════════════ */
+#screen-title {
+  text-align: center;
+  padding: 24px 0 40px;
+}
+
+.title-seal {
+  display: inline-block;
+  width: 72px;
+  height: 72px;
+  border: 3px solid var(--red);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.3;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  background: white;
+  box-shadow: 2px 2px 0 var(--red);
+  letter-spacing: 4px;
+}
+
+.title-main {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--red);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.title-sub {
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+
+.title-author {
+  font-size: 12px;
+  color: #5a8a7a;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.divider {
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 12px auto;
+}
+
+.title-desc {
+  font-size: 13px;
+  color: #3a6a5a;
+  line-height: 1.8;
+  max-width: 420px;
+  margin: 0 auto 24px;
+  padding: 12px 16px;
+  background: rgba(42,138,106,0.08);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  text-align: left;
+}
+
+/* MAP GRID */
+.map-section {
+  margin: 20px 0;
+}
+
+.map-title {
+  font-size: 12px;
+  color: #5a8a7a;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.map-node {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  border: 2px solid transparent;
+  position: relative;
+  padding: 4px;
+}
+
+.map-node.locked {
+  background: #c8dcd8;
+  border-color: #a8c4be;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.map-node.unlocked {
+  background: white;
+  border-color: var(--gold);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.map-node.unlocked:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.map-node.done-1 { background: #d4ece6; border-color: var(--gold); }
+.map-node.done-2 { background: #b8ddd5; border-color: var(--red); }
+.map-node.done-3 { background: var(--red); border-color: var(--jade); }
+.map-node.done-3 .node-num,
+.map-node.done-3 .node-name { color: white; }
+
+.node-num {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--red);
+  line-height: 1;
+}
+
+.node-name {
+  font-size: 9px;
+  color: #3a6a5a;
+  text-align: center;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.node-stars {
+  font-size: 11px;
+  margin-top: 2px;
+  letter-spacing: -1px;
+}
+
+.node-lock {
+  font-size: 16px;
+  color: #90b0aa;
+}
+
+/* BUTTONS */
+.btn-start, .btn-home, .btn-next, .btn-retry, .btn-map {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 8px auto;
+  padding: 14px;
+  border: 2px solid var(--red);
+  border-radius: 10px;
+  background: var(--red);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+
+.btn-start:hover, .btn-next:hover { background: var(--jade); border-color: var(--jade); }
+
+.btn-home {
+  background: transparent;
+  color: var(--red);
+  font-size: 13px;
+  padding: 10px;
+}
+
+.btn-home:hover { background: var(--parchment-dark); }
+
+.btn-retry {
+  background: transparent;
+  color: var(--red);
+  max-width: 180px;
+}
+
+.btn-map {
+  max-width: 180px;
+  font-size: 13px;
+  padding: 10px;
+}
+
+/* ═══════════════════════════════════
+   LEVEL SCREEN
+═══════════════════════════════════ */
+#screen-level {
+  padding: 12px 0 40px;
+}
+
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--parchment-dark);
+}
+
+.level-badge {
+  background: var(--red);
+  color: white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.level-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+  flex: 1;
+}
+
+.level-prog {
+  font-size: 12px;
+  color: #5a8a7a;
+  white-space: nowrap;
+}
+
+/* NARRATIVE */
+.narrative-box {
+  background: rgba(42,138,106,0.07);
+  border: 1px solid rgba(42,138,106,0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #2a5a4a;
+  position: relative;
+}
+
+.narrative-box::before {
+  content: '📜';
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+/* KNOWLEDGE CARD */
+.knowledge-card {
+  background: white;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.knowledge-card h4 {
+  font-size: 14px;
+  color: var(--red);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--parchment-dark);
+  letter-spacing: 1px;
+}
+
+.knowledge-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.knowledge-card ul li {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #1a3a2e;
+  padding: 2px 0;
+  border-bottom: 1px dashed rgba(42,138,106,0.15);
+}
+
+.knowledge-card ul li:last-child { border-bottom: none; }
+
+.kw {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--parchment-dark);
+  color: var(--red);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  margin-right: 3px;
+}
+
+/* QUIZ */
+.quiz-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px var(--shadow);
+  border: 1px solid var(--parchment-dark);
+}
+
+.quiz-num {
+  font-size: 11px;
+  color: #5a8a7a;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.quiz-q {
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.opts-list {
+  list-style: none;
+}
+
+.opt-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--parchment);
+  border: 2px solid var(--parchment-dark);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1.6;
+}
+
+.opt-btn:hover:not(:disabled) {
+  background: rgba(42,138,106,0.1);
+  border-color: var(--gold);
+}
+
+.opt-btn.correct {
+  background: rgba(26,122,58,0.12);
+  border-color: var(--correct);
+  color: #0d4a20;
+  font-weight: 700;
+}
+
+.opt-btn.wrong {
+  background: rgba(139,26,26,0.08);
+  border-color: var(--wrong);
+  color: #5a0d0d;
+}
+
+.opt-btn:disabled { cursor: default; }
+
+.exp-box {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(42,138,106,0.06);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1a4a3a;
+  display: none;
+}
+
+.exp-box.show { display: block; }
+
+.exp-icon { font-size: 14px; margin-right: 4px; }
+
+/* PROGRESS BAR */
+.progress-bar-wrap {
+  background: var(--parchment-dark);
+  border-radius: 4px;
+  height: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+
+/* COMPLETE SCREEN */
+.complete-card {
+  background: white;
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 4px 16px var(--shadow);
+  margin: 20px 0;
+}
+
+.complete-stars {
+  font-size: 32px;
+  margin-bottom: 10px;
+  letter-spacing: 4px;
+}
+
+.complete-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--red);
+  margin-bottom: 6px;
+  letter-spacing: 2px;
+}
+
+.complete-score {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--gold);
+  margin: 10px 0;
+}
+
+.complete-msg {
+  font-size: 14px;
+  color: #3a6a5a;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.score-detail {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--parchment);
+  border-radius: 8px;
+}
+
+.score-item {
+  text-align: center;
+}
+
+.score-label {
+  font-size: 11px;
+  color: #5a8a7a;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.score-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--red);
+}
+
+/* FINAL COMPLETE */
+.final-card {
+  text-align: center;
+  padding: 32px 20px 40px;
+}
+
+.final-seal {
+  width: 100px;
+  height: 100px;
+  border: 4px solid var(--red);
+  border-radius: 12px;
+  color: var(--red);
+  font-size: 18px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  background: white;
+  box-shadow: 4px 4px 0 var(--red);
+  letter-spacing: 6px;
+  animation: stamp .4s ease-out;
+}
+
+@keyframes stamp {
+  from { transform: scale(1.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.final-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--red);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.final-desc {
+  font-size: 14px;
+  color: #3a6a5a;
+  line-height: 1.8;
+  max-width: 380px;
+  margin: 0 auto 20px;
+}
+
+.stars-row {
+  font-size: 20px;
+  margin: 8px 0;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--red);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transition: transform .3s ease;
+  z-index: 999;
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* RESPONSIVE */
+@media (max-width: 400px) {
+  .map-node .node-name { font-size: 8px; }
+  .map-node .node-num  { font-size: 16px; }
+  .quiz-q { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ TITLE SCREEN ══ -->
+  <div id="screen-title">
+    <div class="title-seal">憲<br>政</div>
+    <div class="title-main">政府體制與民主治理</div>
+    <div class="title-sub">公民第一冊．第三章</div>
+    <div class="title-author">高中公民科｜憲政學院見習謀士</div>
+    <div class="divider"></div>
+    <div class="title-desc">
+      你是「見習謀士小憲」，剛通過公民基礎測驗，踏入傳說中的「憲政學院」。學院設有八道考驗，從憲法的根基出發，歷經三種政府體制的比較，抵達民主治理的前沿。通過全部八關，你將獲得「議政謀士印記」。
+    </div>
+
+    <div class="map-section">
+      <div class="map-title">─── 八道考驗 ───</div>
+      <div class="map-grid" id="map-grid"></div>
+    </div>
+
+    <button class="btn-start" onclick="startFromMap()">⚔ 進入考驗</button>
+    <button class="btn-home" onclick="goHome()">⌂ 回到首頁</button>
+  </div>
+
+  <!-- ══ LEVEL SCREEN ══ -->
+  <div id="screen-level" style="display:none"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────
+// 雲端同步設定
+// ─────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbxeJ2XzhzHsYUINJF-Q8wtU7LJFUJBZ6F8l2WxkDIvd8dZuoYougUIXe5fc6g7TX8SeQA/exec';
+
+// ─────────────────────────────────────
+// 關卡資料
+// ─────────────────────────────────────
+const LEVELS = [
+  {
+    id: 1,
+    name: '第一關·憲法的守護',
+    narrative: '你踏入憲政學院大廳，守門的長老說：「謀士必先懂憲政根基——知道為何要限制政府，才能成為真正守護人民的智者。」',
+    knowledge: `
+      <h4>📜 憲政主義核心</h4>
+      <ul>
+        <li><span class="kw">憲政主義</span>：① 以憲法<strong>限制政府權力</strong>；② 以憲法<strong>保障人民基本權利</strong></li>
+        <li><span class="kw">有限政府</span>：政府只能在憲法授權範圍內行使權力，不可逾越</li>
+        <li><span class="kw">法律責任</span>：官員違法失職 → 由<strong>司法機關</strong>審判（違法才追究）</li>
+        <li><span class="kw">政治責任</span>：政策失誤 → 由<strong>民意機關</strong>課責（不需違法，施政不當即可要求下台）</li>
+        <li><span class="kw">塔利班反例</span>：缺乏憲政規範 → 政府濫權，人民無從保障</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '憲政主義的核心目的包含哪兩項？',
+        opts: ['A. 擴大政府職能以服務人民', 'B. 以憲法限制政府權力，並保障人民基本權利', 'C. 由人民直接決定所有政策', 'D. 讓政府擁有足夠資源應對國家危機'],
+        ans: 1,
+        exp: '憲政主義 ＝ ①限制政府權力（有限政府）②保障人民基本權利，並非擴大政府職能。'
+      },
+      {
+        q: '某縣長因政策失誤被縣議員提出譴責案、遭選民要求下台，此屬於哪種責任？',
+        opts: ['A. 法律責任——違法失職由司法審判', 'B. 行政責任——由上級機關處分', 'C. 政治責任——政策失誤接受民意機關課責', 'D. 道德責任——違反社會倫理規範'],
+        ans: 2,
+        exp: '接受民意機關監督、被要求下台屬「政治責任」；法律責任需有違法行為才由司法機關處理。'
+      },
+      {
+        q: '阿富汗塔利班政權剝奪女性受教權、任意逮捕平民，反映了哪種政治問題？',
+        opts: ['A. 缺乏有效的選舉制度', 'B. 缺乏憲政主義規範，政府濫用權力', 'C. 政府稅收不足，無法提供公共服務', 'D. 地方自治權力過大，造成政治分裂'],
+        ans: 1,
+        exp: '塔利班案例是「缺乏憲政主義」的反面教材——無憲法限制政府、無司法獨立保障人民。'
+      }
+    ]
+  },
+  {
+    id: 2,
+    name: '第二關·西敏宮的謀士',
+    narrative: '第二道考驗傳來英倫的鐘聲。長老說：「內閣制的精妙，在於虛位與實責的分工——你能理解英國首相與女王之間的制度設計嗎？」',
+    knowledge: `
+      <h4>📜 內閣制三要素</h4>
+      <ul>
+        <li><span class="kw">虛位元首</span>：國家元首（國王/總統）無政治實權，僅具象徵意義；代表國：英、日、德</li>
+        <li><span class="kw">副署制度</span>：元首頒令須經<strong>首相副署</strong>才生效，由首相承擔政治責任（有權有責）</li>
+        <li><span class="kw">行政立法融合</span>：閣揆由國會多數黨黨魁出任，閣員通常兼任議員</li>
+        <li><span class="kw">倒閣流程</span>：國會通過不信任案 → 內閣總辭 → 首相可呈請解散國會重選</li>
+        <li><span class="kw">聯合內閣</span>：無政黨過半時，多黨聯合組閣</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '英國女王出席議會宣讀施政報告，但本人不對施政成效負政治責任。這反映了內閣制的哪項特色？',
+        opts: ['A. 實權元首——國家元首掌握行政實權', 'B. 虛位元首——國家元首無政治實權，僅具象徵意義', 'C. 雙首長制——元首與閣揆共享行政實權', 'D. 總統制——行政與立法完全分立'],
+        ans: 1,
+        exp: '內閣制元首是「虛位元首」，施政由首相負責。女王宣讀報告，但政策責任由首相承擔。'
+      },
+      {
+        q: '英國女王頒布法令前，須由首相副署才生效。這項副署制度的主要目的是什麼？',
+        opts: ['A. 防止女王簽錯法令', 'B. 讓首相了解女王的決策方向', 'C. 由首相承擔政治責任，落實有權有責的憲政精神', 'D. 加速法令頒布的行政程序'],
+        ans: 2,
+        exp: '虛位元首無實權也無責，副署讓首相（有實權者）同時承擔責任，落實「有權有責」原則。'
+      },
+      {
+        q: '某內閣制國家，國會以過半多數通過不信任案。首相在必須總辭前，可採取哪項行動？',
+        opts: ['A. 宣布戒嚴，暫停國會運作', 'B. 呈請國家元首解散國會，舉行重新選舉', 'C. 提出覆議，要求國會重新審議不信任案', 'D. 直接改選首相，不必向國家元首報告'],
+        ans: 1,
+        exp: '內閣制倒閣流程：國會通過不信任案 → 內閣總辭；首相在提總辭前可呈請解散國會，交由選民裁決。'
+      }
+    ]
+  },
+  {
+    id: 3,
+    name: '第三關·白宮的賽局',
+    narrative: '穿過大西洋的展廳，你來到白宮模擬室。長老說：「總統制的核心在於分立——行政與立法各自獨立，互相制衡，但也可能互相牽制。」',
+    knowledge: `
+      <h4>📜 總統制三要素</h4>
+      <ul>
+        <li><span class="kw">實權元首</span>：總統掌握行政實權，<strong>無須副署</strong>；代表國：美國</li>
+        <li><span class="kw">行政立法分立</span>：行政官員不得兼任議員；總統與國會各自獨立選出</li>
+        <li><span class="kw">固定任期</span>：國會無法逼總統下台；總統也無權解散國會</li>
+        <li><span class="kw">立法否決權（veto）</span>：總統可退回法案；美國需兩院各 <strong>2/3</strong> 才能維持原決議</li>
+        <li><span class="kw">人事同意權</span>：國會可制衡總統任命（如美國參議院）</li>
+        <li><span class="kw">政治僵局</span>：分立政府下，行政與立法對立，政策推動困難</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '美國總統對國會通過的法案提出「否決（veto）」，退回重新審議。國會需要多少比例才能「維持原決議」使法案強制生效？',
+        opts: ['A. 過半（1/2 以上）', 'B. 三分之二以上', 'C. 四分之三以上', 'D. 全體一致同意'],
+        ans: 1,
+        exp: '美國總統制下，兩院各需 2/3 多數維持原決議，法案才能強制生效。（我國雙首長制的覆議門檻為 1/2，比美國低。）'
+      },
+      {
+        q: '美國國防部長由總統提名，但須經參議院確認同意才能正式就職。這體現了總統制中的哪種制衡機制？',
+        opts: ['A. 副署制度', 'B. 倒閣制度', 'C. 國會人事同意權', 'D. 覆議制度'],
+        ans: 2,
+        exp: '人事同意權是總統制下國會制衡行政的重要機制，防止總統獨攬人事任命權。'
+      },
+      {
+        q: '美國歐巴馬執政期間，參眾兩院多數黨為共和黨，形成行政與立法對立局面。這種情況最可能產生何種問題？',
+        opts: ['A. 總統遭彈劾下台', 'B. 政策推動困難，形成政治僵局', 'C. 國會自行通過預算，無需總統簽署', 'D. 自動解散國會，舉行提前改選'],
+        ans: 1,
+        exp: '總統與國會多數黨不同黨的「分立政府」，最常見後果是政策推動困難（gridlock），無法解散國會是關鍵。'
+      }
+    ]
+  },
+  {
+    id: 4,
+    name: '第四關·雙頭鷹的制衡',
+    narrative: '你來到學院核心——雙首長制展廳，一隻雙頭鷹標誌高懸。長老說：「我國同時擁有兩種體制的特色，卻也承受兩種體制的爭議——這就是雙首長制的課題。」',
+    knowledge: `
+      <h4>📜 雙首長制特色比較</h4>
+      <ul>
+        <li><span class="kw">雙首長</span>：<strong>總統</strong>（國安/外交/國防/兩岸）＋ <strong>行政院長</strong>（內政）</li>
+        <li><span class="kw">行政院長產生</span>：由總統直接任命，<strong>無須立法院同意</strong>（我國特色）</li>
+        <li><span class="tag">類似內閣制</span> 倒閣權存在；行政院須向立法院負責（答施政、接受質詢）</li>
+        <li><span class="tag">類似總統制</span> 總統直選有實權；行政官員不得兼任立委</li>
+        <li><span class="kw">有權無責爭議</span>：總統主導核心政策，卻無直接向立法院負責的機制</li>
+        <li><span class="kw">代表國家</span>：我國、法國</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '我國雙首長制中，哪一項特色是「類似內閣制」的設計？',
+        opts: ['A. 總統由人民直接選出', 'B. 行政官員不得兼任立法委員', 'C. 行政院長須向立法院提施政報告並接受質詢', 'D. 公布法令不須其他人員副署'],
+        ans: 2,
+        exp: '行政院須對立法院負責（答施政、接受監督）是內閣制精神；A、B是總統制特色；D是總統制（無副署）的特色。'
+      },
+      {
+        q: '我國行政院長如何產生？',
+        opts: ['A. 由立法院多數黨黨魁自動出任', 'B. 由全體立委過半數投票選出', 'C. 由總統直接任命，無須立法院同意', 'D. 由政黨協商推薦後，由總統任命'],
+        ans: 2,
+        exp: '憲法增修條文明定：行政院長由總統任命，無須立法院同意——這是我國雙首長制不同於內閣制的重要設計。'
+      },
+      {
+        q: '有學者批評我國雙首長制存在「有權無責」問題。這是指什麼？',
+        opts: ['A. 行政院長有權力但不須對任何人負責', 'B. 立法委員有監督權但無法實質課責政府', 'C. 總統主導重要政策決定，卻不直接對立法院負責', 'D. 地方政府有執行權但無足夠財政資源'],
+        ans: 2,
+        exp: '總統掌握國安、外交、兩岸等核心政策，但憲法未設計總統直接向立法院負責的制衡機制，形成「有權無責」的爭議。'
+      }
+    ]
+  },
+  {
+    id: 5,
+    name: '第五關·倒閣與覆議',
+    narrative: '長老攤開一張憲法條文對照表：「這是最常考的高頻考點。副署的例外、倒閣的門檻、覆議的規則——每個數字都要精準記住。」',
+    knowledge: `
+      <h4>📜 關鍵機制與門檻（高頻考點）</h4>
+      <ul>
+        <li><span class="kw">副署例外</span>（不需副署的三種情況）：<br>
+          ① 任命行政院長　② 依憲法須立法院同意的人員任免　③ 解散立法院命令</li>
+        <li><span class="kw">倒閣（不信任案）流程</span>：<br>
+          全體立委 <strong>1/3</strong> 連署 → <strong>1/2</strong> 以上贊成通過 → 院長 <strong>10 日內</strong>提總辭 → 總辭前可呈請總統解散立法院</li>
+        <li><span class="kw">覆議流程</span>：<br>
+          立法院決議有窒礙難行 → 行政院核可 → <strong>10 日內</strong>移請覆議 → 立法院需 <strong>1/2 以上</strong>維持 → 行政院長須接受</li>
+        <li><span class="kw">歷史紀錄</span>：我國不信任案共提出 3 次（1999、2012、2013），均未通過</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '依我國憲法規定，下列哪項總統行為「不需要」行政院長副署？',
+        opts: ['A. 公布法律', 'B. 發布緊急命令', 'C. 任命行政院長', 'D. 授予榮典（勳章）'],
+        ans: 2,
+        exp: '憲法增修條文第 2 條明定：任命行政院長不須副署，因為這是總統的獨立職權，不需行政院長一起承擔責任。'
+      },
+      {
+        q: '我國立法院提出並通過不信任案的程序，下列何者正確？',
+        opts: ['A. 全體立委 1/4 連署，1/3 以上贊成即通過', 'B. 全體立委 1/3 連署，1/2 以上贊成方可通過', 'C. 全體立委 1/2 連署，2/3 以上贊成方可通過', 'D. 由立法院院長直接宣布，無須表決'],
+        ans: 1,
+        exp: '不信任案須全體立委 1/3 以上連署提出，再由全體立委 1/2 以上投票贊成才算通過——門檻分兩階段！'
+      },
+      {
+        q: '行政院提出覆議後，立法院重新表決，哪種結果代表「行政院必須接受」立法院原決議？',
+        opts: ['A. 全體立委 1/3 以上維持原決議', 'B. 全體立委 1/2 以上維持原決議', 'C. 全體立委 2/3 以上維持原決議', 'D. 全體立委一致同意維持原決議'],
+        ans: 1,
+        exp: '覆議結果：立法院 1/2 以上維持原決議 → 行政院長必須接受並執行（不得再次覆議）。注意美國是 2/3，我國是 1/2！'
+      }
+    ]
+  },
+  {
+    id: 6,
+    name: '第六關·中央與地方',
+    narrative: '你進入學院的地圖室，牆上掛著各國的權力分配圖。長老說：「單一制與聯邦制的差異，在於那個『概括權力』究竟歸誰——這是判斷關鍵。」',
+    knowledge: `
+      <h4>📜 單一制 vs 聯邦制</h4>
+      <ul>
+        <li><span class="kw">概括權力歸中央</span> → <strong>單一制</strong>（日本、台灣）</li>
+        <li><span class="kw">概括權力歸地方</span> → <strong>聯邦制</strong>（美國、德國）</li>
+        <li><span class="tag">單一制</span> 地方權力來自中央「委託授予」；中央可收回或調整</li>
+        <li><span class="tag">聯邦制</span> 地方權力來自「憲法直接保障」；聯邦無法輕易剝奪</li>
+        <li><span class="kw">水平分權</span>：同層級政府間（行政/立法/司法）</li>
+        <li><span class="kw">垂直分權</span>：中央與地方之間的權力劃分</li>
+        <li>美國：各州可自定墮胎法律，聯邦無法強制統一 → 聯邦制特色</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '在某國憲法中，「凡憲法未明文列舉的事務，概由各州自行決定」。這代表哪種制度？',
+        opts: ['A. 單一制——概括權力歸中央', 'B. 均權制——依事務性質劃分', 'C. 聯邦制——概括權力歸地方', 'D. 委辦制——由上級委託地方辦理'],
+        ans: 2,
+        exp: '判斷單一制或聯邦制的核心依據是「概括權力」歸誰——「凡未列舉者歸地方」即概括歸地方，是聯邦制特徵。'
+      },
+      {
+        q: '在單一制國家中，地方政府的自治權來源為何？',
+        opts: ['A. 來自憲法對地方的直接保障', 'B. 來自地方居民的公投授權', 'C. 來自中央政府的委託授予', 'D. 來自國際條約的特別規定'],
+        ans: 2,
+        exp: '單一制下，地方只是中央的下屬機構，自治權由中央委託授予；聯邦制下，地方自治權受憲法直接保障，不需中央授權。'
+      },
+      {
+        q: '美國德州和加州對某議題有完全不同的州法律，聯邦政府無法強制統一。這最能體現聯邦制的哪項特色？',
+        opts: ['A. 中央概括權力優先，地方無從反抗', 'B. 地方政府具有憲法保障的固有權力，可自行立法管轄', 'C. 中央下放部分行政事務，由地方執行', 'D. 各地因歷史傳統不同，形成習慣法差異'],
+        ans: 1,
+        exp: '聯邦制中各州的權力直接由憲法保障，並非中央委託，因此聯邦無法強制統一州法律——這是聯邦制的核心特色。'
+      }
+    ]
+  },
+  {
+    id: 7,
+    name: '第七關·均權的智慧',
+    narrative: '長老攤開我國地方制度法：「均權制度是我國憲法的獨特設計，不偏向中央也不偏向地方——以事務性質為準，才是公平的智慧。」',
+    knowledge: `
+      <h4>📜 均權制度與地方行政事項</h4>
+      <ul>
+        <li><span class="kw">均權制度劃分標準</span>：<strong>事務性質</strong>——全國一致性 → 中央；因地制宜 → 地方</li>
+        <li>司法、考試、監察三權仍屬中央</li>
+        <li><span class="kw">四種地方行政事項</span>：<br>
+          ① 地方自治事項（純地方）<br>
+          ② 跨區域自治事項（跨縣市）<br>
+          ③ 上級委辦事項（中央委下）<br>
+          ④ 共同辦理事項（多個自治團體合辦）</li>
+        <li><span class="kw">事權爭議解決機關</span>：<br>
+          中央 vs 地方 → <strong>立法院</strong><br>
+          直轄市之間 → <strong>行政院</strong><br>
+          縣 vs 鄉鎮 → <strong>縣政府</strong></li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '我國均權制度劃分中央與地方權限，最主要的標準是什麼？',
+        opts: ['A. 財政資源多寡', 'B. 行政人員數量', 'C. 事務性質（全國一致性歸中央，因地制宜歸地方）', 'D. 人口密度高低'],
+        ans: 2,
+        exp: '均權制度的核心是「事務性質」：需全國統一處理的歸中央，適合地方因地制宜的歸地方——不是財政也不是人口。'
+      },
+      {
+        q: '桃園國際機場捷運由台北市、新北市、桃園市三縣市共同投資，桃園市負責主要營運。這屬於地方行政中的哪種事項？',
+        opts: ['A. 地方自治事項', 'B. 上級委辦事項', 'C. 跨區域自治事項', 'D. 共同辦理事項'],
+        ans: 3,
+        exp: '「共同辦理事項」指涉及多個自治團體、需要協商共同辦理的事務。桃園機場捷運橫跨三個行政區，是典型共同辦理案例。'
+      },
+      {
+        q: '若某縣與其轄下某鄉鎮之間，發生地方行政事權爭議，應由哪個機關協調解決？',
+        opts: ['A. 立法院', 'B. 行政院', 'C. 內政部', 'D. 縣政府'],
+        ans: 3,
+        exp: '依地方制度法第 77 條：縣與鄉（鎮、市）之間的事權爭議，由「縣政府」協調解決。記憶口訣：誰管誰，誰解決。'
+      }
+    ]
+  },
+  {
+    id: 8,
+    name: '第八關·民主治理實驗室',
+    narrative: '最終考驗在實驗室中進行。長老說：「現代政府已不再是萬能巨人，也不是消極守夜人——效能政府要與民間合作，更要接受課責。你準備好了嗎？」',
+    knowledge: `
+      <h4>📜 民主治理與課責</h4>
+      <ul>
+        <li><span class="kw">政府角色三演進</span>：有限政府（17–19C）→ 萬能政府（19–20C）→ <strong>效能政府</strong>（20C～現在）</li>
+        <li><span class="kw">PPP 公私協力</span>：政府委外民間，以契約約定內容；例：新北土城醫院委託長庚</li>
+        <li><span class="kw">參與式預算</span>：人民直接決定公共支出；三方合作：<strong>人民＋政府＋民間組織</strong></li>
+        <li><span class="kw">外部課責</span>：制法、議會監督、民意、定期改選</li>
+        <li><span class="kw">內部課責</span>三面向：<br>
+          <strong>透明性</strong>（政府資訊公開法）<br>
+          <strong>代表性</strong>（公聽會/行政程序法）<br>
+          <strong>回應性</strong>（1999 市民服務電話）</li>
+      </ul>
+    `,
+    quizzes: [
+      {
+        q: '新北市政府將某公立醫院委託長庚醫療財團法人興建、管理及經營，政府以契約約定執行內容。這是哪種民主治理模式？',
+        opts: ['A. 參與式預算', 'B. 開放政府', 'C. 公私協力（PPP）', 'D. 審議民主'],
+        ans: 2,
+        exp: '公私協力（PPP）是政府將行政任務委外民間，以契約約定，目的是提升效能、降低成本。新北土城醫院委託長庚是經典案例。'
+      },
+      {
+        q: '台北市松山區讓居民直接提案，由人民決定將公共預算的一部分用於哪些社區計畫。這是哪種民主實踐？',
+        opts: ['A. 公私協力（PPP）', 'B. 參與式預算', 'C. 外部課責', 'D. 地方自治事項'],
+        ans: 1,
+        exp: '參與式預算讓人民直接決定一部分公共支出，居民不只是政策接受方，而是主動參與者——與PPP最大差異是「主體是人民」。'
+      },
+      {
+        q: '政府依《政府資訊公開法》主動公開施政資訊，供人民查閱監督。這屬於民主治理「內部課責」的哪個面向？',
+        opts: ['A. 代表性——讓人民參與決策過程', 'B. 回應性——政府作為回應人民需求', 'C. 透明性——政府資訊向人民公開', 'D. 外部課責——由議會進行監督'],
+        ans: 2,
+        exp: '透明性 ＝ 政府資訊公開法；代表性 ＝ 公聽會/行政程序法；回應性 ＝ 1999 市民服務電話。三者要分清楚！'
+      }
+    ]
+  }
+];
+
+// ─────────────────────────────────────
+// 狀態管理
+// ─────────────────────────────────────
+const STORAGE_KEY = 'c3_progress';
+
+const state = {
+  progress: {},   // { 1: '★★★', 2: '★★☆', ... }
+  current: null,  // 目前關卡 id
+  answers: [],    // 目前作答狀況
+  quizIdx: 0,     // 目前題目索引
+};
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.progress = JSON.parse(raw);
+  } catch { state.progress = {}; }
+}
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+}
+
+function isUnlocked(id) {
+  if (id === 1) return true;
+  return !!state.progress[id - 1];
+}
+
+function getStars(correct, total) {
+  const pct = correct / total;
+  if (pct === 1) return '★★★';
+  if (pct >= 0.67) return '★★☆';
+  if (pct >= 0.6)  return '★☆☆';
+  return '';
+}
+
+// ─────────────────────────────────────
+// 地圖渲染
+// ─────────────────────────────────────
+function renderMap() {
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = '';
+
+  LEVELS.forEach(lv => {
+    const node = document.createElement('div');
+    const stars = state.progress[lv.id] || '';
+    const locked = !isUnlocked(lv.id);
+    let cls = locked ? 'locked' : 'unlocked';
+    if (stars === '★☆☆') cls = 'done-1';
+    if (stars === '★★☆') cls = 'done-2';
+    if (stars === '★★★') cls = 'done-3';
+
+    node.className = `map-node ${cls}`;
+
+    const shortName = lv.name.replace(/第.關·/, '');
+    if (locked) {
+      node.innerHTML = `<div class="node-lock">🔒</div><div class="node-name">${shortName}</div>`;
+    } else {
+      node.innerHTML = `
+        <div class="node-num">${lv.id}</div>
+        <div class="node-name">${shortName}</div>
+        ${stars ? `<div class="node-stars">${stars}</div>` : ''}
+      `;
+      node.onclick = () => startLevel(lv.id);
+    }
+    grid.appendChild(node);
+  });
+}
+
+// ─────────────────────────────────────
+// 起點
+// ─────────────────────────────────────
+function startFromMap() {
+  const firstUnplayed = LEVELS.find(lv => isUnlocked(lv.id) && !state.progress[lv.id]);
+  const id = firstUnplayed ? firstUnplayed.id : 1;
+  startLevel(id);
+}
+
+// ─────────────────────────────────────
+// 關卡畫面
+// ─────────────────────────────────────
+function startLevel(id) {
+  const lv = LEVELS.find(l => l.id === id);
+  if (!lv || !isUnlocked(id)) return;
+
+  state.current = id;
+  state.answers = new Array(lv.quizzes.length).fill(null);
+  state.quizIdx = 0;
+
+  showLevelScreen(lv);
+}
+
+function showLevelScreen(lv) {
+  document.getElementById('screen-title').style.display = 'none';
+  const scr = document.getElementById('screen-level');
+  scr.style.display = 'block';
+  renderLevel(lv);
+}
+
+function renderLevel(lv) {
+  const scr = document.getElementById('screen-level');
+  const answered = state.answers.filter(a => a !== null).length;
+  const pct = answered / lv.quizzes.length;
+
+  scr.innerHTML = `
+    <div class="level-header">
+      <div class="level-badge">${lv.name.split('·')[0]}</div>
+      <div class="level-name">${lv.name.split('·')[1] || ''}</div>
+      <div class="level-prog">${answered}/${lv.quizzes.length} 題</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" style="width:${pct * 100}%"></div>
+    </div>
+    <div class="narrative-box">${lv.narrative}</div>
+    <div class="knowledge-card">${lv.knowledge}</div>
+    ${lv.quizzes.map((q, i) => renderQuiz(q, i)).join('')}
+    <div id="submit-area" style="margin-top:16px"></div>
+  `;
+
+  updateSubmitArea(lv);
+}
+
+function renderQuiz(q, idx) {
+  const ans = state.answers[idx];
+  const answered = ans !== null;
+  const optsHtml = q.opts.map((opt, i) => {
+    let cls = '';
+    if (answered) {
+      if (i === q.ans) cls = 'correct';
+      else if (i === ans && i !== q.ans) cls = 'wrong';
+    }
+    return `<button class="opt-btn ${cls}" ${answered ? 'disabled' : ''}
+      onclick="selectAnswer(${idx}, ${i})">${opt}</button>`;
+  }).join('');
+
+  return `
+    <div class="quiz-card" id="quiz-${idx}">
+      <div class="quiz-num">第 ${idx + 1} 題 / 共 ${LEVELS.find(l => l.id === state.current).quizzes.length} 題</div>
+      <div class="quiz-q">${q.q}</div>
+      <div class="opts-list">${optsHtml}</div>
+      <div class="exp-box ${answered ? 'show' : ''}" id="exp-${idx}">
+        <span class="exp-icon">${ans === q.ans ? '✅' : '❌'}</span>${q.exp}
+      </div>
+    </div>
+  `;
+}
+
+function selectAnswer(quizIdx, optIdx) {
+  if (state.answers[quizIdx] !== null) return;
+
+  state.answers[quizIdx] = optIdx;
+  const lv = LEVELS.find(l => l.id === state.current);
+
+  // 更新按鈕樣式
+  const quiz = lv.quizzes[quizIdx];
+  const card = document.getElementById(`quiz-${quizIdx}`);
+  const btns = card.querySelectorAll('.opt-btn');
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === quiz.ans) btn.classList.add('correct');
+    else if (i === optIdx && i !== quiz.ans) btn.classList.add('wrong');
+  });
+
+  document.getElementById(`exp-${quizIdx}`).classList.add('show');
+  document.getElementById(`exp-${quizIdx}`).querySelector('.exp-icon').textContent =
+    optIdx === quiz.ans ? '✅ ' : '❌ ';
+
+  // 更新進度條
+  const answered = state.answers.filter(a => a !== null).length;
+  const pct = answered / lv.quizzes.length;
+  document.querySelector('.progress-bar-fill').style.width = (pct * 100) + '%';
+  document.querySelector('.level-prog').textContent = `${answered}/${lv.quizzes.length} 題`;
+
+  updateSubmitArea(lv);
+}
+
+function updateSubmitArea(lv) {
+  const area = document.getElementById('submit-area');
+  if (!area) return;
+  const allAnswered = state.answers.every(a => a !== null);
+  if (allAnswered) {
+    area.innerHTML = `<button class="btn-next" onclick="showComplete()">查看結果 →</button>`;
+  } else {
+    const unanswered = state.answers.filter(a => a === null).length;
+    area.innerHTML = `<div style="text-align:center;color:#5a8a7a;font-size:13px;padding:8px">
+      還有 ${unanswered} 題待作答</div>`;
+  }
+}
+
+// ─────────────────────────────────────
+// 完關畫面
+// ─────────────────────────────────────
+function showComplete() {
+  const lv = LEVELS.find(l => l.id === state.current);
+  const correct = state.answers.filter((a, i) => a === lv.quizzes[i].ans).length;
+  const total = lv.quizzes.length;
+  const pct = correct / total;
+  const stars = getStars(correct, total);
+  const passed = pct >= 0.6;
+
+  if (passed) {
+    state.progress[lv.id] = stars;
+    saveProgress();
+    syncToCloud();
+  }
+
+  const scr = document.getElementById('screen-level');
+  const nextId = lv.id + 1;
+  const hasNext = LEVELS.find(l => l.id === nextId);
+  const allDone = Object.keys(state.progress).length >= LEVELS.length;
+
+  if (allDone && passed) {
+    showFinalComplete();
+    return;
+  }
+
+  scr.innerHTML = `
+    <div class="complete-card">
+      <div class="complete-stars">${stars || '─'}</div>
+      <div class="complete-title">${lv.name}</div>
+      <div class="complete-score">${Math.round(pct * 100)}%</div>
+      <div class="score-detail">
+        <div class="score-item">
+          <span class="score-label">答對</span>
+          <span class="score-val">${correct}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">答錯</span>
+          <span class="score-val">${total - correct}</span>
+        </div>
+        <div class="score-item">
+          <span class="score-label">總題</span>
+          <span class="score-val">${total}</span>
+        </div>
+      </div>
+      <div class="complete-msg">
+        ${passed
+          ? (stars === '★★★' ? '完美！滿分通關，謀士之資！' : '通關成功！繼續前進吧。')
+          : `未達60%，需重新作答（需 ${Math.ceil(total * 0.6)} 題答對）`}
+      </div>
+      ${passed && hasNext
+        ? `<button class="btn-next" onclick="startLevel(${nextId})">進入 ${hasNext.name} →</button>`
+        : ''}
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+        <button class="btn-retry" onclick="startLevel(${lv.id})">↺ 重新挑戰</button>
+        <button class="btn-map" onclick="showTitleScreen()">⊞ 關卡地圖</button>
+      </div>
+    </div>
+  `;
+}
+
+function showFinalComplete() {
+  const totalStars = Object.values(state.progress).reduce((sum, s) => sum + (s.split('★').length - 1), 0);
+  const maxStars = LEVELS.length * 3;
+
+  const scr = document.getElementById('screen-level');
+  scr.innerHTML = `
+    <div class="final-card">
+      <div class="final-seal">議<br>政<br>謀<br>士</div>
+      <div class="final-title">議政謀士印記</div>
+      <div class="stars-row">${Object.values(state.progress).join(' ')}</div>
+      <div class="final-desc">
+        恭喜！你通過了憲政學院的八道考驗，從憲政主義的根基出發，掌握三種政府體制的精髓，深入理解我國雙首長制的機制，並觸及民主治理的前沿。「議政謀士印記」正式授予你！
+      </div>
+      <div style="font-size:13px;color:#5a8a7a;margin-bottom:16px">
+        總得星：${totalStars} / ${maxStars} ★
+      </div>
+      <button class="btn-map" onclick="showTitleScreen()">⊞ 回到關卡地圖</button>
+      <button class="btn-home" onclick="goHome()">⌂ 回到首頁</button>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────
+// 畫面切換
+// ─────────────────────────────────────
+function showTitleScreen() {
+  document.getElementById('screen-level').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'block';
+  renderMap();
+  window.scrollTo(0, 0);
+}
+
+// ─────────────────────────────────────
+// Toast 提示
+// ─────────────────────────────────────
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ─────────────────────────────────────
+// 雲端同步
+// ─────────────────────────────────────
+async function syncToCloud() {
+  const STUDENT_KEY = 'hc_student';
+  let s;
+  try { s = JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); }
+  catch { return { ok: false, reason: 'no_student' }; }
+  if (!s || !s.id) return { ok: false, reason: 'no_student' };
+  if (!API_URL || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return { ok: false, reason: 'no_url' };
+
+  const ctrl  = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const params = new URLSearchParams({
+      action : 'set',
+      id     : s.id,
+      name   : s.name || '',
+      c3     : localStorage.getItem(STORAGE_KEY) || '{}',
+      t      : Date.now()
+    });
+    const res  = await fetch(API_URL + '?' + params.toString(), { signal: ctrl.signal });
+    clearTimeout(timer);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { return { ok: false, reason: 'bad_json', detail: text.slice(0, 120) }; }
+    return data.ok ? { ok: true } : { ok: false, reason: 'server_err', detail: data.error || '' };
+  } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') return { ok: false, reason: 'timeout' };
+    if (!navigator.onLine)        return { ok: false, reason: 'offline' };
+    return { ok: false, reason: 'network', detail: err.message };
+  }
+}
+
+function syncErrMsg(r) {
+  if (r.reason === 'timeout')     return '連線逾時，進度已存本機';
+  if (r.reason === 'offline')     return '裝置離線，進度已存本機';
+  if (r.reason === 'no_student')  return '請先在首頁登入';
+  if (r.reason === 'bad_json')    return 'Apps Script 回應異常：' + (r.detail || '');
+  if (r.reason === 'server_err')  return 'Apps Script 錯誤：' + (r.detail || '未知');
+  return '同步失敗（' + (r.detail || r.reason) + '）';
+}
+
+async function goHome() {
+  const btn = document.querySelector('.btn-home');
+  if (btn) { btn.textContent = '⏳ 同步中…'; btn.disabled = true; }
+  const result = await syncToCloud();
+  if (result.ok) {
+    if (btn) btn.textContent = '✓ 已存檔';
+    await new Promise(r => setTimeout(r, 600));
+  } else if (result.reason === 'no_student' || result.reason === 'no_url') {
+    if (btn) btn.textContent = '→ 返回首頁';
+    await new Promise(r => setTimeout(r, 400));
+  } else {
+    const msg = syncErrMsg(result);
+    if (btn) btn.textContent = '⚠ 同步失敗';
+    showToast(msg, 3000);
+    await new Promise(r => setTimeout(r, 3200));
+  }
+  window.location.href = 'index.html';
+}
+
+// ─────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────
+loadProgress();
+renderMap();
+</script>
+</body>
+</html>
