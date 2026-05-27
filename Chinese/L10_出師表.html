@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出師表｜初入朝廷的謀士</title>
+<style>
+  :root {
+    --ink: #1c1008;
+    --parchment: #f0e6cc;
+    --parchment-dark: #dcc898;
+    --red: #7a1a0a;
+    --gold: #9a7010;
+    --gold-light: #c49020;
+    --jade: #2d6a4f;
+    --shadow: rgba(28,16,8,0.20);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Noto Serif TC', serif;
+    background: #0d0a04;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #app {
+    width: 100%;
+    max-width: 680px;
+    min-height: 100vh;
+    background: var(--parchment);
+    background-image:
+      radial-gradient(ellipse at top, #f9f0dc 0%, var(--parchment) 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(154,112,16,0.06) 29px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── decorative border ── */
+  #app::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 680px;
+    height: 100%; pointer-events: none; z-index: 999;
+    border: 3px solid var(--gold);
+    box-shadow: inset 0 0 0 6px rgba(154,112,16,0.15);
+  }
+
+  /* ══ TITLE SCREEN ══ */
+  #screen-title {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; padding: 40px 24px; text-align: center;
+  }
+  .title-seal {
+    width: 88px; height: 88px;
+    border: 3px solid var(--red);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: var(--red);
+    margin-bottom: 24px;
+    box-shadow: 2px 2px 0 var(--red), inset 0 0 8px rgba(122,26,10,0.12);
+    letter-spacing: 2px;
+    writing-mode: vertical-rl;
+    font-weight: bold;
+  }
+  .title-main {
+    font-size: 26px; font-weight: bold;
+    color: var(--red); letter-spacing: 4px;
+    margin-bottom: 8px; line-height: 1.4;
+  }
+  .title-sub {
+    font-size: 13px; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 6px;
+  }
+  .title-author {
+    font-size: 13px; color: #666;
+    margin-bottom: 32px; letter-spacing: 2px;
+  }
+  .divider {
+    width: 180px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 16px auto;
+  }
+  .title-desc {
+    font-size: 14px; line-height: 1.9; color: #444;
+    max-width: 380px; margin-bottom: 36px;
+  }
+  .map-grid {
+    display: grid; grid-template-columns: repeat(6,1fr);
+    gap: 10px; width: 100%; max-width: 420px; margin-bottom: 32px;
+  }
+  .map-node {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--gold);
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 10px; color: #888;
+    cursor: pointer; transition: all .2s;
+    background: rgba(255,255,255,0.4);
+    padding: 2px;
+    text-align: center; line-height: 1.2;
+  }
+  .map-node.unlocked { color: var(--ink); background: rgba(255,255,255,0.7); cursor: pointer; }
+  .map-node.unlocked:hover { background: #fff; border-color: var(--red); color: var(--red); }
+  .map-node.completed { background: var(--jade); border-color: var(--jade); color: #fff; }
+  .map-node.locked { opacity: .45; cursor: not-allowed; }
+  .map-node .node-num { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+  .btn-start {
+    background: var(--red); color: #fff;
+    border: none; padding: 14px 48px;
+    font-size: 16px; letter-spacing: 4px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px;
+    box-shadow: 3px 3px 0 #4a0a04;
+    transition: all .15s;
+  }
+  .btn-start:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #4a0a04; }
+  .btn-start:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #4a0a04; }
+  .btn-home {
+    margin-top: 12px;
+    background: none; border: 1.5px solid rgba(122,26,10,0.35);
+    color: var(--red); padding: 9px 32px;
+    font-size: 13px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit; border-radius: 2px;
+    transition: all .15s;
+  }
+  .btn-home:hover { background: rgba(122,26,10,0.07); border-color: var(--red); }
+
+  /* ══ LEVEL SCREEN ══ */
+  #screen-level { display: none; min-height: 100vh; padding-bottom: 40px; }
+  .level-header {
+    background: var(--red);
+    padding: 16px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .level-header-left { display: flex; align-items: center; gap: 12px; }
+  .level-badge {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 3px; display: flex;
+    align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: bold;
+  }
+  .level-title-text { color: #fff; }
+  .level-title-text .lv-num { font-size: 11px; opacity: .8; letter-spacing: 2px; }
+  .level-title-text .lv-name { font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+  .btn-back {
+    background: none; border: 1.5px solid rgba(255,255,255,0.5);
+    color: #fff; padding: 6px 14px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    letter-spacing: 1px; border-radius: 2px;
+  }
+  .progress-bar-wrap { height: 5px; background: var(--parchment-dark); }
+  .progress-bar { height: 100%; background: var(--gold); transition: width .4s; }
+
+  /* ── sections ── */
+  .section { padding: 24px 20px; }
+  .section + .section { border-top: 1px dashed rgba(154,112,16,0.3); }
+  .section-tag {
+    display: inline-block; font-size: 11px; letter-spacing: 3px;
+    color: #fff; background: var(--gold); padding: 2px 10px;
+    margin-bottom: 14px;
+  }
+  .section-tag.red { background: var(--red); }
+  .section-tag.jade { background: var(--jade); }
+
+  /* narrative */
+  .narrative-box {
+    background: rgba(255,255,255,0.55);
+    border-left: 3px solid var(--gold);
+    padding: 16px 18px; font-size: 15px;
+    line-height: 2; color: #2a1a00;
+    border-radius: 0 4px 4px 0;
+  }
+  .narrative-box .npc-name {
+    font-size: 12px; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 8px;
+    display: block;
+  }
+
+  /* knowledge card */
+  .knowledge-card {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--gold-light);
+    border-radius: 4px; padding: 16px 18px;
+    font-size: 14px; line-height: 1.9;
+  }
+  .knowledge-card h4 {
+    color: var(--red); font-size: 14px;
+    letter-spacing: 2px; margin-bottom: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid rgba(154,112,16,0.3);
+  }
+  .knowledge-card ul { padding-left: 18px; }
+  .knowledge-card li { margin-bottom: 6px; }
+  .knowledge-card .kw { color: var(--red); font-weight: bold; }
+  .knowledge-card table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .knowledge-card th {
+    background: rgba(154,112,16,0.15);
+    padding: 6px 8px; text-align: left;
+    border: 1px solid rgba(154,112,16,0.3);
+    font-weight: normal; letter-spacing: 1px;
+  }
+  .knowledge-card td {
+    padding: 6px 8px; border: 1px solid rgba(154,112,16,0.2);
+    vertical-align: top;
+  }
+  .quote-box {
+    background: rgba(45,106,79,0.08);
+    border: 1px dashed var(--jade);
+    border-radius: 4px; padding: 12px 16px;
+    font-size: 14px; line-height: 1.9;
+    margin-top: 10px; color: #1a3a2a;
+  }
+
+  /* quiz */
+  .quiz-wrap { display: flex; flex-direction: column; gap: 28px; }
+  .quiz-item {}
+  .quiz-q {
+    font-size: 15px; line-height: 1.8;
+    margin-bottom: 14px; color: var(--ink);
+    font-weight: bold;
+  }
+  .quiz-q .q-num {
+    display: inline-block; width: 24px; height: 24px;
+    background: var(--red); color: #fff;
+    font-size: 12px; border-radius: 2px;
+    text-align: center; line-height: 24px;
+    margin-right: 8px; font-weight: normal;
+  }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice-btn {
+    background: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(154,112,16,0.4);
+    padding: 12px 16px; font-size: 14px;
+    line-height: 1.6; cursor: pointer;
+    font-family: inherit; text-align: left;
+    border-radius: 3px; transition: all .15s;
+    color: var(--ink);
+  }
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--gold); background: rgba(255,255,255,0.9);
+  }
+  .choice-btn.correct {
+    background: rgba(45,106,79,0.15);
+    border-color: var(--jade); color: var(--jade);
+  }
+  .choice-btn.wrong {
+    background: rgba(122,26,10,0.1);
+    border-color: var(--red); color: var(--red);
+  }
+  .choice-btn:disabled { cursor: default; }
+  .feedback-box {
+    margin-top: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.7;
+    border-radius: 3px; display: none;
+  }
+  .feedback-box.correct {
+    background: rgba(45,106,79,0.1);
+    border-left: 3px solid var(--jade);
+    color: var(--jade); display: block;
+  }
+  .feedback-box.wrong {
+    background: rgba(122,26,10,0.08);
+    border-left: 3px solid var(--red);
+    color: #7a1a0a; display: block;
+  }
+
+  /* level complete */
+  .level-complete {
+    display: none; text-align: center;
+    padding: 32px 20px;
+  }
+  .complete-seal {
+    width: 100px; height: 100px;
+    border: 3px solid var(--jade);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+    color: var(--jade); writing-mode: vertical-rl;
+    font-weight: bold; letter-spacing: 2px;
+    box-shadow: 3px 3px 0 rgba(45,106,79,0.3);
+  }
+  .complete-title { font-size: 20px; color: var(--jade); letter-spacing: 3px; margin-bottom: 8px; }
+  .complete-score { font-size: 14px; color: #666; margin-bottom: 24px; }
+  .btn-next {
+    background: var(--jade); color: #fff;
+    border: none; padding: 14px 40px;
+    font-size: 15px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px; box-shadow: 3px 3px 0 #1a4a2f;
+    margin: 8px; transition: all .15s;
+  }
+  .btn-next:hover { transform: translate(-1px,-1px); }
+  .btn-submit {
+    background: var(--red); color: #fff;
+    border: none; padding: 13px 36px;
+    font-size: 14px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px; box-shadow: 2px 2px 0 #4a0a04;
+    margin-top: 20px; display: block; width: 100%;
+    transition: all .15s;
+  }
+  .btn-submit:hover { opacity: .9; }
+  .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+  .stars { font-size: 28px; margin-bottom: 8px; }
+  em { color: var(--red); font-style: normal; font-weight: bold; }
+
+  @media (max-width: 420px) {
+    .title-main { font-size: 22px; }
+    .knowledge-card { font-size: 13px; }
+    .quiz-q { font-size: 14px; }
+    .choice-btn { font-size: 13px; padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ TITLE SCREEN ══ -->
+<div id="screen-title">
+  <div class="title-seal">出師</div>
+  <div class="title-main">出師表</div>
+  <div class="title-sub">初入朝廷的謀士</div>
+  <div class="title-author">諸葛亮｜高中國文第二冊第十課</div>
+  <div class="divider"></div>
+  <div class="title-desc">
+    你化身為「初入朝廷的謀士」，<br>
+    北伐前夕，諸葛丞相召你入帳，<br>
+    親授十一道考驗。<br>
+    通過全部關卡，方能獲得「隨軍參謀」之職，<br>
+    與丞相並肩出征，還於舊都。
+  </div>
+  <div class="map-grid" id="map-grid"></div>
+  <button class="btn-start" onclick="startFromMap()">開始冒險</button>
+  <button class="btn-home"  onclick="goHome()">⌂ 回到首頁</button>
+</div>
+
+<!-- ══ LEVEL SCREEN ══ -->
+<div id="screen-level">
+  <div class="level-header">
+    <div class="level-header-left">
+      <div class="level-badge" id="lv-badge">01</div>
+      <div class="level-title-text">
+        <div class="lv-num" id="lv-num-text">第一關</div>
+        <div class="lv-name" id="lv-name-text"></div>
+      </div>
+    </div>
+    <button class="btn-back" onclick="goTitle()">&#9664; 地圖</button>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  <div id="level-content"></div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ══════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════
+const LEVELS = [
+{
+  id: 1,
+  name: '草廬尋賢·臥龍出山',
+  tag: '第一關',
+  narrative: `【諸葛丞相】\n丞相大帳之中，燭光搖曳。\n\n你跪伏在地，聽見一道沉穩的聲音緩緩開口：\n\n「謀士，北伐在即，行軍之前，吾當考驗汝之才學。\n欲隨本相出征，先答吾問——汝可知本相身世？」\n\n帳簾外，秋風颯颯，遠處傳來軍鼓之聲。`,
+  knowledge: {
+    title: '諸葛亮其人其事',
+    content: `<ul>
+      <li><span class="kw">字號</span>：字孔明，號臥龍</li>
+      <li><span class="kw">生卒</span>：181–234年，三國時代蜀漢丞相</li>
+      <li><span class="kw">三顧茅廬</span>：207年，劉備三訪南陽，諸葛亮時年27歲出山</li>
+      <li><span class="kw">代表作</span>：〈前出師表〉〈後出師表〉〈誡子書〉〈隆中對〉</li>
+      <li><span class="kw">本課</span>：〈前出師表〉，建興五年（227年）北伐前所上</li>
+    </ul>
+    <div class="quote-box">⚠️ 注意：「<em>鞠躬盡瘁，死而後已</em>」出自〈後出師表〉，非本課。</div>`
+  },
+  quizzes: [
+    {
+      q: '諸葛亮的字與號分別為何？',
+      choices: [
+        '字仲達，號臥龍',
+        '字孔明，號臥龍',
+        '字孔明，號伏龍',
+        '字元直，號諸葛'
+      ],
+      answer: 1,
+      feedback: '「孔明」為字，「臥龍」為號，兩者並用，是後人對諸葛亮最熟悉的稱謂。'
+    },
+    {
+      q: '「三顧茅廬」發生於何年？諸葛亮當時幾歲出山？',
+      choices: [
+        '207年，27歲',
+        '220年，40歲',
+        '200年，20歲',
+        '208年，30歲'
+      ],
+      answer: 0,
+      feedback: '207年劉備三顧南陽，諸葛亮（181年生）時年27歲，從此輔佐蜀漢，「受任於敗軍之際，奉命於危難之間」。'
+    },
+    {
+      q: '下列哪一句話出自〈後出師表〉而非〈前出師表〉（本課）？',
+      choices: [
+        '「誠宜開張聖聽，以光先帝遺德」',
+        '「親賢臣，遠小人，此先漢所以興隆也」',
+        '「鞠躬盡瘁，死而後已」',
+        '「受任於敗軍之際，奉命於危難之間」'
+      ],
+      answer: 2,
+      feedback: '「鞠躬盡瘁，死而後已」是〈後出師表〉的名句，不在本課〈前出師表〉中，常見考題陷阱。'
+    }
+  ]
+},
+{
+  id: 2,
+  name: '秋色警急·存亡之秋',
+  tag: '第二關',
+  narrative: `【諸葛丞相】\n丞相展開一幅巨大的地圖，以手指劃向北方：\n\n「建興五年，天下三分，益州疲弊。\n漢室將傾，存亡之際，本相以此表上陳陛下。\n謀士，汝可知當年天下形勢，與本相上表之深意？」\n\n燭光映照在地圖上，魏、吳、蜀三國的疆界清晰可見。`,
+  knowledge: {
+    title: '寫作背景與開篇主旨',
+    content: `<ul>
+      <li><span class="kw">時間</span>：建興五年（227年），蜀漢北伐前夕</li>
+      <li><span class="kw">「秋」字義</span>：「危急存亡之秋」——「秋」指<em>時候、關鍵時刻</em>，非季節</li>
+      <li><span class="kw">形勢</span>：天下三分，益州疲弊，漢室衰微</li>
+      <li><span class="kw">主旨</span>：報先帝之遺恩＋忠陛下之所託</li>
+    </ul>
+    <div class="quote-box">
+      📌 <b>三項諫言框架：</b><br>
+      ① 廣開言路（第一段）<br>
+      ② 秉公執法（第二段）<br>
+      ③ 親賢遠佞（第三段）
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「今天下三分，益州疲弊，此誠危急存亡之秋也」，句中「秋」字的意思為？',
+      choices: [
+        '秋天，指北伐應在秋季進行',
+        '收穫時機，指北伐將獲大捷',
+        '時候、關鍵時刻',
+        '蕭條衰落的景象'
+      ],
+      answer: 2,
+      feedback: '「秋」在此為古義，意為「時候、關鍵時刻」，「存亡之秋」即「生死存亡的關鍵時刻」，非指季節。'
+    },
+    {
+      q: '〈出師表〉的寫作時間與目的，何者最正確？',
+      choices: [
+        '赤壁之戰後，勸劉備休養生息',
+        '建興五年（227年），北伐前上表勸諫並表明忠心',
+        '劉備白帝城託孤時，表明輔政決心',
+        '夷陵之戰後，請求削藩以鞏固蜀漢'
+      ],
+      answer: 1,
+      feedback: '227年北伐前，諸葛亮上此表，主旨有二：一為向後主提三項建議（忠諫），二為自述身世表明北伐決心（忠誠）。'
+    },
+    {
+      q: '本文「報先帝而忠陛下」中，「先帝」與「陛下」分別指誰？',
+      choices: [
+        '先帝指漢高祖劉邦，陛下指漢武帝',
+        '先帝指劉備，陛下指劉禪',
+        '先帝指劉備，陛下指孫權',
+        '先帝指關羽，陛下指劉禪'
+      ],
+      answer: 1,
+      feedback: '「先帝」指已故的劉備，「陛下」指繼位的劉禪（後主）。全文出現「先帝」13次、「陛下」7次，是諸葛亮情感說服的核心策略。'
+    }
+  ]
+},
+{
+  id: 3,
+  name: '宮廷辨章·表體識別',
+  tag: '第三關',
+  narrative: `【宮廷文庫守衛】\n你被引至宮廷文庫之中，四壁陳列著歷代奏章。\n\n守衛冷聲道：\n\n「這裡收藏了漢代以來的所有公文體裁。\n要進入下一道門，你必須辨清——\n何謂『表』？它與其他公文有何不同？」\n\n金色的封印浮現在最高層的書架上，等待破解。`,
+  knowledge: {
+    title: '文體「表」｜漢代四體識別',
+    content: `<table>
+      <tr><th>文體</th><th>功能</th><th>代表作</th></tr>
+      <tr><td><em>章</em></td><td>謝恩</td><td>各類謝恩章</td></tr>
+      <tr><td><em>奏</em></td><td>彈劾</td><td>各類奏疏</td></tr>
+      <tr><td><em>表</em></td><td>陳情</td><td>〈出師表〉〈陳情表〉</td></tr>
+      <tr><td><em>議</em></td><td>論議</td><td>各類政論</td></tr>
+    </table>
+    <div class="quote-box">
+      📌 記憶口訣：<em>章奏表議</em><br><br>
+      劉勰《文心雕龍》：「<em>表者，標也</em>」——明標心跡<br><br>
+      「表」三大特徵：<br>
+      ① 情感真摯（臣子向君主陳情）<br>
+      ② 結構嚴整（有明確論點與層次）<br>
+      ③ 對象明確（稱「陛下」）<br><br>
+      名言：「<em>讀出師表不哭者不忠，讀陳情表不哭者不孝</em>」
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '漢代「章奏表議」四種文體，「表」的主要功能為何？',
+      choices: [
+        '謝恩',
+        '彈劾',
+        '陳情',
+        '論議'
+      ],
+      answer: 2,
+      feedback: '「章」謝恩、「奏」彈劾、「表」陳情、「議」論議，記憶口訣「章奏表議」。「表」是臣子向君主陳述情志、表達忠誠的文體。'
+    },
+    {
+      q: '劉勰《文心雕龍》說「表者，標也」，這句話最貼切的解釋是？',
+      choices: [
+        '表是用來標示地圖方位的文書',
+        '表是臣子明標心跡、陳情表意的文體',
+        '表是記錄朝廷標準的規範文書',
+        '表是皇帝標示賞罰的詔書'
+      ],
+      answer: 1,
+      feedback: '「標」即「明標」之意，表的功能是讓臣子「明標心跡」——公開表達自己的情志與忠誠，是寫給君主的陳情文書。'
+    },
+    {
+      q: '下列哪一項是「表」這種文體的三大特徵之一？',
+      choices: [
+        '以諷刺與批判為主，不得直接歌頌君主',
+        '必須有駢文形式，講究四六對仗',
+        '情感真摯，臣子向君主陳情表忠',
+        '以第三人稱客觀敘述，不帶個人情感'
+      ],
+      answer: 2,
+      feedback: '「表」的三大特徵：情感真摯、結構嚴整、對象明確（稱陛下）。〈出師表〉正是情感最為充沛的代表作。'
+    }
+  ]
+},
+{
+  id: 4,
+  name: '聖聽廣開·忠諫守門',
+  tag: '第四關',
+  narrative: `【諸葛丞相】\n丞相緩步走到殿中，轉身面向你：\n\n「吾對陛下有三項諫言，此為第一：\n廣開言路。陛下年少繼位，若閉塞言路，\n忠諫之士將無從進言，此乃取禍之道。」\n\n他攤開上表，指向第一段文字，聲音沉穩而懇切。`,
+  knowledge: {
+    title: '第一段｜廣開言路（諫言之一）',
+    content: `<ul>
+      <li><span class="kw">核心主張</span>：廣開言路，不得妄自菲薄</li>
+      <li>核心文句：「誠宜<em>開張聖聽</em>，以光先帝遺德，恢弘志士之氣；不宜<em>妄自菲薄</em>，引喻失義，以塞忠諫之路也。」</li>
+    </ul>
+    <table>
+      <tr><th>詞語</th><th>音讀</th><th>釋義</th></tr>
+      <tr><td><em>妄自菲薄</em></td><td>菲：ㄈㄟˇ</td><td>隨意輕視自己的才能</td></tr>
+      <tr><td><em>引喻失義</em></td><td></td><td>比喻不當，言辭失當</td></tr>
+      <tr><td><em>開張聖聽</em></td><td></td><td>廣泛聆聽各方意見</td></tr>
+    </table>
+    <div class="quote-box">💡 三個成語出自本段：<em>妄自菲薄、廣開言路、引喻失義</em></div>`
+  },
+  quizzes: [
+    {
+      q: '「不宜妄自菲薄」中「菲薄」的古義與現代「菲薄」有何不同？',
+      choices: [
+        '古今義相同，皆指謙遜低調',
+        '古義指輕視自己才能；今義指微薄、不豐厚',
+        '古義指豐盛富足；今義指輕視自己',
+        '古今義相同，皆指非常薄弱'
+      ],
+      answer: 1,
+      feedback: '古義「菲薄」（菲音ㄈㄟˇ）指「輕視、不重視」，「妄自菲薄」即隨意輕視自己的才能；現代「菲薄」則多指「微薄、不豐厚」（如薪水菲薄）。'
+    },
+    {
+      q: '「誠宜開張聖聽」中「開張」的古義為何？與今義差別為何？',
+      choices: [
+        '古今義相同，皆指商店開張營業',
+        '古義：擴大、廣開；今義：商店開始營業',
+        '古義：大聲說話；今義：歡慶開幕',
+        '古義：打開門窗；今義：張揚炫耀'
+      ],
+      answer: 1,
+      feedback: '這是重要的古今義考點。「開張聖聽」的「開張」古義為「擴大、廣泛」，完全不同於今日「商店開業」的意思。'
+    },
+    {
+      q: '第一段諫言「廣開言路」的目的，何者最完整？',
+      choices: [
+        '讓百官有機會彼此監督，避免腐敗',
+        '光揚先帝遺德、鼓舞志士之氣，防止忠諫之路被堵塞',
+        '蒐集民間情報，掌握各地動態',
+        '讓諸葛亮能夠直接向後主進言'
+      ],
+      answer: 1,
+      feedback: '諸葛亮的三項諫言各有其目的。廣開言路是為了「以光先帝遺德，恢弘志士之氣」，同時防止「塞忠諫之路」，是為蜀漢長遠穩固的基礎。'
+    }
+  ]
+},
+{
+  id: 5,
+  name: '公正天秤·賞罰一體',
+  tag: '第五關',
+  narrative: `【諸葛丞相】\n丞相緩緩走向帳中的一架天秤，兩端各置一塊砝碼：\n\n「第二諫：秉公執法。\n宮中府中，俱為一體。\n若賞罰有異，法紀必亂，蜀漢必傾。\n謀士，此段文字，你可能逐字讀懂？」`,
+  knowledge: {
+    title: '第二段｜秉公執法（諫言之二）',
+    content: `<ul>
+      <li>核心文句：「宮中府中，俱為一體，<em>陟罰臧否</em>，不宜異同。」</li>
+    </ul>
+    <table>
+      <tr><th>詞語</th><th>音讀</th><th>釋義</th></tr>
+      <tr><td><em>陟</em></td><td>ㄓˋ</td><td>升遷、提拔</td></tr>
+      <tr><td><em>臧</em></td><td>ㄗㄤ</td><td>善、好</td></tr>
+      <tr><td><em>否</em></td><td>ㄆㄧˇ</td><td>惡、壞</td></tr>
+    </table>
+    <div class="quote-box">
+      📌 <b>修辭：錯綜（交蹉語次）</b><br>
+      「陟罰臧否」= 原本應為「陟臧罰否」（賞善罰惡），<br>
+      將語序交錯排列，使文字更工整有力。<br><br>
+      📌 <b>偏義複詞</b><br>
+      「異同」偏重於「<em>異</em>」（差別對待），「同」字義消退。
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「陟罰臧否，不宜異同」中「異同」屬於哪種語法現象？',
+      choices: [
+        '同義複詞，「異」與「同」意思相近',
+        '偏義複詞，偏重「異」（差別對待），「同」字義消退',
+        '反義複詞，強調賞罰的相對性',
+        '並列複詞，「異」與「同」各占一半語義'
+      ],
+      answer: 1,
+      feedback: '「異同」是偏義複詞，此處偏重「異」（差別對待），意為「不應以不同標準賞罰」。「同」字的語義在此消退，僅剩「異」的語義主導。'
+    },
+    {
+      q: '「陟罰臧否」依照字面順序，字義應為「升遷懲罰善惡」。但就語意邏輯，它實際表達的是？',
+      choices: [
+        '先升遷再懲罰，善惡並重',
+        '先判斷善惡，再決定賞罰（賞善罰惡），語序交蹉',
+        '賞罰都應公開宣布，不得私下決定',
+        '嚴厲懲罰所有言行失當之人'
+      ],
+      answer: 1,
+      feedback: '這是「錯綜（交蹉語次）」修辭。「陟罰臧否」原邏輯應為「陟臧罰否」（獎賞好的、懲罰壞的），但語序交蹉後變成「陟罰臧否」，意思不變但更工整有力。'
+    },
+    {
+      q: '「宮中府中，俱為一體」這句話的意思與目的為何？',
+      choices: [
+        '宮殿與丞相府距離很近，地理上是一體的',
+        '皇宮（後主）與丞相府（諸葛亮）必須合作，共同治國',
+        '宮中與府中應使用相同的法律標準，一視同仁，秉公執法',
+        '皇宮的事務應全部移交丞相府處理'
+      ],
+      answer: 2,
+      feedback: '諸葛亮強調「宮中府中，俱為一體」，是說無論是皇宮還是丞相府的官員，都應接受同一套賞罰標準，不得有所偏袒，這是秉公執法的核心。'
+    }
+  ]
+},
+{
+  id: 6,
+  name: '朝堂辨賢·親賢遠佞',
+  tag: '第六關',
+  narrative: `【諸葛丞相】\n丞相沉默片刻，面色嚴肅：\n\n「第三諫，亦是最重要的一諫：親賢遠佞。\n先帝常言：親賢臣則興，近小人則亡。\n前漢之所以興隆，後漢之所以傾頹，正在於此。\n謀士，吾為陛下推薦的賢臣，你可知曉？」`,
+  knowledge: {
+    title: '第三段｜親賢遠佞（諫言之三）',
+    content: `<ul>
+      <li><span class="kw">推薦文臣</span>：郭攸之、費禕（ㄧˉ）、董允——志慮忠純</li>
+      <li><span class="kw">推薦武臣</span>：向寵——性行淑均，曉暢軍事</li>
+      <li>核心文句：「<em>親賢臣，遠小人，此先漢所以興隆也；親小人，遠賢臣，此後漢所以傾頹也。</em>」</li>
+    </ul>
+    <table>
+      <tr><th>項目</th><th>先漢（興）</th><th>後漢（衰）</th></tr>
+      <tr><td>政策</td><td>親賢臣</td><td>親小人</td></tr>
+      <tr><td>結果</td><td>興隆</td><td>傾頹</td></tr>
+    </table>
+    <div class="quote-box">
+      📌 <b>古今義：「所以」</b><br>
+      古義：何以、原因（此先漢<em>所以</em>興隆也＝這是先漢興隆的原因）<br>
+      今義：因此、表結果的連詞（我努力，所以成功）
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '諸葛亮在第三段推薦郭攸之、費禕、董允，稱其「志慮忠純」；推薦向寵，說他「性行淑均，曉暢軍事」。這兩組人才分別屬於哪種職務？',
+      choices: [
+        '郭費董為武將，向寵為文臣',
+        '郭費董為文臣，向寵為武將',
+        '四人皆為文臣，分管不同部門',
+        '四人皆為武將，負責不同方面的軍事'
+      ],
+      answer: 1,
+      feedback: '郭攸之、費禕、董允為文官（「宮中之事」），向寵為武將（「營中之事」，曉暢軍事），是諸葛亮為後主精心挑選的治國輔佐人才。'
+    },
+    {
+      q: '「此先漢所以興隆也」中「所以」的意思，與現代用法有何不同？',
+      choices: [
+        '古今用法相同，皆表示「因此、所以」',
+        '古義：原因、何以；今義：表示結果的連詞',
+        '古義：方法、途徑；今義：表示假設的連詞',
+        '古今用法不同，但意思恰好相反'
+      ],
+      answer: 1,
+      feedback: '這是重要的古今義考題。「此先漢所以興隆也」的「所以」古義為「……的原因」（名詞），翻譯為「這是先漢興隆的原因」；現代「所以」則是表結果的連詞。'
+    },
+    {
+      q: '諸葛亮以「先漢興↔後漢衰」對比論證親賢遠佞的重要性，這種論證方法稱為？',
+      choices: [
+        '歸納論證——從多個例子歸納出規律',
+        '對比論證——以正反對照強化論點',
+        '類比論證——以相似案例推論結果',
+        '因果論證——說明行為與結果的因果關係'
+      ],
+      answer: 1,
+      feedback: '先漢（親賢→興）vs 後漢（親小人→衰），正反對照，是典型的「對比論證」手法，使說服力更強、結論更清晰。'
+    }
+  ]
+},
+{
+  id: 7,
+  name: '布衣心聲·臣本布衣',
+  tag: '第七關',
+  narrative: `【諸葛丞相】\n說完三諫，丞相轉身，遙望帳外的星空，沉默良久。\n\n「謀士，吾今日說的，不只是兵法，\n亦是吾這半生的心路。\n臣本布衣，躬耕於南陽……\n先帝不棄，方有今日。」\n\n他的聲音，此刻有了一絲不易察覺的哽咽。`,
+  knowledge: {
+    title: '第四段（前半）｜身世自述',
+    content: `<ul>
+      <li>核心文句：
+        <ul>
+          <li>「臣本<em>布衣</em>，躬耕於南陽，苟全性命於亂世，不求聞達於諸侯。」</li>
+          <li>「先帝不以臣<em>卑鄙</em>，<em>猥</em>自枉屈，三顧臣於草廬之中，諮臣以當世之事。」</li>
+          <li>「由是<em>感激</em>，遂許先帝以驅馳。」</li>
+        </ul>
+      </li>
+    </ul>
+    <table>
+      <tr><th>詞語</th><th>古義</th><th>今義</th></tr>
+      <tr><td><em>卑鄙</em></td><td>身分卑微、地位低下</td><td>品行惡劣</td></tr>
+      <tr><td><em>感激</em></td><td>感動激奮</td><td>衷心感謝</td></tr>
+      <tr><td><em>猥</em></td><td>有辱對方（謙詞）</td><td>卑賤下流</td></tr>
+    </table>
+    <div class="quote-box">📌 <b>借代</b>：「<em>布衣</em>」代指平民百姓（古代平民穿布衣，士大夫穿絲綢）</div>`
+  },
+  quizzes: [
+    {
+      q: '「先帝不以臣卑鄙，猥自枉屈，三顧臣於草廬之中」，此處「卑鄙」的意思為？',
+      choices: [
+        '品行惡劣、行為低賤（現代義）',
+        '身分卑微、地位低下（古義）',
+        '謙虛低調、不張揚',
+        '膽怯懦弱、不敢當大任'
+      ],
+      answer: 1,
+      feedback: '「卑鄙」是重要的古今義考點。古義指「身分卑微、地位低下」（卑=身分低，鄙=地處偏僻），諸葛亮以此自謙；今義則指品行惡劣，意思截然不同。'
+    },
+    {
+      q: '「由是感激，遂許先帝以驅馳」，此處「感激」的古義與今義有何不同？',
+      choices: [
+        '古今義相同，皆表示心存感謝',
+        '古義：感動激奮（受感動而振奮）；今義：衷心感謝',
+        '古義：感到憤激、憤恨；今義：激動感謝',
+        '古義：受到感動而激烈行動；今義：輕微的感謝'
+      ],
+      answer: 1,
+      feedback: '「感激」古義為「感動激奮」，諸葛亮被劉備三顧茅廬的誠意所感動，激奮而決意效命；現代「感激」則偏向「衷心感謝」，情感較為平和，兩者有所不同。'
+    },
+    {
+      q: '「臣本布衣，躬耕於南陽」中「布衣」是哪種修辭手法？',
+      choices: [
+        '象徵——布衣象徵清廉正直的品格',
+        '借代——以「布衣」（穿的衣物）代指平民身分',
+        '轉化——將布衣人格化，賦予其志向',
+        '借喻——以布衣比喻諸葛亮的一生'
+      ],
+      answer: 1,
+      feedback: '「布衣」是借代。古代平民穿布衣，士大夫穿絲綢，故以「布衣」代指平民身分。諸葛亮以此自謙，說明自己出身普通，並無顯赫背景。'
+    }
+  ]
+},
+{
+  id: 8,
+  name: '二十一年·受任危難',
+  tag: '第八關',
+  narrative: `【諸葛丞相】\n丞相轉回身來，眼中已有淚光：\n\n「受任於敗軍之際，奉命於危難之間，\n爾來二十有一年矣！\n\n這二十一年，本相夙夜憂嘆，\n只恐辜負先帝之託。\n\n如今北伐在即，不知所云，\n只願還於舊都，以報先帝。」`,
+  knowledge: {
+    title: '第四段（後半）｜忠誠表白與北伐決心',
+    content: `<ul>
+      <li>核心文句：
+        <ul>
+          <li>「受任於<em>敗軍之際</em>，奉命於<em>危難之間</em>，爾來二十有一年矣！」</li>
+          <li>「受命以來，<em>夙夜</em>憂嘆，恐託付不效，以傷先帝之明。」</li>
+          <li>「當獎率三軍，北定中原，庶竭<em>駑鈍</em>，攘除姦凶，興復漢室，還於舊都。」</li>
+          <li>「今當遠離，臨表<em>涕泣</em>，不知所云。」</li>
+        </ul>
+      </li>
+    </ul>
+    <table>
+      <tr><th>詞語</th><th>釋義</th></tr>
+      <tr><td><em>夙夜</em></td><td>早晚、日夜（夙=早晨）</td></tr>
+      <tr><td><em>庶</em></td><td>希望（副詞）</td></tr>
+      <tr><td><em>效</em></td><td>成效、成功</td></tr>
+      <tr><td><em>當</em></td><td>將要（副詞）</td></tr>
+    </table>
+    <div class="quote-box">💡 成語：<em>不知所云</em>（語出本段）——原指情緒激動語無倫次，今指說話不知所謂</div>`
+  },
+  quizzes: [
+    {
+      q: '「受任於敗軍之際，奉命於危難之間，爾來二十有一年矣」，此段描述的是哪一段歷史時期？',
+      choices: [
+        '從三顧茅廬（207年）至北伐出征（228年）的約21年',
+        '從赤壁之戰到夷陵之戰的21年',
+        '從諸葛亮出生到出山為官的21年',
+        '從劉備稱帝到北伐的21年'
+      ],
+      answer: 0,
+      feedback: '207年劉備三顧茅廬，諸葛亮出山；227年上〈出師表〉，次年（228年）北伐。「爾來二十有一年」指這段君臣相知相守的歲月，充滿了情感重量。'
+    },
+    {
+      q: '「庶竭駑鈍，攘除姦凶，興復漢室，還於舊都」，句中「庶」字的意思為？',
+      choices: [
+        '平民百姓（庶民）',
+        '希望、但願',
+        '差不多、幾乎',
+        '眾多、大量'
+      ],
+      answer: 1,
+      feedback: '「庶」在此為副詞，意為「希望、但願」，表達諸葛亮北伐的決心：「希望盡我駑鈍之力，剷除奸凶，興復漢室，還都洛陽。」'
+    },
+    {
+      q: '「臨表涕泣，不知所云」，諸葛亮在此表達什麼情感？「不知所云」是什麼意思？',
+      choices: [
+        '表達憤怒，「不知所云」指不知敵人在說什麼',
+        '表達激動哽咽、感慨萬千，「不知所云」指情緒激動到語無倫次',
+        '表達輕鬆，「不知所云」指下文還未想好',
+        '表達謙虛，「不知所云」指所說的話可能不正確'
+      ],
+      answer: 1,
+      feedback: '「不知所云」原義是情緒激動到語無倫次，是諸葛亮在表達北伐依依不捨、對先帝忠誠的深情收束。現代「不知所云」多用於批評他人說話不知所謂，語義已有所轉移。'
+    }
+  ]
+},
+{
+  id: 9,
+  name: '文字機鋒·修辭解謎',
+  tag: '第九關',
+  narrative: `【文字守衛·機鋒殿】\n通過丞相的身世考驗，你被引至一座文字機鋒殿。\n\n牆上鑲嵌著諸葛亮用字的密碼，閃閃發光：\n\n錯綜、借代、鑲嵌，還有多義的「以」字，\n每一個都是解讀〈出師表〉的關鍵。\n\n守衛低聲說：「能解開這些密碼，\n才算真正讀懂了丞相的文字功力。」`,
+  knowledge: {
+    title: '修辭解謎｜錯綜・借代・鑲嵌・「以」字多義',
+    content: `<table>
+      <tr><th>修辭</th><th>例句</th><th>說明</th></tr>
+      <tr><td><em>錯綜</em></td><td>陟罰臧否（→陟臧罰否）</td><td>語序交蹉，意同形變</td></tr>
+      <tr><td><em>錯綜</em></td><td>志慮忠純、性行淑均</td><td>同義詞交蹉並用</td></tr>
+      <tr><td><em>借代</em></td><td>陛下→天子；布衣→平民；行陣→軍隊；不毛→蠻荒地</td><td>以相關事物代替本體</td></tr>
+      <tr><td><em>鑲嵌（同義複詞）</em></td><td>崩殂、菲薄、諮諏</td><td>兩字同義並用，增強語氣</td></tr>
+      <tr><td><em>鑲嵌（偏義複詞）</em></td><td>異同（偏異）、宮府（偏宮）</td><td>兩字對義，偏重一字</td></tr>
+    </table>
+    <div class="quote-box">
+      📌 <b>「以」字多義</b><br>
+      ① 原因（因）：不以臣卑鄙（因為臣身分卑微）<br>
+      ② 目的（來、為了）：開張聖聽，<em>以</em>光先帝遺德<br>
+      ③ 結果（以致）：引喻失義，<em>以</em>塞忠諫之路<br>
+      ④ 時間（在）：受任<em>於</em>敗軍之際（此處用「於」）
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '「陟罰臧否」屬於什麼修辭手法？其本來的語序應為何？',
+      choices: [
+        '鑲嵌（偏義複詞），本來語序相同',
+        '錯綜（交蹉語次），本來語序應為「陟臧罰否」（賞善罰惡）',
+        '借代，以「陟罰」代指賞罰制度',
+        '映襯，「陟」與「罰」形成對比'
+      ],
+      answer: 1,
+      feedback: '「錯綜（交蹉語次）」是將語序打亂以求音韻工整。「陟罰臧否」的邏輯應是「陟臧罰否」（提拔好的、懲罰壞的），但交蹉排列後語勢更強。'
+    },
+    {
+      q: '「不毛之地」中「不毛」代指什麼？這是哪種修辭手法？',
+      choices: [
+        '不毛代指沒有糧食的荒地；轉化手法',
+        '不毛代指蠻荒、草木不生之地；借代手法',
+        '不毛代指敵人的心臟地帶；象徵手法',
+        '不毛代指秋天枯萎的景象；譬喻手法'
+      ],
+      answer: 1,
+      feedback: '「不毛」（草木不生）借代蠻荒之地，是借代修辭。「五月渡瀘，深入不毛」中，「不毛」代指南方蠻荒地區，而非真的沒有毛髮。'
+    },
+    {
+      q: '「先帝不<em>以</em>臣卑鄙」，此處「以」字的用法為？',
+      choices: [
+        '目的：為了讓臣能夠進諫',
+        '結果：以致臣的地位卑微',
+        '原因：因為臣身分卑微',
+        '憑藉：憑藉臣的卑微出身'
+      ],
+      answer: 2,
+      feedback: '「不以臣卑鄙」即「不因為我身分卑微」，「以」在此表原因，相當於「因為、由於」。這是「以」字最常見的古典用法之一。'
+    },
+    {
+      q: '「誠宜開張聖聽，<em>以</em>光先帝遺德」，此處「以」字的用法為？',
+      choices: [
+        '原因：因為能光揚先帝遺德',
+        '目的：為了光揚先帝遺德',
+        '結果：以致光揚了先帝遺德',
+        '條件：在光揚先帝遺德的前提下'
+      ],
+      answer: 1,
+      feedback: '「以光先帝遺德」的「以」表目的，意為「為了、用來」，完整語意為「廣開聖聽，用來光揚先帝的遺德」。'
+    }
+  ]
+},
+{
+  id: 10,
+  name: '時光易位·古今詞義',
+  tag: '第十關',
+  narrative: `【時光沙漏·語義守門人】\n機鋒殿的門徐徐開啟，你進入一座巨大的沙漏室。\n\n沙漏中，文字在流動——同樣的字，\n千年後的意思卻截然不同。\n\n守門人說：「時光流逝，語言也在變遷。\n能辨識古今詞義，才是真正讀通〈出師表〉的謀士。」`,
+  knowledge: {
+    title: '古今詞義辨析｜七組考點',
+    content: `<table>
+      <tr><th>詞語</th><th>古義</th><th>今義</th></tr>
+      <tr><td><em>開張</em></td><td>擴大、廣開</td><td>商店開始營業</td></tr>
+      <tr><td><em>菲薄</em></td><td>輕視</td><td>微薄、不豐厚</td></tr>
+      <tr><td><em>痛恨</em></td><td>痛心遺憾</td><td>非常憎恨</td></tr>
+      <tr><td><em>卑鄙</em></td><td>身分卑微、地處偏僻</td><td>品行惡劣</td></tr>
+      <tr><td><em>猥</em></td><td>有辱對方（謙詞）</td><td>卑賤下流</td></tr>
+      <tr><td><em>感激</em></td><td>感動激奮</td><td>衷心感謝</td></tr>
+      <tr><td><em>曉暢</em></td><td>精通、熟悉</td><td>文章流暢通順</td></tr>
+    </table>`
+  },
+  quizzes: [
+    {
+      q: '「未嘗不歎息痛恨於桓靈也」，此處「痛恨」的意思為？',
+      choices: [
+        '非常憎恨，充滿憤怒與仇視',
+        '痛心遺憾，感到惋惜與悲嘆',
+        '懊悔悔恨，為自己的過失感到遺憾',
+        '嚴厲批判，強烈指責其錯誤'
+      ],
+      answer: 1,
+      feedback: '「痛恨」是重要的古今義考點。古義為「痛心遺憾」，諸葛亮對桓帝、靈帝親小人遠賢臣感到痛心惋惜；今義則是「非常憎恨」，帶有強烈的敵意，語義有所轉移。'
+    },
+    {
+      q: '「性行淑均，曉暢軍事」中「曉暢」的古義為何？',
+      choices: [
+        '文章流暢通順',
+        '精通、熟悉',
+        '說話清晰明白',
+        '對事物瞭解透徹，言行一致'
+      ],
+      answer: 1,
+      feedback: '「曉暢軍事」古義為「精通軍事」，「曉暢」=「熟悉、精通」；現代「曉暢」多用來形容文章流暢通順，語義不同。'
+    },
+    {
+      q: '下列哪一組詞語的古今義差距最大、最容易混淆？',
+      choices: [
+        '「夙夜」：古義夜晚；今義早晨',
+        '「卑鄙」：古義身分卑微；今義品行惡劣',
+        '「興隆」：古義繁盛；今義發達（差距不大）',
+        '「涕泣」：古義眼淚；今義鼻涕（部分混淆）'
+      ],
+      answer: 1,
+      feedback: '「卑鄙」古今義差距最大且最易混淆。古義「卑=地位低，鄙=地處偏僻」，是諸葛亮謙稱自己的出身；今義則是「品行惡劣」，完全負面，若以今義理解古文則大錯特錯。'
+    },
+    {
+      q: '「先帝在時，每與臣論此事，未嘗不歎息痛恨於桓靈也」，結合古今義，翻譯正確的是？',
+      choices: [
+        '先帝非常憎恨桓帝和靈帝，每次談到都勃然大怒',
+        '先帝每次與臣討論，對桓帝靈帝親小人之失都感到痛心遺憾',
+        '先帝因為憎恨桓靈二帝，所以立志復仇',
+        '先帝與臣論及此事，對桓靈二帝的所作所為感到難以置信'
+      ],
+      answer: 1,
+      feedback: '以「痛恨」古義（痛心遺憾）理解，全句意為：先帝每次與臣討論此事（親小人遠賢臣的危害），都不禁對桓帝靈帝的失政感到痛心嘆息。'
+    }
+  ]
+},
+{
+  id: 11,
+  name: '鞠躬盡瘁·千古忠魂',
+  tag: '第十一關',
+  narrative: `【最終考驗·丞相親授】\n帳外，出征的號角已然吹響。\n\n諸葛丞相走到你面前，將一枚印信緩緩放入你的手中：\n\n「謀士，你通過了十關考驗。\n最後一問，也是最難的一問——\n你真的讀懂了本相這份表章背後的用心嗎？\n\n北伐之路，生死難料。\n出師一表真名世，千載誰堪伯仲間。」`,
+  knowledge: {
+    title: '綜合深究｜說服技巧・成語典故・學測考點',
+    content: `<ul>
+      <li><span class="kw">說服技巧</span>：全文「先帝」出現13次、「陛下」出現7次——以感情牌喚起後主的責任心</li>
+      <li><span class="kw">表現方式</span>：議論（三項忠諫）＋敘事（身世自述）＋抒情（北伐決心）三位一體</li>
+      <li><span class="kw">首尾照應</span>：「先帝創業未半而中道崩殂」→「深追先帝遺詔」</li>
+    </ul>
+    <div class="quote-box">
+      <b>三國典故辨析：</b><br>
+      <em>樂不思蜀</em>——劉禪降魏後安樂不思蜀漢（非本課人物行為）<br>
+      <em>初出茅廬</em>——諸葛亮初出山時（源自三國故事）<br>
+      <em>吳下阿蒙</em>——吳國呂蒙勤學後判若兩人（非蜀漢）<br><br>
+      <b>學測考點整合：</b><br>
+      「以」字多義（113年 Q26）<br>
+      假設→則→結果句式（114年 Q29）<br>
+      「表」典型格式辨析（115年 Q30-31）
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '諸葛亮在全文中使用「先帝」13次、「陛下」7次，這種寫法的主要目的是？',
+      choices: [
+        '遵守表文的格式規定，必須稱呼君主與先帝',
+        '以反覆提及先帝遺志與陛下責任，喚起後主的情感共鳴與使命感',
+        '向朝臣展示自己與先帝的親密關係',
+        '強調君臣之間的正式從屬關係'
+      ],
+      answer: 1,
+      feedback: '這是諸葛亮最核心的說服策略——以「先帝」13次喚起後主對先帝的崇敬與記憶，以「陛下」7次讓後主感受到自己的責任。情感說服是整篇〈出師表〉成功的關鍵。'
+    },
+    {
+      q: '〈出師表〉採用議論、敘事、抒情三位一體的寫法。以下哪一段主要以「抒情」為主？',
+      choices: [
+        '「宮中府中，俱為一體，陟罰臧否，不宜異同」（第二段）',
+        '「臣本布衣……由是感激，遂許先帝以驅馳……臨表涕泣，不知所云」（第四段）',
+        '「親賢臣，遠小人，此先漢所以興隆也」（第三段）',
+        '「今天下三分，益州疲弊，此誠危急存亡之秋也」（第一段）'
+      ],
+      answer: 1,
+      feedback: '第四段是諸葛亮的身世自述與北伐決心，以敘事帶出抒情，「臨表涕泣，不知所云」是全文情感的高峰，與前三段以議論為主的忠諫形成強烈對比。'
+    },
+    {
+      q: '「樂不思蜀」這個成語，是關於三國中哪位人物的故事？與諸葛亮的關係為何？',
+      choices: [
+        '關羽，關羽降曹後不思蜀漢，與諸葛亮無直接關係',
+        '劉禪，諸葛亮死後劉禪降魏，樂不思蜀，正是諸葛亮擔憂後主能力的寫照',
+        '諸葛亮本人，他在北伐時思念蜀中家園',
+        '劉備，劉備在荊州時樂不思蜀'
+      ],
+      answer: 1,
+      feedback: '「樂不思蜀」指劉禪降魏後，司馬昭問是否思念蜀地，劉禪答「此間樂，不思蜀」。這恰好印證了諸葛亮在〈出師表〉中對後主能力的隱憂與苦心叮嚀的必要性。'
+    },
+    {
+      q: '陸游詩云「出師一表真名世，千載誰堪伯仲間」，表達什麼評價？這印證了〈出師表〉的哪項特質？',
+      choices: [
+        '〈出師表〉文采斐然，千年來無人能寫出同等美麗的文章',
+        '〈出師表〉展現了諸葛亮千古罕見的忠誠品格，後世無人能及',
+        '〈出師表〉的軍事策略千年後仍是最高明的兵法',
+        '〈出師表〉開創了表文文體，後世皆無法超越其格式'
+      ],
+      answer: 1,
+      feedback: '陸游以「真名世」（真正名留後世）與「千載誰堪伯仲間」（千年無人能與之匹敵），稱頌諸葛亮的忠誠品格與〈出師表〉的感人力量。「讀出師表不哭者不忠」，正是此意。'
+    }
+  ]
+}
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const state = {
+  progress: JSON.parse(localStorage.getItem('l10_progress') || '{}'),
+  currentLevel: 0,
+  answered: {},
+  correctCount: 0
+};
+function saveProgress() {
+  localStorage.setItem('l10_progress', JSON.stringify(state.progress));
+}
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbyrFmS6A76XEJ1wWt13bggLGNX7TT4ba-20OinoewmGjcK49YSy6Zj3asEwb4fWh1Kx9A/exec';
+async function syncToCloud() {
+  const STUDENT_KEY = 'hc2_student';
+  let s;
+  try { s = JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); } catch { return; }
+  if (!s || !s.id) return false;
+  try {
+    const params = new URLSearchParams({
+      action : 'set',
+      id     : s.id,
+      name   : s.name || '',
+      l09    : localStorage.getItem('l09_progress') || '{}',
+      l10    : localStorage.getItem('l10_progress') || '{}',
+      l11    : localStorage.getItem('l11_progress') || '{}',
+      t      : Date.now()
+    });
+    const res  = await fetch(API_URL + '?' + params.toString());
+    const data = await res.json();
+    return data.ok;
+  } catch (e) { return false; }
+}
+
+function isUnlocked(id) { return id === 1 || !!state.progress[(id-1)]; }
+function isCompleted(id) { return !!state.progress[id]; }
+
+// ══════════════════════════════════════════════
+//  MAP RENDER
+// ══════════════════════════════════════════════
+function renderMap() {
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const node = document.createElement('div');
+    const done = isCompleted(lv.id);
+    const open = isUnlocked(lv.id);
+    node.className = 'map-node ' + (done ? 'completed' : open ? 'unlocked' : 'locked');
+    node.innerHTML = `<div class="node-num">${done ? '✓' : lv.id}</div><div style="font-size:9px;line-height:1.2">${lv.name.split('·')[1] || lv.name}</div>`;
+    if (lv.id === 11) {
+      node.style.gridColumn = 'span 1';
+      node.style.justifySelf = 'start';
+    }
+    if (open) node.onclick = () => startLevel(lv.id);
+    grid.appendChild(node);
+  });
+}
+
+function startFromMap() {
+  let target = 1;
+  for (let i = 1; i <= LEVELS.length; i++) {
+    if (!isCompleted(i) && isUnlocked(i)) { target = i; break; }
+  }
+  startLevel(target);
+}
+
+// ══════════════════════════════════════════════
+//  LEVEL
+// ══════════════════════════════════════════════
+function startLevel(id) {
+  const lv = LEVELS.find(l => l.id === id);
+  if (!lv) return;
+  state.currentLevel = id;
+  state.answered = {};
+  state.correctCount = 0;
+
+  document.getElementById('screen-title').style.display = 'none';
+  document.getElementById('screen-level').style.display = 'block';
+  document.getElementById('lv-badge').textContent = String(id).padStart(2,'0');
+  document.getElementById('lv-num-text').textContent = lv.tag;
+  document.getElementById('lv-name-text').textContent = lv.name;
+  document.getElementById('progress-bar').style.width = '0%';
+
+  const content = document.getElementById('level-content');
+  content.innerHTML = buildLevelHTML(lv);
+  window.scrollTo(0,0);
+}
+
+function buildLevelHTML(lv) {
+  const narr = lv.narrative.replace(/\n/g,'<br>').replace(/【(.+?)】/g,'<span class="npc-name">【$1】</span>');
+
+  let quizHTML = '';
+  lv.quizzes.forEach((q, qi) => {
+    const choices = q.choices.map((c, ci) =>
+      `<button class="choice-btn" onclick="answerQ(${lv.id},${qi},${ci})" id="c${lv.id}_${qi}_${ci}">${String.fromCharCode(65+ci)}. ${c}</button>`
+    ).join('');
+    quizHTML += `
+      <div class="quiz-item" id="qi_${lv.id}_${qi}">
+        <div class="quiz-q"><span class="q-num">${qi+1}</span>${q.q}</div>
+        <div class="choices">${choices}</div>
+        <div class="feedback-box" id="fb_${lv.id}_${qi}"></div>
+      </div>`;
+  });
+
+  return `
+    <div class="section">
+      <div class="section-tag">情境導引</div>
+      <div class="narrative-box">${narr}</div>
+    </div>
+    <div class="section">
+      <div class="section-tag red">核心教學</div>
+      <div class="knowledge-card">
+        <h4>📜 ${lv.knowledge.title}</h4>
+        ${lv.knowledge.content}
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-tag jade">冒險挑戰</div>
+      <div class="quiz-wrap">${quizHTML}</div>
+    </div>
+    <div class="level-complete" id="lc_${lv.id}">
+      <div class="complete-seal">通關</div>
+      <div class="stars" id="stars_${lv.id}">★★★</div>
+      <div class="complete-title">關卡通關！</div>
+      <div class="complete-score" id="lc_score_${lv.id}"></div>
+      <button class="btn-next" onclick="goTitle()">返回地圖</button>
+      ${lv.id < LEVELS.length ? `<button class="btn-next" onclick="startLevel(${lv.id+1})">下一關 ▶</button>` : ''}
+    </div>`;
+}
+
+function answerQ(lvId, qi, ci) {
+  if (state.answered[qi] !== undefined) return;
+  const lv = LEVELS.find(l => l.id === lvId);
+  const q = lv.quizzes[qi];
+  const correct = ci === q.answer;
+
+  state.answered[qi] = correct;
+  if (correct) state.correctCount++;
+
+  for (let i = 0; i < q.choices.length; i++) {
+    const btn = document.getElementById(`c${lvId}_${qi}_${i}`);
+    btn.disabled = true;
+    if (i === q.answer) btn.classList.add('correct');
+    else if (i === ci && !correct) btn.classList.add('wrong');
+  }
+
+  const fb = document.getElementById(`fb_${lvId}_${qi}`);
+  fb.className = 'feedback-box ' + (correct ? 'correct' : 'wrong');
+  fb.innerHTML = (correct ? '✓ ' : '✗ ') + q.feedback;
+
+  const total = lv.quizzes.length;
+  const done = Object.keys(state.answered).length;
+  document.getElementById('progress-bar').style.width = (done/total*100) + '%';
+
+  if (done === total) setTimeout(() => showComplete(lvId), 600);
+}
+
+function showComplete(lvId) {
+  const lv = LEVELS.find(l => l.id === lvId);
+  const total = lv.quizzes.length;
+  const correct = state.correctCount;
+  const pct = correct / total;
+  const stars = pct === 1 ? '★★★' : pct >= 0.6 ? '★★☆' : '★☆☆';
+
+  document.getElementById(`lc_${lvId}`).style.display = 'block';
+  document.getElementById(`stars_${lvId}`).textContent = stars;
+  document.getElementById(`lc_score_${lvId}`).textContent =
+    `答對 ${correct} / ${total} 題　${Math.round(pct*100)} 分`;
+
+  if (pct >= 0.6) {
+    state.progress[lvId] = stars;
+    saveProgress();
+    syncToCloud();
+  }
+  document.getElementById(`lc_${lvId}`).scrollIntoView({behavior:'smooth'});
+}
+
+async function goHome() {
+  const btn = document.querySelector('.btn-home');
+  if (btn) { btn.textContent = '⏳ 同步中…'; btn.disabled = true; }
+  const ok = await syncToCloud();
+  if (btn) btn.textContent = ok ? '✓ 已存檔' : '（本機模式）';
+  await new Promise(r => setTimeout(r, 700));
+  window.location.href = 'index.html';
+}
+
+function goTitle() {
+  document.getElementById('screen-level').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'flex';
+  renderMap();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+renderMap();
+</script>
+</body>
+</html>

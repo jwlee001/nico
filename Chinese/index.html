@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高中國文第二冊｜互動冒險學堂</title>
+<style>
+:root {
+  --ink: #1c1008;
+  --parchment: #f4e8cc;
+  --parchment-dark: #e8d4a8;
+  --red: #8b1a1a;
+  --gold: #b8860b;
+  --gold-light: #daa520;
+  --jade: #2d6a4f;
+  --shadow: rgba(28,16,8,0.20);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Georgia', 'Noto Serif TC', serif;
+  background: #1c1008;
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex; justify-content: center;
+}
+#app {
+  width: 100%; max-width: 720px;
+  min-height: 100vh;
+  background: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at top, #f9f0dc 0%, var(--parchment) 60%),
+    repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(180,150,80,0.04) 29px);
+  position: relative;
+}
+#app::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 720px;
+  height: 100%; pointer-events: none; z-index: 999;
+  border: 3px solid var(--gold);
+  box-shadow: inset 0 0 0 6px rgba(184,134,11,0.12);
+}
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(175deg, #5a0a0a 0%, #8b1a1a 100%);
+  padding: 20px 28px 32px;
+  text-align: center;
+  border-bottom: 3px solid var(--gold);
+}
+.hero-seal {
+  width: 76px; height: 76px;
+  border: 2.5px solid rgba(255,255,255,0.5);
+  border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff; font-weight: bold;
+  writing-mode: vertical-rl; letter-spacing: 3px;
+  margin-bottom: 18px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3), inset 0 0 14px rgba(255,215,0,0.12);
+}
+.hero-title {
+  font-size: 24px; color: #fff; font-weight: bold;
+  letter-spacing: 6px; margin-bottom: 4px;
+}
+.hero-sub {
+  font-size: 11px; color: rgba(255,255,255,0.65);
+  letter-spacing: 5px; margin-bottom: 26px;
+}
+.hero-divider {
+  width: 220px; height: 1px; margin: 0 auto 24px;
+  background: linear-gradient(to right, transparent, rgba(218,165,32,0.7), transparent);
+}
+
+/* overall stats row */
+.stats-row {
+  display: flex; justify-content: center; align-items: center; gap: 0;
+  margin-bottom: 18px;
+}
+.stat-block { text-align: center; padding: 0 24px; }
+.stat-block + .stat-block { border-left: 1px solid rgba(255,255,255,0.18); }
+.stat-num {
+  font-size: 32px; color: var(--gold-light); font-weight: bold;
+  line-height: 1; margin-bottom: 4px;
+}
+.stat-lbl { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; }
+
+/* overall progress bar */
+.prog-wrap { max-width: 300px; margin: 0 auto 8px; }
+.prog-bg {
+  height: 7px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden;
+}
+.prog-fg {
+  height: 100%; background: var(--gold-light);
+  border-radius: 4px; width: 0%;
+  transition: width 1.1s cubic-bezier(.4,0,.2,1) .15s;
+}
+.prog-pct { font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 1px; margin-top: 6px; }
+
+/* ── STUDENT BAR ── */
+.s-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  margin-bottom: 20px;
+}
+.s-info { display: flex; align-items: center; gap: 10px; text-align: left; }
+.s-avatar {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #fff; font-weight: bold; flex-shrink: 0;
+}
+.s-name { font-size: 13px; color: #fff; font-weight: bold; line-height: 1.3; }
+.s-id   { font-size: 10px; color: rgba(255,255,255,0.55); letter-spacing: 1px; }
+.s-actions { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.sync-dot { font-size: 14px; color: #888; cursor: help; line-height: 1; }
+.s-btn {
+  font-size: 10px; padding: 4px 9px; letter-spacing: 1px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.85);
+  border-radius: 2px; cursor: pointer; font-family: inherit;
+  transition: background .15s; white-space: nowrap;
+}
+.s-btn:hover { background: rgba(255,255,255,0.22); }
+.s-btn.login-btn-sm { background: rgba(218,165,32,0.3); border-color: rgba(218,165,32,0.5); }
+
+/* ── LOGIN OVERLAY ── */
+#login-overlay {
+  position: fixed; inset: 0;
+  background: rgba(28,16,8,0.85);
+  z-index: 1500;
+  display: flex; align-items: center; justify-content: center;
+}
+.login-box {
+  background: var(--parchment);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  padding: 36px 32px;
+  max-width: 320px; width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+.login-seal {
+  width: 60px; height: 60px;
+  border: 2px solid var(--red);
+  border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; color: var(--red); font-weight: bold;
+  margin-bottom: 16px;
+}
+.login-title { font-size: 18px; font-weight: bold; color: var(--ink); letter-spacing: 3px; margin-bottom: 6px; }
+.login-sub   { font-size: 12px; color: #888; margin-bottom: 22px; letter-spacing: .5px; line-height: 1.8; }
+.login-input {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid rgba(184,134,11,0.4);
+  border-radius: 3px;
+  font-family: inherit; font-size: 14px;
+  background: rgba(255,255,255,0.7);
+  margin-bottom: 12px;
+  color: var(--ink); display: block;
+}
+.login-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(184,134,11,0.15); }
+.login-main-btn {
+  width: 100%; padding: 11px;
+  background: var(--red); color: #fff;
+  border: none; border-radius: 3px;
+  font-family: inherit; font-size: 14px; letter-spacing: 3px;
+  cursor: pointer; margin-bottom: 12px;
+  transition: filter .15s;
+}
+.login-main-btn:hover { filter: brightness(1.1); }
+.login-skip {
+  font-size: 11px; color: #aaa; cursor: pointer; letter-spacing: .5px;
+  background: none; border: none; font-family: inherit;
+  display: block; width: 100%; text-align: center; padding: 4px;
+}
+.login-skip:hover { color: #888; text-decoration: underline; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 32px; left: 50%; transform: translateX(-50%);
+  background: rgba(28,16,8,0.88);
+  color: var(--parchment);
+  padding: 10px 26px;
+  border-radius: 20px;
+  font-size: 13px; letter-spacing: 1px;
+  z-index: 2000;
+  opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* ── ENCOURAGEMENT ── */
+.enc-wrap { padding: 22px 24px 0; }
+.enc-box {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 15px 20px;
+  background: rgba(184,134,11,0.09);
+  border: 1px solid rgba(184,134,11,0.28);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 4px 4px 0;
+}
+.enc-icon { font-size: 24px; flex-shrink: 0; line-height: 1.4; }
+.enc-text { font-size: 14px; line-height: 1.9; color: #2a1800; }
+
+/* ── SECTION LABEL ── */
+.sec-lbl {
+  font-size: 10px; letter-spacing: 5px; color: var(--gold);
+  padding: 22px 24px 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.sec-lbl::before, .sec-lbl::after { content: ''; flex: 1; height: 1px; }
+.sec-lbl::before { background: linear-gradient(to right, transparent, rgba(184,134,11,0.35)); }
+.sec-lbl::after  { background: linear-gradient(to left,  transparent, rgba(184,134,11,0.35)); }
+
+/* ── COURSE CARDS ── */
+.cards { padding: 0 22px 8px; display: flex; flex-direction: column; gap: 18px; }
+.card {
+  border-radius: 4px; overflow: hidden;
+  border: 1px solid rgba(184,134,11,0.28);
+  background: rgba(255,255,255,0.58);
+  transition: box-shadow .2s, transform .15s;
+}
+.card:hover { box-shadow: 0 6px 22px var(--shadow); transform: translateY(-2px); }
+.card-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 15px 18px 13px;
+  border-bottom: 1px solid rgba(184,134,11,0.18);
+}
+.c-seal {
+  width: 48px; height: 48px; flex-shrink: 0;
+  border: 2px solid; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: bold;
+  writing-mode: vertical-rl; letter-spacing: 1px;
+}
+.c-info { flex: 1; min-width: 0; }
+.c-lesson { font-size: 10px; letter-spacing: 2px; opacity: .6; margin-bottom: 2px; }
+.c-title  { font-size: 15px; font-weight: bold; letter-spacing: 1px; }
+.c-author { font-size: 11px; opacity: .55; margin-top: 2px; }
+.c-badge  { font-size: 10px; padding: 3px 10px; border-radius: 10px; letter-spacing: 1px; white-space: nowrap; font-family: inherit; }
+.card-body { padding: 14px 18px 16px; }
+.c-prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.c-prog-bg  { flex: 1; height: 5px; background: rgba(0,0,0,0.08); border-radius: 3px; overflow: hidden; }
+.c-prog-fg  { height: 100%; border-radius: 3px; width: 0%; transition: width .8s cubic-bezier(.4,0,.2,1) .3s; }
+.c-prog-txt { font-size: 11px; color: #777; white-space: nowrap; }
+.dot-map { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 11px; }
+.lv-dot {
+  min-width: 28px; height: 22px; padding: 0 4px;
+  border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: bold;
+  border: 1px solid rgba(184,134,11,0.22);
+  color: #ccc; background: rgba(255,255,255,0.35);
+  transition: all .4s ease; cursor: default;
+}
+.lv-dot.s3 { background: #2d6a4f; border-color: #2d6a4f; color: #fff; }
+.lv-dot.s2 { background: #9a7820; border-color: #9a7820; color: #fff; }
+.lv-dot.s1 { background: #9a5020; border-color: #9a5020; color: #fff; }
+.c-status {
+  font-size: 12px; color: #666; line-height: 1.8;
+  margin-bottom: 12px; font-style: italic;
+  border-left: 3px solid rgba(184,134,11,0.3); padding-left: 10px;
+}
+.btn-go {
+  width: 100%; padding: 11px 0;
+  font-size: 13px; letter-spacing: 4px;
+  border: none; cursor: pointer; font-family: inherit;
+  border-radius: 2px; transition: all .15s;
+}
+.btn-go.start    { background: var(--red);  color: #fff; box-shadow: 2px 2px 0 #5a0000; }
+.btn-go.cont     { background: var(--gold); color: #fff; box-shadow: 2px 2px 0 #7a5a00; }
+.btn-go.complete { background: var(--jade); color: #fff; box-shadow: 2px 2px 0 #1a4a2f; }
+.btn-go:hover  { transform: translate(-1px,-1px); filter: brightness(1.08); }
+.btn-go:active { transform: translate(1px,1px);   filter: brightness(.95); }
+
+/* ── STARS PANEL ── */
+.stars-panel {
+  margin: 4px 22px 20px;
+  padding: 18px 22px;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(184,134,11,0.22);
+  border-radius: 4px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 0; text-align: center;
+}
+.sp-block + .sp-block { border-left: 1px solid rgba(184,134,11,0.2); }
+.sp-num { font-size: 26px; color: var(--gold); font-weight: bold; line-height: 1; margin-bottom: 5px; }
+.sp-lbl { font-size: 10px; color: #888; letter-spacing: 1.5px; }
+
+/* ── SAVE BUTTON ── */
+.save-wrap { padding: 0 22px 16px; }
+.btn-save {
+  width: 100%; padding: 12px;
+  background: none;
+  border: 1.5px solid rgba(184,134,11,0.4);
+  color: var(--gold);
+  font-family: inherit; font-size: 13px; letter-spacing: 3px;
+  border-radius: 3px; cursor: pointer; transition: all .15s;
+}
+.btn-save:hover  { background: rgba(184,134,11,0.09); border-color: var(--gold); }
+.btn-save:active { background: rgba(184,134,11,0.18); }
+.btn-save:disabled { opacity: .5; cursor: default; }
+
+/* ── TIPS ── */
+.tips-box {
+  margin: 0 22px 22px;
+  padding: 12px 16px;
+  background: rgba(45,106,79,0.07);
+  border: 1px dashed rgba(45,106,79,0.35);
+  border-radius: 4px;
+  font-size: 12px; line-height: 1.9; color: #2a4a35;
+}
+.tips-box strong { color: var(--jade); }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center; padding: 18px 22px;
+  font-size: 10px; color: #ccc; letter-spacing: 2px;
+  border-top: 1px solid rgba(184,134,11,0.18);
+}
+
+@media (max-width: 460px) {
+  .hero-title { font-size: 20px; letter-spacing: 4px; }
+  .stat-num   { font-size: 26px; }
+  .stat-block { padding: 0 16px; }
+  .cards      { padding: 0 14px 8px; }
+  .stars-panel{ margin: 4px 14px 18px; }
+  .tips-box   { margin: 0 14px 18px; }
+  .s-btn      { font-size: 9px; padding: 3px 7px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN OVERLAY ── -->
+<div id="login-overlay" style="display:none">
+  <div class="login-box">
+    <div class="login-seal">入</div>
+    <div class="login-title">登入學堂</div>
+    <div class="login-sub">輸入學號以記錄進度<br>換裝置也能繼續冒險</div>
+    <input id="login-id"   class="login-input" type="text"
+           placeholder="學號（必填）" maxlength="20"
+           onkeydown="if(event.key==='Enter')document.getElementById('login-name').focus()">
+    <input id="login-name" class="login-input" type="text"
+           placeholder="姓名（選填）" maxlength="20"
+           onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-main-btn" onclick="doLogin()">確認登入 →</button>
+    <button class="login-skip"     onclick="skipLogin()">略過，僅本機使用</button>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<div id="app">
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+
+    <!-- 學生列 -->
+    <div class="s-bar">
+      <div class="s-info">
+        <div class="s-avatar" id="s-avatar">?</div>
+        <div>
+          <div class="s-name" id="s-name">未登入</div>
+          <div class="s-id"   id="s-id">請先登入以同步進度</div>
+        </div>
+      </div>
+      <div class="s-actions">
+        <span class="sync-dot" id="sync-dot" title="同步狀態">●</span>
+        <button class="s-btn"            id="s-pull-btn"   onclick="pullCloud()"    style="display:none">↓ 載入</button>
+        <button class="s-btn"            id="s-switch-btn" onclick="switchStudent()" style="display:none">切換</button>
+        <button class="s-btn login-btn-sm" id="s-login-btn"  onclick="openLogin()">登入 →</button>
+      </div>
+    </div>
+
+    <div class="hero-seal">學堂</div>
+    <div class="hero-title">高中國文第二冊</div>
+    <div class="hero-sub">互動冒險學堂</div>
+    <div class="hero-divider"></div>
+    <div class="stats-row">
+      <div class="stat-block">
+        <div class="stat-num" id="h-done">0</div>
+        <div class="stat-lbl">完成關卡</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num" id="h-total">31</div>
+        <div class="stat-lbl">總關卡數</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-num" id="h-stars">0</div>
+        <div class="stat-lbl">獲得星數</div>
+      </div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-bg"><div class="prog-fg" id="h-bar"></div></div>
+      <div class="prog-pct" id="h-pct">整體完成度 0%</div>
+    </div>
+  </div>
+
+  <!-- ── ENCOURAGEMENT ── -->
+  <div class="enc-wrap">
+    <div class="enc-box">
+      <div class="enc-icon" id="enc-icon">📜</div>
+      <div class="enc-text" id="enc-text">正在讀取進度……</div>
+    </div>
+  </div>
+
+  <!-- ── COURSE CARDS ── -->
+  <div class="sec-lbl">冒險地圖</div>
+  <div class="cards" id="cards"></div>
+
+  <!-- ── STARS PANEL ── -->
+  <div class="sec-lbl">闖關成果</div>
+  <div class="stars-panel">
+    <div class="sp-block">
+      <div class="sp-num" id="sp-done">0</div>
+      <div class="sp-lbl">完成關卡</div>
+    </div>
+    <div class="sp-block">
+      <div class="sp-num" id="sp-stars">0</div>
+      <div class="sp-lbl">獲得星數</div>
+    </div>
+    <div class="sp-block">
+      <div class="sp-num" id="sp-pct">0%</div>
+      <div class="sp-lbl">星星完成率</div>
+    </div>
+  </div>
+
+  <!-- ── SAVE BUTTON ── -->
+  <div class="save-wrap">
+    <button class="btn-save" id="btn-save" onclick="manualSave()">☁ 儲存進度至雲端</button>
+    <div id="sync-log" style="margin-top:8px;font-size:11px;color:#888;line-height:1.7;display:none;
+      background:rgba(0,0,0,0.05);border-radius:3px;padding:8px 10px;font-family:monospace;
+      word-break:break-all;"></div>
+  </div>
+
+  <!-- ── TIPS ── -->
+  <div class="tips-box">
+    <strong>星級說明：</strong>每關最多獲得三顆星。<br>
+    <strong>■</strong> <span style="color:#2d6a4f">★★★</span> 全對（100%）&nbsp;
+    <strong>■</strong> <span style="color:#9a7820">★★☆</span> 部分答對（60–99%）&nbsp;
+    <strong>■</strong> <span style="color:#9a5020">★☆☆</span> 剛好過關（60%）<br>
+    答對 60% 以上即可解鎖下一關，可重玩任何已解鎖的關卡。
+  </div>
+
+  <div class="footer">高中國文第二冊 · 互動冒險學堂</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  雲端設定（部署後替換此 URL）
+// ══════════════════════════════════════════════
+const API_URL     = 'https://script.google.com/macros/s/AKfycbyrFmS6A76XEJ1wWt13bggLGNX7TT4ba-20OinoewmGjcK49YSy6Zj3asEwb4fWh1Kx9A/exec';
+const STUDENT_KEY = 'hc2_student';
+
+// ══════════════════════════════════════════════
+//  課程設定
+// ══════════════════════════════════════════════
+const COURSES = [
+  {
+    id: 'l09', key: 'l09_progress',
+    file: 'L09_青春並不消逝只是遷徙.html',
+    title: '青春並不消逝，只是遷徙', author: '張曼娟',
+    lesson: '第二冊 第九課', total: 10,
+    seal: '青春', color: '#8b1a1a',
+    msg: {
+      none:  '時光迴廊靜靜等候，記憶的封印尚未開啟。踏出第一步，青春之旅就此展開。',
+      going: '記憶使者，歲月的秘密正一一在你眼前揭開。繼續前進，終點的頓悟就在不遠處！',
+      done:  '歲月慈悲，青春永不消逝——全關通關，記憶使者的印記已刻入時光迴廊！'
+    }
+  },
+  {
+    id: 'l10', key: 'l10_progress',
+    file: 'L10_出師表.html',
+    title: '出師表', author: '諸葛亮',
+    lesson: '第二冊 第十課', total: 11,
+    seal: '出師', color: '#7a1a0a',
+    msg: {
+      none:  '丞相大帳前，謀士的考驗尚未開始。北伐前夕，丞相等待你的回應。',
+      going: '謀士，丞相的考驗尚未全部通過。繼續前進，不知所云不是你的結局！',
+      done:  '鞠躬盡瘁，死而後已——出師表全關通關，隨軍參謀資格正式獲得！'
+    }
+  },
+  {
+    id: 'l11', key: 'l11_progress',
+    file: 'L11_出走與回家.html',
+    title: '出走與回家', author: '林懷民',
+    lesson: '第二冊 第十一課', total: 10,
+    seal: '歸家', color: '#c4982a',
+    msg: {
+      none:  '舞台後台的日記靜靜等待，無人翻閱。翻開第一頁，出走之旅從這裡起航。',
+      going: '見習者，舞台大幕尚未完全升起。繼續追尋，林懷民的泥土之根等你親手觸碰！',
+      done:  '泥土之根，出走與回家——全關通關，見習者已成為舞台的見證者！'
+    }
+  }
+];
+
+// ══════════════════════════════════════════════
+//  學生資料
+// ══════════════════════════════════════════════
+function getStudent() {
+  try { return JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); }
+  catch { return null; }
+}
+function saveStudent(s) { localStorage.setItem(STUDENT_KEY, JSON.stringify(s)); }
+
+// ══════════════════════════════════════════════
+//  登入流程
+// ══════════════════════════════════════════════
+function openLogin() {
+  document.getElementById('login-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-id').focus(), 50);
+}
+function doLogin() {
+  const id   = (document.getElementById('login-id').value   || '').trim();
+  const name = (document.getElementById('login-name').value || '').trim();
+  if (!id) { showToast('請輸入學號'); return; }
+  const prev = getStudent();
+  // 切換到不同學號時清除本機進度，避免舊資料污染新帳號
+  if (!prev || prev.id !== id) {
+    localStorage.removeItem('l09_progress');
+    localStorage.removeItem('l10_progress');
+    localStorage.removeItem('l11_progress');
+  }
+  saveStudent({ id, name });
+  document.getElementById('login-overlay').style.display = 'none';
+  updateStudentBar();
+  render();       // 先用空資料刷新畫面
+  pullCloud();    // 再從雲端載入正確進度
+}
+function skipLogin() {
+  document.getElementById('login-overlay').style.display = 'none';
+}
+function switchStudent() {
+  document.getElementById('login-id').value   = '';
+  document.getElementById('login-name').value = '';
+  document.getElementById('login-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-id').focus(), 50);
+}
+
+function updateStudentBar() {
+  const s = getStudent();
+  if (s && s.id) {
+    document.getElementById('s-avatar').textContent = (s.name || s.id)[0].toUpperCase();
+    document.getElementById('s-name').textContent   = s.name || '同學';
+    document.getElementById('s-id').textContent     = '學號：' + s.id;
+    document.getElementById('s-pull-btn').style.display   = '';
+    document.getElementById('s-switch-btn').style.display = '';
+    document.getElementById('s-login-btn').style.display  = 'none';
+  } else {
+    document.getElementById('s-avatar').textContent = '?';
+    document.getElementById('s-name').textContent   = '未登入';
+    document.getElementById('s-id').textContent     = '請先登入以同步進度';
+    document.getElementById('s-pull-btn').style.display   = 'none';
+    document.getElementById('s-switch-btn').style.display = 'none';
+    document.getElementById('s-login-btn').style.display  = '';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  同步狀態指示 & Toast
+// ══════════════════════════════════════════════
+const SYNC_COLORS = { idle: '#888', syncing: '#f0a500', ok: '#2d6a4f', err: '#8b1a1a' };
+const SYNC_LABELS = { idle: '', syncing: '同步中…', ok: '已同步', err: '同步失敗' };
+
+function setSyncStatus(st, extra) {
+  const dot = document.getElementById('sync-dot');
+  dot.style.color = SYNC_COLORS[st] || '#888';
+  dot.title       = extra || SYNC_LABELS[st] || '';
+}
+
+let _toastTimer;
+function showToast(msg, dur) {
+  dur = dur || 2500;
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ══════════════════════════════════════════════
+//  進度合併（各關取最高星）
+// ══════════════════════════════════════════════
+function starVal(v) {
+  if (!v) return 0;
+  if (v === 'done') return 1;
+  return (v.match(/★/g) || []).length;
+}
+
+function mergeProgress(localStr, cloudStr) {
+  let local, cloud;
+  try { local = JSON.parse(localStr || '{}'); } catch { local = {}; }
+  try { cloud = JSON.parse(cloudStr || '{}'); } catch { cloud = {}; }
+  const merged = Object.assign({}, local);
+  for (const k of Object.keys(cloud)) {
+    if (starVal(cloud[k]) > starVal(local[k] || null)) merged[k] = cloud[k];
+  }
+  return merged;
+}
+
+// ══════════════════════════════════════════════
+//  雲端讀寫
+// ══════════════════════════════════════════════
+async function pullCloud() {
+  const s = getStudent();
+  if (!s || !s.id || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  setSyncStatus('syncing');
+  try {
+    const res  = await fetch(API_URL + '?action=get&id=' + encodeURIComponent(s.id));
+    const data = await res.json();
+    if (data.ok) {
+      let localAhead = false;
+      for (const course of COURSES) {
+        const cloud     = data[course.id] || '{}';
+        const local     = localStorage.getItem(course.key) || '{}';
+        const merged    = mergeProgress(local, cloud);
+        const mergedStr = JSON.stringify(merged);
+        localStorage.setItem(course.key, mergedStr);
+        if (mergedStr !== cloud) localAhead = true;
+      }
+      if (localAhead) {
+        // 本機有雲端沒有的資料，推回去
+        await pushCloud();
+        showToast('✓ 進度已合併並同步至雲端');
+      } else {
+        showToast('✓ 進度已從雲端載入');
+      }
+      setSyncStatus('ok');
+      render();
+    } else {
+      await pushCloud();
+    }
+  } catch (e) {
+    setSyncStatus('err', '無法連線：' + e.message);
+    showToast('⚠ 載入失敗，請檢查網路');
+  }
+}
+
+async function pushCloud() {
+  const s = getStudent();
+  if (!s || !s.id) return;
+  setSyncStatus('syncing');
+  try {
+    const params = new URLSearchParams({
+      action : 'set',
+      id     : s.id,
+      name   : s.name || '',
+      l09    : localStorage.getItem('l09_progress') || '{}',
+      l10    : localStorage.getItem('l10_progress') || '{}',
+      l11    : localStorage.getItem('l11_progress') || '{}',
+      t      : Date.now()
+    });
+    const res  = await fetch(API_URL + '?' + params.toString());
+    const data = await res.json();
+    setSyncStatus(data.ok ? 'ok' : 'err', data.ok ? '' : '伺服器回應異常');
+  } catch (e) {
+    setSyncStatus('err', '同步失敗：' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  工具函數
+// ══════════════════════════════════════════════
+function readProg(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+  catch { return {}; }
+}
+
+function calcCourse(course) {
+  const prog = readProg(course.key);
+  let done = 0, stars = 0;
+  const lvStars = [];
+  for (let i = 1; i <= course.total; i++) {
+    const s = starVal(prog[i]);
+    lvStars.push(s);
+    if (s > 0) { done++; stars += s; }
+  }
+  return { done, stars, lvStars, pct: done / course.total };
+}
+
+// ══════════════════════════════════════════════
+//  鼓勵訊息邏輯
+// ══════════════════════════════════════════════
+function getEncouragement(totalDone, totalAll, courseStats) {
+  const allTotal = COURSES.reduce((s, c) => s + c.total, 0);
+
+  if (totalDone === allTotal) {
+    return { icon: '🏆', text: '恭喜全部通關！三門課全部制霸，你是高中國文第二冊的文學勇士！三位作家——張曼娟、諸葛亮、林懷民——的智慧，已化為你的文學底蘊。' };
+  }
+
+  const justDone = COURSES.filter((c, i) => courseStats[i].done === c.total && c.total > 0);
+  if (justDone.length > 0 && totalDone < allTotal) {
+    const names = justDone.map(c => `〈${c.title}〉`).join('、');
+    return { icon: '🎖️', text: `${names}已全關通關！太棒了！繼續挑戰其餘課程，邁向完全制霸！` };
+  }
+
+  for (let i = 0; i < COURSES.length; i++) {
+    const c = COURSES[i], s = courseStats[i];
+    const rem = c.total - s.done;
+    if (rem > 0 && rem <= 3 && s.done > 0) {
+      return { icon: '⚡', text: `〈${c.title}〉只剩 ${rem} 關！加把勁，通關就在眼前——你做得到！` };
+    }
+  }
+
+  const pct = totalAll > 0 ? totalDone / allTotal : 0;
+  if (totalDone === 0)  return { icon: '📜', text: '踏上冒險的第一步！三門課等你挑戰，選一門開始你的文學旅程。' };
+  if (pct < 0.20) return { icon: '🌱', text: '冒險已然啟程！持之以恆，每一道答題都讓你的文字功力更上一層。' };
+  if (pct < 0.40) return { icon: '⚔️', text: '初露鋒芒！你已突破初關，越過的每一關卡都讓你離文學高手更近一步。' };
+  if (pct < 0.60) return { icon: '🏯', text: '過關斬將！半途已過，文字功力日益精進。堅持下去，勝利已在前方等候！' };
+  if (pct < 0.80) return { icon: '🔥', text: '勢如破竹！大半關卡已在掌中，繼續衝鋒——終點就在視線所及之處！' };
+  return { icon: '⚡', text: '最後衝刺！幾乎完成了！再一把力，文學武林高手之名即將到來！' };
+}
+
+// ══════════════════════════════════════════════
+//  課程卡片 HTML
+// ══════════════════════════════════════════════
+function dotClass(s) {
+  if (s === 3) return 's3';
+  if (s === 2) return 's2';
+  if (s === 1) return 's1';
+  return '';
+}
+function dotLabel(s, idx) {
+  if (s === 3) return '★★★';
+  if (s === 2) return '★★☆';
+  if (s === 1) return '★☆☆';
+  return idx + 1;
+}
+
+function buildCard(course, stats) {
+  const { done, stars, lvStars, pct } = stats;
+  const total   = course.total;
+  const progPct = Math.round(pct * 100);
+  const c       = course.color;
+
+  let badge, badgeBg;
+  if (done === 0)        { badge = '未開始';                  badgeBg = '#aaa'; }
+  else if (done < total) { badge = `進行中 ${done}/${total}`; badgeBg = '#9a7010'; }
+  else                   { badge = '✓ 通關';                  badgeBg = '#2d6a4f'; }
+
+  let btnClass, btnTxt;
+  if (done === 0)        { btnClass = 'start';    btnTxt = '開始冒險 ▶'; }
+  else if (done < total) { btnClass = 'cont';     btnTxt = '繼續前進 ▶'; }
+  else                   { btnClass = 'complete'; btnTxt = '✓ 再次挑戰'; }
+
+  const msgKey = done === 0 ? 'none' : done < total ? 'going' : 'done';
+
+  const dots = lvStars.map((s, i) =>
+    `<div class="lv-dot ${dotClass(s)}" title="第${i+1}關${s>0?' ：'+['','★☆☆','★★☆','★★★'][s]:''}">${dotLabel(s, i)}</div>`
+  ).join('');
+
+  return `
+  <div class="card">
+    <div class="card-head">
+      <div class="c-seal" style="color:${c};border-color:${c};box-shadow:1px 1px 0 ${c}">${course.seal}</div>
+      <div class="c-info">
+        <div class="c-lesson">${course.lesson}</div>
+        <div class="c-title">〈${course.title}〉</div>
+        <div class="c-author">${course.author}</div>
+      </div>
+      <div class="c-badge" style="background:${badgeBg};color:#fff">${badge}</div>
+    </div>
+    <div class="card-body">
+      <div class="c-prog-row">
+        <div class="c-prog-bg">
+          <div class="c-prog-fg" style="background:${c}" data-width="${progPct}"></div>
+        </div>
+        <div class="c-prog-txt">${done} / ${total} 關　${stars} ★</div>
+      </div>
+      <div class="dot-map">${dots}</div>
+      <div class="c-status">${course.msg[msgKey]}</div>
+      <button class="btn-go ${btnClass}" onclick="go('${course.file}')">${btnTxt}</button>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  主渲染
+// ══════════════════════════════════════════════
+function render() {
+  const allTotal   = COURSES.reduce((s, c) => s + c.total, 0);
+  const allMaxStar = allTotal * 3;
+
+  const courseStats = COURSES.map(c => calcCourse(c));
+  const totalDone   = courseStats.reduce((s, x) => s + x.done,  0);
+  const totalStars  = courseStats.reduce((s, x) => s + x.stars, 0);
+  const pct     = allTotal   > 0 ? Math.round(totalDone  / allTotal   * 100) : 0;
+  const starPct = allMaxStar > 0 ? Math.round(totalStars / allMaxStar * 100) : 0;
+
+  document.getElementById('h-done').textContent  = totalDone;
+  document.getElementById('h-total').textContent = allTotal;
+  document.getElementById('h-stars').textContent = totalStars;
+  document.getElementById('h-pct').textContent   = `整體完成度 ${pct}%`;
+  const hbar = document.getElementById('h-bar');
+  hbar.style.width = '0%';
+  requestAnimationFrame(() => requestAnimationFrame(() => { hbar.style.width = pct + '%'; }));
+
+  const enc = getEncouragement(totalDone, allTotal, courseStats);
+  document.getElementById('enc-icon').textContent = enc.icon;
+  document.getElementById('enc-text').textContent = enc.text;
+
+  document.getElementById('cards').innerHTML =
+    COURSES.map((c, i) => buildCard(c, courseStats[i])).join('');
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('.c-prog-fg[data-width]').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  }));
+
+  document.getElementById('sp-done').textContent  = totalDone;
+  document.getElementById('sp-stars').textContent = totalStars;
+  document.getElementById('sp-pct').textContent   = starPct + '%';
+}
+
+function go(file) { window.location.href = file; }
+
+async function manualSave() {
+  const s = getStudent();
+  if (!s || !s.id) { showToast('請先登入才能存檔'); openLogin(); return; }
+  const btn = document.getElementById('btn-save');
+  const log = document.getElementById('sync-log');
+  btn.disabled = true;
+  btn.textContent = '☁ 儲存中…';
+  log.style.display = 'none';
+
+  // 組合要送出的資料（供診斷用）
+  const payload = {
+    id  : s.id,
+    name: s.name || '',
+    l09 : localStorage.getItem('l09_progress') || '{}',
+    l10 : localStorage.getItem('l10_progress') || '{}',
+    l11 : localStorage.getItem('l11_progress') || '{}'
+  };
+
+  try {
+    const params = new URLSearchParams({ action:'set', t: Date.now(), ...payload });
+    const res  = await fetch(API_URL + '?' + params.toString());
+    const text = await res.text();
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = null; }
+
+    log.innerHTML =
+      `<b>送出資料：</b><br>` +
+      `學號: ${payload.id}　姓名: ${payload.name || '(空)'}<br>` +
+      `l09: ${payload.l09}<br>` +
+      `l10: ${payload.l10}<br>` +
+      `l11: ${payload.l11}<br>` +
+      `<b>伺服器回應：</b> ${text.slice(0, 200)}`;
+    log.style.display = 'block';
+
+    if (parsed && parsed.ok) {
+      setSyncStatus('ok');
+      showToast('✓ 進度已儲存至雲端');
+    } else {
+      setSyncStatus('err', '回應異常');
+      showToast('⚠ 儲存失敗，請看下方診斷');
+    }
+  } catch (e) {
+    log.innerHTML = `<b>錯誤：</b> ${e.message}`;
+    log.style.display = 'block';
+    setSyncStatus('err', e.message);
+    showToast('⚠ 網路錯誤，請看下方診斷');
+  }
+
+  btn.textContent = '☁ 儲存進度至雲端';
+  btn.disabled = false;
+}
+
+// ══════════════════════════════════════════════
+//  初始化
+// ══════════════════════════════════════════════
+function init() {
+  updateStudentBar();
+  render();
+  const s = getStudent();
+  if (!s || !s.id) {
+    // 首次使用，顯示登入畫面
+    openLogin();
+  } else {
+    pullCloud();
+  }
+}
+
+window.addEventListener('pageshow', () => { updateStudentBar(); render(); });
+window.addEventListener('focus',    () => { render(); });
+init();
+</script>
+</body>
+</html>

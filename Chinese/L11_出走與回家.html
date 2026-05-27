@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出走與回家｜踏上舞台的出走者</title>
+<style>
+  :root {
+    --ink: #1a1a2a;
+    --parchment: #f5f0e8;
+    --parchment-dark: #e8e0d0;
+    --red: #8b2020;
+    --gold: #c4982a;
+    --gold-light: #e0b840;
+    --jade: #2d6a4f;
+    --shadow: rgba(20,20,40,0.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Noto Serif TC', serif;
+    background: #0d0d1a;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #app {
+    width: 100%;
+    max-width: 680px;
+    min-height: 100vh;
+    background: var(--parchment);
+    background-image:
+      radial-gradient(ellipse at top, #faf5ea 0%, var(--parchment) 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(196,152,42,0.06) 29px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── decorative border ── */
+  #app::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 680px;
+    height: 100%; pointer-events: none; z-index: 999;
+    border: 3px solid var(--gold);
+    box-shadow: inset 0 0 0 6px rgba(196,152,42,0.15);
+  }
+
+  /* ══ TITLE SCREEN ══ */
+  #screen-title {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; padding: 40px 24px; text-align: center;
+  }
+  .title-seal {
+    width: 88px; height: 88px;
+    border: 3px solid var(--red);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: var(--red);
+    margin-bottom: 24px;
+    box-shadow: 2px 2px 0 var(--red), inset 0 0 8px rgba(139,32,32,0.12);
+    letter-spacing: 2px;
+    writing-mode: vertical-rl;
+    font-weight: bold;
+  }
+  .title-main {
+    font-size: 26px; font-weight: bold;
+    color: var(--red); letter-spacing: 4px;
+    margin-bottom: 8px; line-height: 1.4;
+  }
+  .title-sub {
+    font-size: 13px; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 6px;
+  }
+  .title-author {
+    font-size: 13px; color: #666;
+    margin-bottom: 32px; letter-spacing: 2px;
+  }
+  .divider {
+    width: 180px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 16px auto;
+  }
+  .title-desc {
+    font-size: 14px; line-height: 1.9; color: #444;
+    max-width: 380px; margin-bottom: 36px;
+  }
+  .map-grid {
+    display: grid; grid-template-columns: repeat(5,1fr);
+    gap: 10px; width: 100%; max-width: 360px; margin-bottom: 32px;
+  }
+  .map-node {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--gold);
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 10px; color: #888;
+    cursor: pointer; transition: all .2s;
+    background: rgba(255,255,255,0.4);
+    padding: 2px;
+    text-align: center; line-height: 1.2;
+  }
+  .map-node.unlocked { color: var(--ink); background: rgba(255,255,255,0.7); cursor: pointer; }
+  .map-node.unlocked:hover { background: #fff; border-color: var(--red); color: var(--red); }
+  .map-node.completed { background: var(--jade); border-color: var(--jade); color: #fff; }
+  .map-node.locked { opacity: .45; cursor: not-allowed; }
+  .map-node .node-num { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+  .btn-start {
+    background: var(--red); color: #fff;
+    border: none; padding: 14px 48px;
+    font-size: 16px; letter-spacing: 4px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px;
+    box-shadow: 3px 3px 0 #5a0000;
+    transition: all .15s;
+  }
+  .btn-start:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #5a0000; }
+  .btn-start:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #5a0000; }
+  .btn-home {
+    margin-top: 12px;
+    background: none; border: 1.5px solid rgba(196,152,42,0.4);
+    color: var(--gold); padding: 9px 32px;
+    font-size: 13px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit; border-radius: 2px;
+    transition: all .15s;
+  }
+  .btn-home:hover { background: rgba(196,152,42,0.08); border-color: var(--gold); }
+
+  /* ══ LEVEL SCREEN ══ */
+  #screen-level { display: none; min-height: 100vh; padding-bottom: 40px; }
+  .level-header {
+    background: var(--red);
+    padding: 16px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .level-header-left { display: flex; align-items: center; gap: 12px; }
+  .level-badge {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 3px; display: flex;
+    align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: bold;
+  }
+  .level-title-text { color: #fff; }
+  .level-title-text .lv-num { font-size: 11px; opacity: .8; letter-spacing: 2px; }
+  .level-title-text .lv-name { font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+  .btn-back {
+    background: none; border: 1.5px solid rgba(255,255,255,0.5);
+    color: #fff; padding: 6px 14px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    letter-spacing: 1px; border-radius: 2px;
+  }
+  .progress-bar-wrap { height: 5px; background: var(--parchment-dark); }
+  .progress-bar { height: 100%; background: var(--gold); transition: width .4s; }
+
+  /* ── sections ── */
+  .section { padding: 24px 20px; }
+  .section + .section { border-top: 1px dashed rgba(196,152,42,0.3); }
+  .section-tag {
+    display: inline-block; font-size: 11px; letter-spacing: 3px;
+    color: #fff; background: var(--gold); padding: 2px 10px;
+    margin-bottom: 14px;
+  }
+  .section-tag.red { background: var(--red); }
+  .section-tag.jade { background: var(--jade); }
+
+  /* narrative */
+  .narrative-box {
+    background: rgba(255,255,255,0.55);
+    border-left: 3px solid var(--gold);
+    padding: 16px 18px; font-size: 15px;
+    line-height: 2; color: #2a1a00;
+    border-radius: 0 4px 4px 0;
+  }
+  .narrative-box .npc-name {
+    font-size: 12px; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 8px;
+    display: block;
+  }
+
+  /* knowledge card */
+  .knowledge-card {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--gold-light);
+    border-radius: 4px; padding: 16px 18px;
+    font-size: 14px; line-height: 1.9;
+  }
+  .knowledge-card h4 {
+    color: var(--red); font-size: 14px;
+    letter-spacing: 2px; margin-bottom: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid rgba(196,152,42,0.3);
+  }
+  .knowledge-card ul { padding-left: 18px; }
+  .knowledge-card li { margin-bottom: 6px; }
+  .knowledge-card .kw { color: var(--red); font-weight: bold; }
+  .knowledge-card table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .knowledge-card th {
+    background: rgba(196,152,42,0.15);
+    padding: 6px 8px; text-align: left;
+    border: 1px solid rgba(196,152,42,0.3);
+    font-weight: normal; letter-spacing: 1px;
+  }
+  .knowledge-card td {
+    padding: 6px 8px; border: 1px solid rgba(196,152,42,0.2);
+    vertical-align: top;
+  }
+  .quote-box {
+    background: rgba(45,106,79,0.08);
+    border: 1px dashed var(--jade);
+    border-radius: 4px; padding: 12px 16px;
+    font-size: 14px; line-height: 1.9;
+    margin-top: 10px; color: #1a3a2a;
+  }
+
+  /* quiz */
+  .quiz-wrap { display: flex; flex-direction: column; gap: 28px; }
+  .quiz-item {}
+  .quiz-q {
+    font-size: 15px; line-height: 1.8;
+    margin-bottom: 14px; color: var(--ink);
+    font-weight: bold;
+  }
+  .quiz-q .q-num {
+    display: inline-block; width: 24px; height: 24px;
+    background: var(--red); color: #fff;
+    font-size: 12px; border-radius: 2px;
+    text-align: center; line-height: 24px;
+    margin-right: 8px; font-weight: normal;
+  }
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice-btn {
+    background: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(196,152,42,0.4);
+    padding: 12px 16px; font-size: 14px;
+    line-height: 1.6; cursor: pointer;
+    font-family: inherit; text-align: left;
+    border-radius: 3px; transition: all .15s;
+    color: var(--ink);
+  }
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--gold); background: rgba(255,255,255,0.9);
+  }
+  .choice-btn.correct {
+    background: rgba(45,106,79,0.15);
+    border-color: var(--jade); color: var(--jade);
+  }
+  .choice-btn.wrong {
+    background: rgba(139,32,32,0.1);
+    border-color: var(--red); color: var(--red);
+  }
+  .choice-btn:disabled { cursor: default; }
+  .feedback-box {
+    margin-top: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.7;
+    border-radius: 3px; display: none;
+  }
+  .feedback-box.correct {
+    background: rgba(45,106,79,0.1);
+    border-left: 3px solid var(--jade);
+    color: var(--jade); display: block;
+  }
+  .feedback-box.wrong {
+    background: rgba(139,32,32,0.08);
+    border-left: 3px solid var(--red);
+    color: #8b2020; display: block;
+  }
+
+  /* level complete */
+  .level-complete {
+    display: none; text-align: center;
+    padding: 32px 20px;
+  }
+  .complete-seal {
+    width: 100px; height: 100px;
+    border: 3px solid var(--jade);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+    color: var(--jade); writing-mode: vertical-rl;
+    font-weight: bold; letter-spacing: 2px;
+    box-shadow: 3px 3px 0 rgba(45,106,79,0.3);
+  }
+  .complete-title { font-size: 20px; color: var(--jade); letter-spacing: 3px; margin-bottom: 8px; }
+  .complete-score { font-size: 14px; color: #666; margin-bottom: 24px; }
+  .btn-next {
+    background: var(--jade); color: #fff;
+    border: none; padding: 14px 40px;
+    font-size: 15px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px; box-shadow: 3px 3px 0 #1a4a2f;
+    margin: 8px; transition: all .15s;
+  }
+  .btn-next:hover { transform: translate(-1px,-1px); }
+  .btn-submit {
+    background: var(--red); color: #fff;
+    border: none; padding: 13px 36px;
+    font-size: 14px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit;
+    border-radius: 2px; box-shadow: 2px 2px 0 #5a0000;
+    margin-top: 20px; display: block; width: 100%;
+    transition: all .15s;
+  }
+  .btn-submit:hover { opacity: .9; }
+  .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+  .stars { font-size: 28px; margin-bottom: 8px; }
+  em { color: var(--red); font-style: normal; font-weight: bold; }
+
+  @media (max-width: 420px) {
+    .title-main { font-size: 22px; }
+    .knowledge-card { font-size: 13px; }
+    .quiz-q { font-size: 14px; }
+    .choice-btn { font-size: 13px; padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ TITLE SCREEN ══ -->
+<div id="screen-title">
+  <div class="title-seal">出走</div>
+  <div class="title-main">出走與回家</div>
+  <div class="title-sub">踏上舞台的出走者</div>
+  <div class="title-author">林懷民｜高中國文第二冊第十一課</div>
+  <div class="divider"></div>
+  <div class="title-desc">
+    你化身為「初入藝術殿堂的見習者」，<br>
+    在一座古老的舞台後台，<br>
+    偶然發現林懷民留下的舊日記。<br>
+    須通過十關，追尋日記碎片，<br>
+    還原他從出走到回家的完整旅程，<br>
+    解鎖舞台大幕，目睹那一場屬於台灣的舞蹈。
+  </div>
+  <div class="map-grid" id="map-grid"></div>
+  <button class="btn-start" onclick="startFromMap()">開始冒險</button>
+  <button class="btn-home"  onclick="goHome()">⌂ 回到首頁</button>
+</div>
+
+<!-- ══ LEVEL SCREEN ══ -->
+<div id="screen-level">
+  <div class="level-header">
+    <div class="level-header-left">
+      <div class="level-badge" id="lv-badge">01</div>
+      <div class="level-title-text">
+        <div class="lv-num" id="lv-num-text">第一關</div>
+        <div class="lv-name" id="lv-name-text"></div>
+      </div>
+    </div>
+    <button class="btn-back" onclick="goTitle()">◀ 地圖</button>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  <div id="level-content"></div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ══════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════
+const LEVELS = [
+{
+  id: 1,
+  name: '舞者啟程·認識林懷民',
+  tag: '第一關',
+  narrative: `【舞台後台·守夜人】\n深夜的後台，燈光昏黃。\n\n你翻開一個落滿灰塵的舊皮箱，\n一本泛黃的日記從中滑落。\n\n守夜人輕聲說：\n\n「這是林懷民先生的日記。\n他說，要讀懂這本日記，\n先要認識寫下它的人。」`,
+  knowledge: {
+    title: '林懷民其人其事',
+    content: `<ul>
+      <li><span class="kw">生卒</span>：1947年生，嘉義人，台灣現代舞蹈家</li>
+      <li><span class="kw">身份轉換</span>：14歲起發表小說→赴美愛荷華大學創意寫作碩士→轉赴紐約學現代舞→回台創立雲門舞集</li>
+      <li><span class="kw">雲門舞集</span>：1973年創立，台灣第一個職業現代舞團</li>
+      <li><span class="kw">代表舞作</span>：《薪傳》《九歌》《流浪者之歌》《水月》</li>
+      <li><span class="kw">本課主旨</span>：以親身的出走與回家，探索自我認同與本土文化根源</li>
+    </ul>
+    <div class="quote-box">💡 林懷民以<em>小說家</em>身分出發，最終成為<em>舞蹈家</em>，本身的人生軌跡即是一段「出走與回家」。</div>`
+  },
+  quizzes: [
+    {
+      q: '林懷民在創立雲門舞集之前，曾就讀於美國哪所大學的哪個科系？',
+      choices: [
+        '紐約大學，舞蹈系',
+        '愛荷華大學，創意寫作碩士',
+        '哈佛大學，戲劇系',
+        '哥倫比亞大學，東亞研究所'
+      ],
+      answer: 1,
+      feedback: '林懷民先在愛荷華大學取得<em>創意寫作碩士</em>，之後才轉赴紐約學習現代舞，這段歷程正是他「出走」的重要一環——以文字出發，以身體回家。'
+    },
+    {
+      q: '雲門舞集創立於哪一年？有何特殊意義？',
+      choices: [
+        '1960年，是台灣第一個芭蕾舞團',
+        '1973年，是台灣第一個職業現代舞團',
+        '1980年，是台灣第一個獲得政府補助的舞團',
+        '1987年，是解嚴後第一個成立的表演藝術團體'
+      ],
+      answer: 1,
+      feedback: '<em>1973年</em>，林懷民回台創立雲門舞集，是台灣第一個以台灣素材、台灣舞者、為台灣觀眾演出的職業現代舞團，開創了台灣表演藝術的新時代。'
+    },
+    {
+      q: '下列哪一項最能概括林懷民的人生軌跡與本課主旨的關係？',
+      choices: [
+        '他一生旅居海外，以異鄉為家，從未真正回頭',
+        '他從文學出走到舞蹈，從台灣出走到海外，最終帶著本土意識回家',
+        '他從小受西方文化影響，始終以西方藝術為創作根源',
+        '他在台灣遭受挫折後出走，在海外獲得成功，再也未返台'
+      ],
+      answer: 1,
+      feedback: '林懷民的人生本身就是「出走與回家」的具體實踐——從文學到舞蹈是<em>出走</em>，從台灣到海外是出走，最終帶著對本土文化的體悟回台，創作屬於台灣的舞蹈，是「<em>回家</em>」的最好詮釋。'
+    }
+  ]
+},
+{
+  id: 2,
+  name: '文體解鎖·敘抒雙翼',
+  tag: '第二關',
+  narrative: `【日記庫房·典籍守衛】\n走廊盡頭，一扇厚重的門吱呀作響。\n\n裡頭是放滿各類散文的庫房。\n\n守衛推了推眼鏡說：\n\n「林懷民的〈出走與回家〉，\n是一篇很特別的散文——\n它同時擁有兩片翅膀：敘事與抒情。\n你能分辨這兩者的差異，才能讀懂他的文字。」`,
+  knowledge: {
+    title: '文體特色｜抒情散文的敘抒雙翼',
+    content: `<table>
+      <tr><th>比較項目</th><th>抒情散文（本課）</th><th>小說體散文（第九課）</th></tr>
+      <tr><td>基礎</td><td>真實體驗</td><td>真實體驗</td></tr>
+      <tr><td>重心</td><td>情感抒發為主</td><td>情節張力為主</td></tr>
+      <tr><td>結構</td><td>線性時間順序（出走→回家）</td><td>雙線交織、時空跳接</td></tr>
+      <tr><td>讀起來</td><td>如讀一封深情的長信</td><td>如讀短篇小說</td></tr>
+    </table>
+    <div class="quote-box">
+      📌 <b>本課結構：線性順敘</b><br>
+      少年時期（出走前）→ 出走（赴美追夢）→ 異鄉困頓 → 回家（返台）→ 創立雲門→ 生命體悟<br><br>
+      📌 <b>核心張力</b>：<em>出走</em>（離開，追求外在目標）↔ <em>回家</em>（歸返，發現內在根源）
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '〈出走與回家〉屬於哪種散文類型？其最突出的文體特徵是什麼？',
+      choices: [
+        '小說體散文，特徵是雙線交織的敘事結構',
+        '抒情散文，以真實生命歷程為基礎，情感抒發為主軸',
+        '議論散文，以論證出走的必要性為主要目的',
+        '說明散文，系統介紹台灣現代舞的發展歷程'
+      ],
+      answer: 1,
+      feedback: '〈出走與回家〉是<em>抒情散文</em>，以林懷民真實的出走與回家歷程為骨架，情感的流動（渴望→迷失→覺醒→認同）是閱讀的核心體驗，有別於以情節張力取勝的小說體散文。'
+    },
+    {
+      q: '本課的時間結構採用何種敘述方式？',
+      choices: [
+        '倒敘，從回家的結局開始回憶出走的過程',
+        '插敘，在出走的過程中穿插童年回憶',
+        '順敘，按出走前→出走中→回家的時間順序線性推進',
+        '時空跳接，在不同時期的記憶中來回切換'
+      ],
+      answer: 2,
+      feedback: '本課採<em>線性順敘</em>，從少年時期對外在世界的渴望，到出走赴美的過程，到異鄉的困頓迷失，再到決定回台、創立雲門的覺醒，時間脈絡清晰推進。'
+    },
+    {
+      q: '〈出走與回家〉的「核心張力」最佳描述為何？',
+      choices: [
+        '東方傳統文化與西方現代藝術的衝突',
+        '「出走」（追求外在目標的離開）與「回家」（發現內在根源的歸返）的辯證',
+        '個人藝術理想與現實謀生需求的拉鋸',
+        '台灣認同與中國文化傳統的矛盾'
+      ],
+      answer: 1,
+      feedback: '「出走」與「回家」在本文不是對立的，而是<em>辯證</em>的——出走是成長的必要，回家是生命的完成。出走讓他帶著「更豐厚的自己」回來，「家」因此成了出發點而非終點。'
+    }
+  ]
+},
+{
+  id: 3,
+  name: '少年出走·離岸的心',
+  tag: '第三關',
+  narrative: `【日記碎片·第一頁】\n你翻開日記的第一頁，油墨的香氣瀰漫開來。\n\n筆跡年輕而急切：\n\n「我想離開。不是逃跑，而是渴望。\n台灣太小了，小到我的夢想裝不下。\n我要去看看那個更大的世界。」\n\n你感覺到那個少年的心跳，正一聲一聲敲打著遠方。`,
+  knowledge: {
+    title: '課文前段｜出走動機與離家心境',
+    content: `<ul>
+      <li><span class="kw">出走動機</span>：對藝術的渴望，對更廣闊世界的嚮往，想超越台灣的局限</li>
+      <li><span class="kw">情感基調</span>：渴望、期待、略帶不安的勇氣</li>
+      <li><span class="kw">出走性質</span>：非逃避，而是主動追尋（追夢的積極出走）</li>
+    </ul>
+    <div class="quote-box">
+      📌 <b>修辭：譬喻</b><br>
+      作者以意象呈現出走的心情：離開是「離岸」，遠方是「更大的海」，<br>
+      用自然意象承載情感，是抒情散文常見的寫作技法。<br><br>
+      📌 <b>「出走」的積極定義</b><br>
+      不是逃離，而是為了帶著更豐厚的自己回來。
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '林懷民選擇出走（離開台灣），最主要的動機為何？',
+      choices: [
+        '逃避台灣的政治環境與社會壓力',
+        '對藝術的渴望與對更廣闊世界的嚮往，主動追尋自我',
+        '因為無法在台灣找到工作，被迫出走謀生',
+        '受到外國獎學金的吸引，被動接受機會'
+      ],
+      answer: 1,
+      feedback: '林懷民的出走是<em>積極主動</em>的——他渴望藝術，渴望突破台灣的局限，去看看更廣闊的世界。這種「帶著夢想出走」的性質，使得他後來的「回家」更具有深刻的生命意義。'
+    },
+    {
+      q: '作者描寫出走前的心情，主要呈現哪種情感複合狀態？',
+      choices: [
+        '純粹的喜悅與解放，毫無留戀',
+        '純粹的恐懼與不安，害怕未知',
+        '渴望與期待為主，夾雜著一絲對未知的不安',
+        '對台灣的失望與憤怒，主要是負面情緒'
+      ],
+      answer: 2,
+      feedback: '出走前的情感是<em>複合的</em>——渴望（對藝術、對廣闊世界）是主旋律，但不安（對未知、對離家）也同時存在。這種複合情感的誠實呈現，是抒情散文的重要特質。'
+    },
+    {
+      q: '「出走」在本文中被賦予的積極意義為何？',
+      choices: [
+        '是對現實的逃避，讓人得以暫時放鬆',
+        '是為了帶著更豐厚的自己回來，是成長的必要歷程',
+        '是一種犧牲，放棄家鄉以換取藝術成就',
+        '是一種反叛，對傳統束縛的徹底拒絕'
+      ],
+      answer: 1,
+      feedback: '林懷民對「出走」的詮釋是積極的——「出走不是逃跑，而是渴望」。離開是為了<em>更好地回來</em>，這使「出走」成為自我成長的必要過程，而非對家鄉的背棄。'
+    }
+  ]
+},
+{
+  id: 4,
+  name: '異鄉星夜·迷失問路',
+  tag: '第四關',
+  narrative: `【日記碎片·第二頁】\n紙頁上，字跡開始凌亂：\n\n「我在紐約。街道太長，人群太冷漠。\n我的英文還不夠好，我的舞跳得不夠好。\n最可怕的問題在深夜悄悄爬上來——\n\n我是誰？我從哪裡來？\n我要去哪裡？」\n\n你看見了那個在異鄉的年輕人，\n在星夜下問著沒有人回答的問題。`,
+  knowledge: {
+    title: '課文中段｜異鄉困頓與身分認同危機',
+    content: `<ul>
+      <li><span class="kw">異鄉困境</span>：語言隔閡、文化差異、技藝不足帶來的挫折感</li>
+      <li><span class="kw">身分認同危機</span>：「我是誰？我從哪裡來？我要去哪裡？」——三個無法回避的自問</li>
+      <li><span class="kw">情感轉折</span>：從出走時的渴望，轉為異鄉的迷失與自我懷疑</li>
+    </ul>
+    <div class="quote-box">
+      📌 <b>修辭：對比</b><br>
+      台灣（熟悉、溫暖、有根）↔ 異鄉（陌生、冷漠、無根）<br>
+      出走時的渴望 ↔ 異鄉中的迷失<br><br>
+      📌 <b>情感弧線（此階段）</b>：渴望 → 挫折 → 迷失 → 自問
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '作者在異鄉（紐約）遭遇的困境，何者描述最完整？',
+      choices: [
+        '只有經濟上的困難，缺乏生活費',
+        '語言隔閡、文化差異、技藝不足帶來的多重挫折感',
+        '只有藝術上的問題，舞蹈技巧不夠好',
+        '因為思念台灣而無法專心創作'
+      ],
+      answer: 1,
+      feedback: '異鄉困境是<em>多重的</em>：語言不夠流利、文化格格不入、舞蹈技藝未達水準……這些挫折疊加，最終引爆了更深層的身分認同危機：「我究竟是誰？」'
+    },
+    {
+      q: '「我是誰？我從哪裡來？我要去哪裡？」這三個問題，在作者的處境中代表什麼危機？',
+      choices: [
+        '哲學上的虛無主義危機，對人生意義感到迷茫',
+        '身分認同危機——在異鄉失去定向，不知自己的根在哪裡',
+        '職業規劃的困惑，不確定要成為舞蹈家還是作家',
+        '語言學習的困境，無法用英語表達自己的身分'
+      ],
+      answer: 1,
+      feedback: '這三個問題是「<em>身分認同危機</em>」的核心。在異鄉，過去的身分參照系消失了，作者被迫重新面對「我究竟是誰」——這個危機後來成為他決定回台的重要推力。'
+    },
+    {
+      q: '課文以「台灣（熟悉）↔ 異鄉（陌生）」形成對比，這種手法在此段的主要功能是？',
+      choices: [
+        '讚美台灣的優越，批判異鄉的冷漠',
+        '通過對比突顯失根感，為後來的「回家」體悟埋下伏筆',
+        '客觀記錄兩地文化的差異，供讀者比較',
+        '製造幽默效果，諷刺異鄉人的冷漠'
+      ],
+      answer: 1,
+      feedback: '台灣與異鄉的對比，讓讀者感受到「<em>失根</em>」的痛苦——作者在異鄉像一棵離開土壤的植物。這種失根感，正是後來「回家」時感受「泥土」珍貴的伏筆。'
+    }
+  ]
+},
+{
+  id: 5,
+  name: '字詞機關·音形解碼',
+  tag: '第五關',
+  narrative: `【文字迷陣·音形守關人】\n日記的某幾頁，文字突然變得模糊，\n結成了一個字詞迷陣。\n\n守關人說：\n「想讀懂林懷民的文字，\n先得破解這些字音與字形的封印。\n\n錯一個，迷陣就會旋轉，讓你迷失方向。」`,
+  knowledge: {
+    title: '字音字形辨析｜本課重要詞彙',
+    content: `<b>一、字音辨析</b>
+    <table>
+      <tr><th>字</th><th>音讀</th><th>例詞</th></tr>
+      <tr><td><em>攢</em></td><td>ㄗㄢˇ（聚集）/ ㄘㄨㄢˊ（湊集）</td><td>攢眉（ㄘㄨㄢˊ）/ 積攢（ㄗㄢˇ）</td></tr>
+      <tr><td><em>棲</em></td><td>ㄑㄧ（居住）</td><td>棲息、棲身</td></tr>
+      <tr><td><em>裨</em></td><td>ㄅㄧˋ（增益）/ ㄆㄧˊ（偏將）</td><td>大有裨益（ㄅㄧˋ）</td></tr>
+    </table>
+    <br><b>二、字形辨析</b>
+    <table>
+      <tr><th>組別</th><th>字</th><th>音讀</th><th>詞例</th></tr>
+      <tr><td>齊旁</td><td><em>臍</em></td><td>ㄑㄧˊ</td><td>肚臍</td></tr>
+      <tr><td></td><td><em>齊</em></td><td>ㄑㄧˊ</td><td>整齊</td></tr>
+      <tr><td>里旁</td><td><em>裡</em></td><td>ㄌㄧˇ</td><td>裡面</td></tr>
+      <tr><td></td><td><em>裏</em></td><td>ㄌㄧˇ</td><td>裏頭（同裡）</td></tr>
+    </table>
+    <div class="quote-box">📌 <em>「彷彿」</em>的用法：表「好像、似乎」，常用於描述虛幻或不確定的感受，如「彷彿看見了故鄉」。</div>`
+  },
+  quizzes: [
+    {
+      q: '「大有裨益」的「裨」，正確讀音為？',
+      choices: [
+        'ㄆㄧˊ（偏將之義）',
+        'ㄅㄧˋ（增益之義）',
+        'ㄅㄧˊ（無此讀音）',
+        'ㄆㄧˋ（無此讀音）'
+      ],
+      answer: 1,
+      feedback: '「裨益」的「裨」讀<em>ㄅㄧˋ</em>，意為「增益、補益」；讀ㄆㄧˊ時，是「裨將」（偏將、副將）之義，需依詞義判斷讀音。'
+    },
+    {
+      q: '「棲身異鄉」的「棲」，正確讀音與意義為？',
+      choices: [
+        'ㄑㄧ，居住、棲居',
+        'ㄒㄧ，休息',
+        'ㄒㄧ，稀少（通「稀」）',
+        'ㄑㄧˊ，棲息（讀四聲）'
+      ],
+      answer: 0,
+      feedback: '「棲」讀<em>ㄑㄧ</em>（一聲或二聲），意為「居住、棲身」，「棲身異鄉」即「在異鄉居住」。注意不要誤讀為ㄒㄧ。'
+    },
+    {
+      q: '「彷彿」在下列句子中的用法，哪一句最接近「好像、似乎」的意思？',
+      choices: [
+        '「我彷彿了他的計畫」（錯誤，動詞用法不存在）',
+        '「他彷彿聽見了遠方母親的呼喚」',
+        '「彷彿是個好辦法」（此處「彷彿」用法略有不同）',
+        '「她彷彿他的樣子」（搭配錯誤）'
+      ],
+      answer: 1,
+      feedback: '「彷彿」正確用法為「好像、似乎」，常描述虛幻或不確定的感受。「彷彿聽見了遠方母親的呼喚」——用「<em>彷彿</em>」傳達一種若有若無的感知，是抒情散文中的典型用法。'
+    },
+    {
+      q: '下列哪個字形與讀音的配對是正確的？',
+      choices: [
+        '臍：ㄑㄧˊ，整齊的意思',
+        '棲：ㄒㄧ，棲息的意思',
+        '裨：ㄅㄧˋ，增益的意思',
+        '攢：ㄗㄢˋ，聚集的意思'
+      ],
+      answer: 2,
+      feedback: '「<em>裨（ㄅㄧˋ）益</em>」是正確配對，意為增益補益。「臍（ㄑㄧˊ）」是肚臍，不是整齊；「棲（ㄑㄧ）」不讀ㄒㄧ；「攢」聚集義讀ㄗㄢˇ，不讀四聲。'
+    }
+  ]
+},
+{
+  id: 6,
+  name: '修辭武庫·五式心法',
+  tag: '第六關',
+  narrative: `【修辭殿堂·掌門考驗】\n走過字詞迷陣，前方出現一座巍峨的修辭殿堂。\n\n掌門手持一卷密笈，沉聲說：\n\n「林懷民的文字，用了五種心法——\n對比、排比、象徵、轉化、譬喻。\n能辨識這些招式，才算真正讀懂這篇散文的藝術。」\n\n殿門緩緩開啟。`,
+  knowledge: {
+    title: '五式修辭心法',
+    content: `<table>
+      <tr><th>修辭</th><th>例句（意象）</th><th>辨析要點</th></tr>
+      <tr><td><em>對比</em></td><td>出走（追夢）↔ 回家（尋根）；異鄉（冷漠）↔ 故鄉（溫暖）</td><td>以對立突顯主題</td></tr>
+      <tr><td><em>排比</em></td><td>「我是誰？我從哪裡來？我要去哪裡？」</td><td>相同句型連續，強化情感</td></tr>
+      <tr><td><em>象徵</em></td><td>泥土→根源與認同；舞蹈→生命的表達方式；家→文化的歸屬</td><td>具體事物承載抽象意義</td></tr>
+      <tr><td><em>轉化（擬人）</em></td><td>「土地召喚著我」</td><td>將無生命的土地賦予人的行為</td></tr>
+      <tr><td><em>譬喻（明喻）</em></td><td>「像一棵拔起的植物」</td><td>本體＋喻詞（像）＋喻體</td></tr>
+    </table>`
+  },
+  quizzes: [
+    {
+      q: '「我是誰？我從哪裡來？我要去哪裡？」這三個問句，最主要使用的修辭手法為？',
+      choices: [
+        '設問——問了之後立刻自己回答',
+        '排比——以相同句型連續排列，強化失根的情感衝擊',
+        '對比——三個問題互相對立，形成矛盾',
+        '借代——以問句代指身分認同危機'
+      ],
+      answer: 1,
+      feedback: '三個問句結構相同（「我＋動詞＋疑問詞」），是<em>排比</em>修辭，透過連續的疑問句疊加，讓讀者感受到作者在異鄉的迷失與無助。'
+    },
+    {
+      q: '本文以「泥土」象徵台灣的根源與文化認同。這種以具體事物承載抽象意義的修辭叫做？',
+      choices: [
+        '借代——以泥土代替台灣這個地名',
+        '象徵——以泥土這個具體意象，象徵抽象的根源與認同',
+        '轉化——將泥土人格化，賦予其感情',
+        '誇飾——誇大泥土的重要性'
+      ],
+      answer: 1,
+      feedback: '「<em>象徵</em>」是以具體事物承載抽象意義。「泥土」在此不只是土壤，而是「根源、文化認同、歸屬感」的象徵——返台踏上台灣的土地，那種「踩到泥土」的感覺，就是「回家」的實體化。'
+    },
+    {
+      q: '「像一棵拔起的植物」，這個形容異鄉失根感的句子，使用的修辭為？',
+      choices: [
+        '借喻——只出現喻體「拔起的植物」，省略本體',
+        '明喻——本體（作者）＋喻詞（像）＋喻體（拔起的植物）',
+        '象徵——植物象徵生命力的消逝',
+        '轉化——將植物的感受轉化為人的情感'
+      ],
+      answer: 1,
+      feedback: '「像一棵拔起的植物」有完整的<em>明喻</em>結構：本體（作者在異鄉）＋喻詞（像）＋喻體（拔起的植物），生動呈現失根的漂泊感。'
+    },
+    {
+      q: '「土地召喚著我回家」，此句使用的修辭為？',
+      choices: [
+        '象徵——土地象徵文化認同',
+        '轉化（擬人）——賦予土地人的行為（召喚）',
+        '借代——以土地代替台灣',
+        '誇飾——誇大土地的吸引力'
+      ],
+      answer: 1,
+      feedback: '土地本是無生命的自然物，「召喚」是人才有的行為，此處將土地擬人化，賦予其主動呼喚的能力，屬於「<em>轉化（擬人）</em>」。這一手法將「回家」的衝動表現為一種自然的力量。'
+    }
+  ]
+},
+{
+  id: 7,
+  name: '成語殿堂·字字珠璣',
+  tag: '第七關',
+  narrative: `【成語殿堂·智慧長老】\n修辭殿的封印解開，一扇古老的石門升起。\n\n白袍長老手持玉石，微微笑道：\n\n「年輕的見習者，成語是智慧的結晶。\n這些字句，凝縮了千百年的人情道理。\n〈出走與回家〉中藏著幾枚珍貴的成語——\n考驗你能否融會貫通。」`,
+  knowledge: {
+    title: '本課成語精要',
+    content: `<table>
+      <tr><th>成語</th><th>釋義</th><th>課文關聯</th></tr>
+      <tr><td><em>▲落葉歸根</em></td><td>離家在外者最終仍要回到故土</td><td>出走後回台的心理動因</td></tr>
+      <tr><td><em>▲安土重遷</em></td><td>習慣故土，不輕易離開</td><td>出走前必須克服的心理障礙</td></tr>
+      <tr><td><em>▲背井離鄉</em></td><td>離開家鄉，在外地生活</td><td>出走的具體狀態</td></tr>
+      <tr><td><em>▲認祖歸宗</em></td><td>找回自己的根源與文化認同</td><td>回家後的生命體悟</td></tr>
+      <tr><td>出人頭地</td><td>才能超群，出類拔萃</td><td>出走的目標之一</td></tr>
+      <tr><td>有容乃大</td><td>有廣闊的胸襟才能成就大事</td><td>接納異文化的態度</td></tr>
+    </table>`
+  },
+  quizzes: [
+    {
+      q: '「落葉歸根」這個成語，最能呼應本課哪個主題？',
+      choices: [
+        '出走的決心——離開家鄉追求夢想',
+        '異鄉的困頓——在外地遭遇的困難與挫折',
+        '回家的必然——遊子最終回到故土的生命歸向',
+        '創作的動力——以台灣意象創作舞蹈'
+      ],
+      answer: 2,
+      feedback: '「落葉歸根」指離家在外者最終仍要回到故土，與本文「回家」的主題高度呼應。林懷民在異鄉迷失後，最終決定回台，正是「<em>落葉歸根</em>」的生命實踐。'
+    },
+    {
+      q: '林懷民在出走前，需要克服「安土重遷」的心理。「安土重遷」的意思是？',
+      choices: [
+        '對土地感恩，重視農業',
+        '習慣故土生活，不輕易離開',
+        '安全地遷移，重視移民計畫',
+        '在土地上安家，反對搬遷'
+      ],
+      answer: 1,
+      feedback: '「安土重遷」指習慣了故鄉的生活，<em>不輕易離開</em>。這種心理是許多人面對出走的障礙——離開熟悉的環境需要勇氣，林懷民的出走正是克服了這種安逸慣性。'
+    },
+    {
+      q: '「背井離鄉」中「井」字指什麼？為何離開「井」就代表離家？',
+      choices: [
+        '井代表農田，農田是家的根基',
+        '井代表故鄉的水源，古人聚居於井旁，「井」因此成為故鄉的象徵',
+        '井代表家族的財富與資產',
+        '井代表一種特定的建築結構'
+      ],
+      answer: 1,
+      feedback: '古代人聚居於<em>水井</em>旁，「背井」字面上是「背對著水井離去」，引申為「離開故鄉」。「井」是家鄉生活的核心象徵，離井即是離家，「背井離鄉」因此成為形容出走的成語。'
+    }
+  ]
+},
+{
+  id: 8,
+  name: '歸根之路·回家體悟',
+  tag: '第八關',
+  narrative: `【日記碎片·第三頁】\n日記最後幾頁的字跡，變得沉穩而有力：\n\n「我踩上台灣的土地，感覺到了什麼——\n不是泥土，是根。\n\n我知道了：家不是讓我停留的地方，\n而是讓我出發的地方。\n\n我要用台灣的故事，跳一支屬於台灣的舞。」`,
+  knowledge: {
+    title: '課文後段｜回家的覺醒與「泥土之根」',
+    content: `<ul>
+      <li><span class="kw">回台後的覺醒</span>：踏上台灣土地的瞬間，感受到失去已久的「根」</li>
+      <li><span class="kw">「泥土」意象</span>：不只是物質的土壤，而是文化認同、生命根源、腳踏實地的象徵</li>
+      <li><span class="kw">雲門舞集的動因</span>：以台灣文化素材創作舞蹈，讓本土的故事透過身體說話</li>
+      <li><span class="kw">家的重新定義</span>：「家」不是停留的終點，而是出發的起點</li>
+    </ul>
+    <div class="quote-box">
+      📌 <b>情感弧線（此階段）</b>：迷失 → 覺醒 → 認同<br><br>
+      ✨ 「出走是為了更好地回來」——出走與回家不再是對立，而是辯證的整體。
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '作者回到台灣後，踏上土地的第一感受是什麼？這個感受有何象徵意義？',
+      choices: [
+        '感受到熟悉的氣候與食物，讓他放鬆下來',
+        '感受到「根」——那種在異鄉失去的身分歸屬感瞬間回來',
+        '感受到失落，因為台灣沒有他想要的藝術環境',
+        '感受到責任，覺得必須回台灣照顧家人'
+      ],
+      answer: 1,
+      feedback: '踏上台灣土地的瞬間，作者感受到的不只是熟悉的土壤，而是「<em>根</em>」——那種在異鄉長期失去的身分歸屬感與文化認同感，這個瞬間的體悟，就是「回家」的完整意義。'
+    },
+    {
+      q: '「泥土」在本文中象徵什麼？',
+      choices: [
+        '農業文明的重要性，台灣的農業傳統',
+        '文化根源、身分認同與腳踏實地的生命態度',
+        '物質生活的基礎，穩定的生活環境',
+        '台灣地理環境的特色，肥沃的土壤'
+      ],
+      answer: 1,
+      feedback: '「泥土」在此是<em>象徵意象</em>——它不只是土壤，而是林懷民找回的「根」：文化的根源、身分的歸屬、腳踏實地而非空中飄浮的生命態度。這個意象貫穿全文，構成「回家」體悟的核心。'
+    },
+    {
+      q: '作者如何重新定義「家」？這個定義如何解決「出走」與「回家」的對立？',
+      choices: [
+        '家是讓人安逸的避風港，出走是背叛家，回家是懺悔',
+        '家是出發的起點而非停留的終點；出走與回家因此不是對立，而是同一旅程的往返',
+        '家是讓人懷念的地方，值得時常回去緬懷',
+        '家是必須超越的束縛，出走才能真正自由'
+      ],
+      answer: 1,
+      feedback: '作者對「家」的重新定義是本文的思想核心：家是「<em>出發的起點</em>」——人帶著家的養分出走，又帶著外在的收穫回家，使家更豐厚。出走與回家因此成為辯證的整體，而非對立。'
+    }
+  ]
+},
+{
+  id: 9,
+  name: '雙線對映·出走回家',
+  tag: '第九關',
+  narrative: `【舞台高空·全景俯瞰】\n你被帶到舞台最高的吊點，\n俯瞰整個後台與舞台的全景。\n\n守夜人說：\n\n「見習者，你現在能看見全局了。\n〈出走與回家〉有一條清晰的線索，\n還有多組對比意象，\n讓整篇文章形成完整的結構。」`,
+  knowledge: {
+    title: '全文結構分析｜對比架構與意象追蹤',
+    content: `<div class="quote-box">
+      <b>全文線性結構：</b><br>
+      少年渴望 → 出走赴美 → 異鄉迷失 → 覺醒決定 → 回台尋根 → 創立雲門 → 生命體悟
+    </div>
+    <br>
+    <b>核心對比架構：</b>
+    <table>
+      <tr><th>出走（離）</th><th>回家（歸）</th></tr>
+      <tr><td>追求外在目標</td><td>發現內在根源</td></tr>
+      <tr><td>異鄉冷漠、失根</td><td>故鄉溫暖、有根</td></tr>
+      <tr><td>迷失、自問</td><td>覺醒、認同</td></tr>
+      <tr><td>像拔起的植物</td><td>踩到泥土，找回根</td></tr>
+    </table>
+    <br>
+    <div class="quote-box">
+      📌 <b>意象追蹤</b><br>
+      <em>土地／泥土</em>：根源與認同的象徵，出走時失去，回家時找回<br>
+      <em>舞蹈</em>：生命表達方式的象徵，從模仿西方到發展本土<br>
+      <em>家</em>：從「出發點」到「出發點」——繞一圈後，更深刻地理解家的意義
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '本文的「出走↔回家」對比結構，在敘事上呈現為？',
+      choices: [
+        '倒敘結構：先描述回家，再回憶出走',
+        '雙線交織：出走與回家的敘事線同時進行',
+        '線性順敘：從出走前的渴望，到回家後的體悟，按時間推進',
+        '環形結構：以回家的場景作為開頭與結尾'
+      ],
+      answer: 2,
+      feedback: '本文採<em>線性順敘</em>，時間清晰地從少年渴望→出走→異鄉→回家推進。這與第九課〈青春並不消逝〉的雙線交織不同，是抒情散文更常見的順時序結構。'
+    },
+    {
+      q: '「泥土」意象在全文中的功能，以下哪項描述最完整？',
+      choices: [
+        '只出現在回家段落，代表台灣的農業傳統',
+        '貫穿全文，在出走時「失去」，在回家時「找回」，承載根源與認同的象徵意義',
+        '只作為具體描述，沒有象徵意義',
+        '作為對比，用來襯托異鄉土地的貧瘠'
+      ],
+      answer: 1,
+      feedback: '「泥土」意象是全文的核心象徵：出走時失去（失根，如拔起的植物），回家時找回（踩到泥土，感受到根），前後呼應，使全文的「<em>出走↔回家</em>」主題得到具體而生動的承載。'
+    },
+    {
+      q: '分析本文「出走↔回家」的辯證關係，下列何者最為精確？',
+      choices: [
+        '出走是錯誤，回家才是正確；人生不應該出走',
+        '出走與回家互相對立，代表人生的兩種選擇',
+        '出走是成長的必要，回家是生命的完成；兩者是同一旅程的辯證整體',
+        '出走讓人成功，回家讓人失去自我；兩者難以兼得'
+      ],
+      answer: 2,
+      feedback: '本文最深刻的洞見是：出走與回家不是對立的，而是<em>辯證</em>的——出走讓人帶著更豐厚的自己回家，回家讓出走的意義得以完成。這種辯證思維，超越了「離家vs念家」的簡單對立。'
+    }
+  ]
+},
+{
+  id: 10,
+  name: '泥土之根·生命認同',
+  tag: '第十關',
+  narrative: `【舞台中央·大幕開啟】\n舞台大幕緩緩升起。\n\n燈光打亮，台上是雲門舞集的舞者，\n以台灣的土地、河流、人民為素材，\n用身體說著屬於台灣的故事。\n\n守夜人最後說：\n\n「見習者，你完成了追尋。\n現在，告訴我——\n你真的讀懂了林懷民的〈出走與回家〉嗎？」`,
+  knowledge: {
+    title: '主旨綜合｜生命認同的三個層次',
+    content: `<div class="quote-box">
+      📌 <b>全文情感弧線：</b><br>
+      少年渴望 → 勇敢出走 → 異鄉迷失 → 自我叩問 → 覺醒回家 → 生命認同
+    </div>
+    <br>
+    <b>主旨三個層次：</b>
+    <ul>
+      <li><em>個人層</em>：找到自我——出走讓人認識外在，回家讓人認識自己</li>
+      <li><em>文化層</em>：以台灣文化為根，發展本土藝術（雲門舞集）</li>
+      <li><em>普世層</em>：「出走是成長的必要，回家是生命的完成」——普世的生命哲學</li>
+    </ul>
+    <div class="quote-box">
+      ✨ 核心體悟：「家不是讓我停留的地方，而是讓我出發的地方。」<br><br>
+      ✨ 「出走」的意義：帶著夢想離開，帶著根源回來——出走使人豐厚，回家使出走有意義。
+    </div>`
+  },
+  quizzes: [
+    {
+      q: '本文主旨的「個人層」最精確的表述為何？',
+      choices: [
+        '林懷民個人的成功故事，激勵讀者勇敢追夢',
+        '出走讓人認識外在世界，回家讓人認識自己內在的根源與認同',
+        '個人應該忠於自己的夢想，不受任何外在束縛',
+        '告訴讀者出走是年輕人的必要選擇'
+      ],
+      answer: 1,
+      feedback: '個人層的主旨是：出走與回家讓人完成了「<em>認識自己</em>」的旅程——出走讓人接觸外在世界，回家讓人在對比中看清自己的根源在哪裡，從而確立身分認同。'
+    },
+    {
+      q: '林懷民創立雲門舞集，在「文化層」的意義上代表什麼？',
+      choices: [
+        '台灣終於有了一個達到國際水準的表演藝術團體',
+        '以台灣文化為根，用身體說台灣的故事，發展本土藝術，實現了「回家」的文化使命',
+        '證明了林懷民在藝術上的個人成就',
+        '建立了一個訓練台灣舞蹈人才的機構'
+      ],
+      answer: 1,
+      feedback: '在文化層，雲門舞集的創立代表林懷民將「回家」的體悟付諸實踐——他以台灣的土地、歷史、文化為素材，讓世界看見屬於台灣的身體語言，這是「<em>文化回家</em>」的最高體現。'
+    },
+    {
+      q: '「家不是讓我停留的地方，而是讓我出發的地方。」這句話如何在普世層面解讀？',
+      choices: [
+        '告訴我們家沒有讓人停留的價值，應該出走',
+        '「家」的意義在於提供出發的養分，而非是讓人逃離的理由；這是一種積極而非消極的家的觀念',
+        '家只對年輕人有意義，等人成熟後家就失去了意義',
+        '這句話只適用於藝術家，對普通人不適用'
+      ],
+      answer: 1,
+      feedback: '在普世層面，這句話重新定義了「家」：家不是讓人困在原地的束縛，而是<em>滋養我們出發的根基</em>。帶著家的養分出走，帶著外在的收穫回家——這個辯證，適用於每一個追求自我成長的人。'
+    },
+    {
+      q: '綜合全文，「出走與回家」這個題目，最完整的詮釋為何？',
+      choices: [
+        '出走是人生的失敗，回家是正確的選擇',
+        '出走是對家的背叛，回家是對家的補償',
+        '出走與回家是辯證的生命旅程：出走讓人豐厚，回家讓出走有意義；兩者共同完成了一個人對自我與文化的認同',
+        '出走是年輕人的特權，回家是老年人的宿命'
+      ],
+      answer: 2,
+      feedback: '這是全文最核心的詮釋：出走（離開→豐厚自己）與回家（歸返→發現根源）不是對立，而是<em>辯證</em>——出走讓回家更有意義，回家讓出走更完整。林懷民以自己的生命故事，示範了這個普世的生命哲學。'
+    }
+  ]
+}
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const state = {
+  progress: JSON.parse(localStorage.getItem('l11_progress') || '{}'),
+  currentLevel: 0,
+  answered: {},
+  correctCount: 0
+};
+function saveProgress() {
+  localStorage.setItem('l11_progress', JSON.stringify(state.progress));
+}
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbyrFmS6A76XEJ1wWt13bggLGNX7TT4ba-20OinoewmGjcK49YSy6Zj3asEwb4fWh1Kx9A/exec';
+async function syncToCloud() {
+  const STUDENT_KEY = 'hc2_student';
+  let s;
+  try { s = JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); } catch { return; }
+  if (!s || !s.id) return false;
+  try {
+    const params = new URLSearchParams({
+      action : 'set',
+      id     : s.id,
+      name   : s.name || '',
+      l09    : localStorage.getItem('l09_progress') || '{}',
+      l10    : localStorage.getItem('l10_progress') || '{}',
+      l11    : localStorage.getItem('l11_progress') || '{}',
+      t      : Date.now()
+    });
+    const res  = await fetch(API_URL + '?' + params.toString());
+    const data = await res.json();
+    return data.ok;
+  } catch (e) { return false; }
+}
+
+function isUnlocked(id) { return id === 1 || !!state.progress[(id-1)]; }
+function isCompleted(id) { return !!state.progress[id]; }
+
+// ══════════════════════════════════════════════
+//  MAP RENDER
+// ══════════════════════════════════════════════
+function renderMap() {
+  const grid = document.getElementById('map-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const node = document.createElement('div');
+    const done = isCompleted(lv.id);
+    const open = isUnlocked(lv.id);
+    node.className = 'map-node ' + (done ? 'completed' : open ? 'unlocked' : 'locked');
+    node.innerHTML = `<div class="node-num">${done ? '✓' : lv.id}</div><div style="font-size:9px;line-height:1.2">${lv.name.split('·')[1] || lv.name}</div>`;
+    if (open) node.onclick = () => startLevel(lv.id);
+    grid.appendChild(node);
+  });
+}
+
+function startFromMap() {
+  let target = 1;
+  for (let i = 1; i <= LEVELS.length; i++) {
+    if (!isCompleted(i) && isUnlocked(i)) { target = i; break; }
+  }
+  startLevel(target);
+}
+
+// ══════════════════════════════════════════════
+//  LEVEL
+// ══════════════════════════════════════════════
+function startLevel(id) {
+  const lv = LEVELS.find(l => l.id === id);
+  if (!lv) return;
+  state.currentLevel = id;
+  state.answered = {};
+  state.correctCount = 0;
+
+  document.getElementById('screen-title').style.display = 'none';
+  document.getElementById('screen-level').style.display = 'block';
+  document.getElementById('lv-badge').textContent = String(id).padStart(2,'0');
+  document.getElementById('lv-num-text').textContent = lv.tag;
+  document.getElementById('lv-name-text').textContent = lv.name;
+  document.getElementById('progress-bar').style.width = '0%';
+
+  const content = document.getElementById('level-content');
+  content.innerHTML = buildLevelHTML(lv);
+  window.scrollTo(0,0);
+}
+
+function buildLevelHTML(lv) {
+  const narr = lv.narrative.replace(/\n/g,'<br>').replace(/【(.+?)】/g,'<span class="npc-name">【$1】</span>');
+
+  let quizHTML = '';
+  lv.quizzes.forEach((q, qi) => {
+    const choices = q.choices.map((c, ci) =>
+      `<button class="choice-btn" onclick="answerQ(${lv.id},${qi},${ci})" id="c${lv.id}_${qi}_${ci}">${String.fromCharCode(65+ci)}. ${c}</button>`
+    ).join('');
+    quizHTML += `
+      <div class="quiz-item" id="qi_${lv.id}_${qi}">
+        <div class="quiz-q"><span class="q-num">${qi+1}</span>${q.q}</div>
+        <div class="choices">${choices}</div>
+        <div class="feedback-box" id="fb_${lv.id}_${qi}"></div>
+      </div>`;
+  });
+
+  return `
+    <div class="section">
+      <div class="section-tag">情境導引</div>
+      <div class="narrative-box">${narr}</div>
+    </div>
+    <div class="section">
+      <div class="section-tag red">核心教學</div>
+      <div class="knowledge-card">
+        <h4>📜 ${lv.knowledge.title}</h4>
+        ${lv.knowledge.content}
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-tag jade">冒險挑戰</div>
+      <div class="quiz-wrap">${quizHTML}</div>
+    </div>
+    <div class="level-complete" id="lc_${lv.id}">
+      <div class="complete-seal">通關</div>
+      <div class="stars" id="stars_${lv.id}">★★★</div>
+      <div class="complete-title">關卡通關！</div>
+      <div class="complete-score" id="lc_score_${lv.id}"></div>
+      <button class="btn-next" onclick="goTitle()">返回地圖</button>
+      ${lv.id < LEVELS.length ? `<button class="btn-next" onclick="startLevel(${lv.id+1})">下一關 ▶</button>` : ''}
+    </div>`;
+}
+
+function answerQ(lvId, qi, ci) {
+  if (state.answered[qi] !== undefined) return;
+  const lv = LEVELS.find(l => l.id === lvId);
+  const q = lv.quizzes[qi];
+  const correct = ci === q.answer;
+
+  state.answered[qi] = correct;
+  if (correct) state.correctCount++;
+
+  for (let i = 0; i < q.choices.length; i++) {
+    const btn = document.getElementById(`c${lvId}_${qi}_${i}`);
+    btn.disabled = true;
+    if (i === q.answer) btn.classList.add('correct');
+    else if (i === ci && !correct) btn.classList.add('wrong');
+  }
+
+  const fb = document.getElementById(`fb_${lvId}_${qi}`);
+  fb.className = 'feedback-box ' + (correct ? 'correct' : 'wrong');
+  fb.innerHTML = (correct ? '✓ ' : '✗ ') + q.feedback;
+
+  const total = lv.quizzes.length;
+  const done = Object.keys(state.answered).length;
+  document.getElementById('progress-bar').style.width = (done/total*100) + '%';
+
+  if (done === total) setTimeout(() => showComplete(lvId), 600);
+}
+
+function showComplete(lvId) {
+  const lv = LEVELS.find(l => l.id === lvId);
+  const total = lv.quizzes.length;
+  const correct = state.correctCount;
+  const pct = correct / total;
+  const stars = pct === 1 ? '★★★' : pct >= 0.6 ? '★★☆' : '★☆☆';
+
+  document.getElementById(`lc_${lvId}`).style.display = 'block';
+  document.getElementById(`stars_${lvId}`).textContent = stars;
+  document.getElementById(`lc_score_${lvId}`).textContent =
+    `答對 ${correct} / ${total} 題　${Math.round(pct*100)} 分`;
+
+  if (pct >= 0.6) {
+    state.progress[lvId] = stars;
+    saveProgress();
+    syncToCloud();
+  }
+  document.getElementById(`lc_${lvId}`).scrollIntoView({behavior:'smooth'});
+}
+
+async function goHome() {
+  const btn = document.querySelector('.btn-home');
+  if (btn) { btn.textContent = '⏳ 同步中…'; btn.disabled = true; }
+  const ok = await syncToCloud();
+  if (btn) btn.textContent = ok ? '✓ 已存檔' : '（本機模式）';
+  await new Promise(r => setTimeout(r, 700));
+  window.location.href = 'index.html';
+}
+
+function goTitle() {
+  document.getElementById('screen-level').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'flex';
+  renderMap();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+renderMap();
+</script>
+</body>
+</html>

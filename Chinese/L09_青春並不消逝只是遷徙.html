@@ -121,6 +121,15 @@
   }
   .btn-start:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #5a0000; }
   .btn-start:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #5a0000; }
+  .btn-home {
+    margin-top: 12px;
+    background: none; border: 1.5px solid rgba(139,26,26,0.35);
+    color: var(--red); padding: 9px 32px;
+    font-size: 13px; letter-spacing: 3px;
+    cursor: pointer; font-family: inherit; border-radius: 2px;
+    transition: all .15s;
+  }
+  .btn-home:hover { background: rgba(139,26,26,0.07); border-color: var(--red); }
 
   /* ══ LEVEL SCREEN ══ */
   #screen-level { display: none; min-height: 100vh; padding-bottom: 40px; }
@@ -329,6 +338,7 @@
   </div>
   <div class="map-grid" id="map-grid"></div>
   <button class="btn-start" onclick="startFromMap()">開始冒險</button>
+  <button class="btn-home"  onclick="goHome()">⌂ 回到首頁</button>
 </div>
 
 <!-- ══ LEVEL SCREEN ══ -->
@@ -924,8 +934,31 @@ const state = {
 function saveProgress() {
   localStorage.setItem('l09_progress', JSON.stringify(state.progress));
 }
-function isUnlocked(id) { return id === 1 || state.progress[(id-1)] === 'done'; }
-function isCompleted(id) { return state.progress[id] === 'done'; }
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbyrFmS6A76XEJ1wWt13bggLGNX7TT4ba-20OinoewmGjcK49YSy6Zj3asEwb4fWh1Kx9A/exec';
+async function syncToCloud() {
+  const STUDENT_KEY = 'hc2_student';
+  let s;
+  try { s = JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); } catch { return false; }
+  if (!s || !s.id) return false;
+  try {
+    const params = new URLSearchParams({
+      action : 'set',
+      id     : s.id,
+      name   : s.name || '',
+      l09    : localStorage.getItem('l09_progress') || '{}',
+      l10    : localStorage.getItem('l10_progress') || '{}',
+      l11    : localStorage.getItem('l11_progress') || '{}',
+      t      : Date.now()
+    });
+    const res  = await fetch(API_URL + '?' + params.toString());
+    const data = await res.json();
+    return data.ok;
+  } catch (e) { return false; }
+}
+
+function isUnlocked(id) { return id === 1 || !!state.progress[(id-1)]; }
+function isCompleted(id) { return !!state.progress[id]; }
 
 // ══════════════════════════════════════════════
 //  MAP RENDER
@@ -1062,10 +1095,20 @@ function showComplete(lvId) {
     `答對 ${correct} / ${total} 題　${Math.round(pct*100)} 分`;
 
   if (pct >= 0.6) {
-    state.progress[lvId] = 'done';
+    state.progress[lvId] = stars;
     saveProgress();
+    syncToCloud();
   }
   document.getElementById(`lc_${lvId}`).scrollIntoView({behavior:'smooth'});
+}
+
+async function goHome() {
+  const btn = document.querySelector('.btn-home');
+  if (btn) { btn.textContent = '⏳ 同步中…'; btn.disabled = true; }
+  const ok = await syncToCloud();
+  if (btn) btn.textContent = ok ? '✓ 已存檔' : '（本機模式）';
+  await new Promise(r => setTimeout(r, 700));
+  window.location.href = 'index.html';
 }
 
 function goTitle() {
