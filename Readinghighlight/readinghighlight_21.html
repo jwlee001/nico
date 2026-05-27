@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Amazing Hoover Dam · L21</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(170deg,#3d7ab5 0%,#5a4a2a 40%,#4a4a4a 70%,#2d2d2d 100%);min-height:100vh;color:#f0ece0;overflow-x:hidden}
+
+/* Floating deco */
+.deco{position:fixed;font-size:28px;opacity:.09;pointer-events:none;animation:floatD 10s ease-in-out infinite}
+@keyframes floatD{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(8deg)}}
+
+/* Concrete texture overlay */
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.02) 3px,rgba(0,0,0,.02) 4px);pointer-events:none;z-index:0}
+
+/* App */
+#app{position:relative;z-index:1;max-width:660px;margin:0 auto;padding:20px 16px 48px}
+.screen{display:none}.screen.active{display:block}
+
+/* ── MAP ── */
+.map-header{text-align:center;padding:28px 12px 20px}
+.map-dam{font-size:56px;display:block;animation:damGlow 4s ease-in-out infinite;margin-bottom:10px}
+@keyframes damGlow{0%,100%{filter:drop-shadow(0 0 8px rgba(30,127,192,.4))}50%{filter:drop-shadow(0 0 24px rgba(30,127,192,.9))}}
+.map-title{font-size:1.9em;font-weight:800;color:#7ec8e3;text-shadow:0 0 20px rgba(126,200,227,.4);margin-bottom:4px}
+.map-sub{font-size:.78em;color:#a09070;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.map-desc{color:#c8bca0;font-size:.88em;line-height:1.7;margin-bottom:20px}
+
+/* SVG dam illustration */
+.dam-svg{width:100%;max-width:340px;margin:0 auto 8px;display:block}
+
+/* Student panel */
+.s-panel{background:rgba(0,0,0,.25);border:1px solid rgba(126,200,227,.2);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.s-panel label{font-size:.8em;color:#a09070;white-space:nowrap}
+.s-panel input{flex:1;min-width:100px;background:rgba(255,255,255,.08);border:1px solid rgba(126,200,227,.3);border-radius:8px;color:#f0ece0;padding:7px 11px;font-size:.88em;outline:none;font-family:inherit}
+.s-panel input:focus{border-color:#7ec8e3}
+.btn-login{background:linear-gradient(135deg,#1a5a80,#2e8bc0);border:none;color:white;padding:8px 18px;border-radius:18px;font-size:.82em;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.s-logged{font-size:.88em;color:#7ec8e3;font-weight:700}
+.btn-change{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#a09070;padding:5px 13px;border-radius:12px;font-size:.76em;cursor:pointer;font-family:inherit}
+.btn-sync{background:rgba(126,200,227,.12);border:1px solid rgba(126,200,227,.3);color:#7ec8e3;padding:6px 14px;border-radius:14px;font-size:.8em;cursor:pointer;font-family:inherit;margin-left:auto}
+
+/* Progress bar */
+.prog-wrap{margin-bottom:18px}
+.prog-label{font-size:.76em;color:#a09070;margin-bottom:5px;text-align:center}
+.prog-bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#1a5a80,#7ec8e3);border-radius:3px;transition:width .5s ease}
+
+/* Level grid */
+.lv-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:22px}
+.lv-card{background:rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 12px;cursor:pointer;transition:all .25s;text-align:center}
+.lv-card:hover:not(.locked){transform:translateY(-3px);border-color:#7ec8e3;box-shadow:0 8px 24px rgba(126,200,227,.2)}
+.lv-card.locked{opacity:.45;cursor:not-allowed}
+.lv-card.done{border-color:rgba(80,160,100,.4)}
+.lv-card.perfect{border-color:rgba(126,200,227,.6)}
+.lv-icon{font-size:1.6em;margin-bottom:5px}
+.lv-num{font-size:.88em;font-weight:800;color:#7ec8e3;margin-bottom:2px}
+.lv-name{font-size:.68em;color:#a09070;line-height:1.3;margin-bottom:6px}
+.type-mini{font-size:.63em;padding:2px 8px;border-radius:9px;display:inline-block;margin-bottom:7px}
+.tord{background:rgba(160,100,20,.25);color:#d4a870}
+.tfil{background:rgba(20,100,160,.25);color:#70b8e0}
+.lv-stars{font-size:.95em;letter-spacing:1px}
+.lv-lock{font-size:1.3em;opacity:.6}
+
+/* Map footer */
+.map-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.btn-home{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#c8bca0;padding:9px 18px;border-radius:18px;font-size:.85em;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-home:hover{background:rgba(255,255,255,.13)}
+.sync-msg{font-size:.78em;color:#a09070}
+
+/* ── GAME ── */
+.g-header{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.btn-back{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#c8bca0;padding:7px 14px;border-radius:14px;font-size:.82em;cursor:pointer;font-family:inherit;white-space:nowrap}
+.g-lv-name{font-size:.95em;font-weight:700;color:#7ec8e3;flex:1;text-align:center}
+.q-ctr{font-size:.78em;color:#a09070;white-space:nowrap}
+
+.g-card{background:rgba(0,0,0,.3);border:2px solid rgba(126,200,227,.2);border-radius:20px;padding:22px}
+.lv-badge{display:inline-block;padding:4px 14px;border-radius:18px;font-size:.78em;font-weight:700;margin-bottom:18px}
+.bord{background:linear-gradient(135deg,#6b4a10,#c08030)}
+.bfil{background:linear-gradient(135deg,#0a4060,#1a7ab0)}
+
+.q-dots{display:flex;gap:8px;margin-bottom:16px}
+.q-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .3s}
+.q-dot.current{background:#7ec8e3;transform:scale(1.35)}
+.q-dot.ok{background:#4caf50}
+.q-dot.bad{background:#f44336}
+
+/* Word order */
+.zone-lbl{font-size:.75em;color:#a09070;margin-bottom:7px}
+.answer-zone{min-height:58px;background:rgba(0,0,0,.3);border:2px dashed rgba(126,200,227,.35);border-radius:12px;padding:9px 11px;display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;transition:border-color .3s,background .3s;align-items:flex-start}
+.answer-zone.oz-ok{border-color:#4caf50;background:rgba(76,175,80,.1)}
+.answer-zone.oz-bad{border-color:#f44336;background:rgba(244,67,54,.1)}
+.z-placeholder{color:#6a7a5a;font-size:.82em;align-self:center;font-style:italic}
+.word-pool{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.chip{background:linear-gradient(135deg,#2a4a1a,#3a6828);border:2px solid rgba(126,200,227,.2);color:#d0e8c0;padding:7px 13px;border-radius:22px;cursor:pointer;font-size:.86em;font-weight:600;transition:all .2s;user-select:none;font-family:inherit}
+.chip:hover{transform:translateY(-2px);border-color:#7ec8e3;box-shadow:0 4px 12px rgba(126,200,227,.2)}
+.chip.placed{background:linear-gradient(135deg,#1a3a5a,#2a5a80);border-color:rgba(126,200,227,.4);color:#a0c8e0}
+
+/* Fill-in */
+.q-text{font-size:1.02em;line-height:1.75;color:#f0ece0;margin-bottom:16px}
+.blank{display:inline-block;min-width:80px;border-bottom:3px solid #7ec8e3;color:#7ec8e3;font-weight:700;text-align:center;padding:0 6px;transition:all .3s}
+.blank.bk-ok{color:#4caf50;border-color:#4caf50}
+.blank.bk-bad{color:#f44336;border-color:#f44336}
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.opt-btn{background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.15);color:#ddd8c0;padding:11px 14px;border-radius:12px;cursor:pointer;font-size:.88em;font-weight:600;text-align:left;transition:all .2s;font-family:inherit}
+.opt-btn:hover:not(:disabled){background:rgba(126,200,227,.12);border-color:#7ec8e3}
+.opt-btn.o-ok{background:rgba(76,175,80,.2);border-color:#4caf50;color:#a5d6a7}
+.opt-btn.o-bad{background:rgba(244,67,54,.2);border-color:#f44336;color:#ef9a9a}
+.opt-btn:disabled{cursor:not-allowed}
+.opt-l{color:#7ec8e3;font-weight:800;margin-right:4px}
+
+/* Feedback */
+.fb{border-radius:12px;padding:11px 14px;font-size:.92em;font-weight:700;margin:11px 0;display:none;animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.fb.fb-ok{display:block;background:rgba(76,175,80,.15);border:2px solid #4caf50;color:#a5d6a7}
+.fb.fb-bad{display:block;background:rgba(244,67,54,.15);border:2px solid #f44336;color:#ef9a9a}
+.fb.fb-warn{display:block;background:rgba(255,152,0,.15);border:2px solid #ff9800;color:#ffcc80}
+.ans-hint{background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.3);border-radius:8px;padding:7px 11px;font-size:.84em;color:#a5d6a7;margin-top:7px}
+
+/* Buttons */
+.btn-row{display:flex;justify-content:center;gap:11px;margin-top:13px;flex-wrap:wrap}
+.btn{padding:10px 24px;border:none;border-radius:20px;font-size:.9em;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-check{background:linear-gradient(135deg,#1a6090,#2e9ac8);color:white}
+.btn-check:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(46,154,200,.4)}
+.btn-next{background:linear-gradient(135deg,#4caf50,#2e7d32);color:white;display:none}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(76,175,80,.4)}
+.btn-clear{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:#a09070;padding:8px 16px;border-radius:18px;font-size:.8em;cursor:pointer;font-family:inherit}
+.btn-clear:hover{background:rgba(255,255,255,.12)}
+
+/* ── COMPLETE ── */
+.cpl-screen{text-align:center;padding:36px 16px}
+.cpl-icon{font-size:68px;margin-bottom:14px}
+.cpl-title{font-size:1.9em;font-weight:800;color:#7ec8e3;margin-bottom:6px}
+.cpl-stars{font-size:2.6em;margin:10px 0;letter-spacing:4px}
+.cpl-score{font-size:3.4em;font-weight:800;color:#7ec8e3;line-height:1;margin:8px 0}
+.cpl-msg{font-size:.95em;color:#c8bca0;margin:8px 0 22px;line-height:1.6}
+.cpl-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:24px}
+.stat-box{background:rgba(0,0,0,.2);border-radius:13px;padding:14px 8px}
+.stat-box .slb{font-size:.7em;color:#a09070;margin-bottom:3px}
+.stat-box .sval{font-size:1.25em;font-weight:800;color:#7ec8e3}
+.cpl-btns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.btn-back-map{background:linear-gradient(135deg,#1a5a80,#2e8bc0);color:white;padding:11px 26px;border:none;border-radius:20px;font-size:.92em;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-back-map:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(46,139,192,.4)}
+.btn-retry{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);color:#c8bca0;padding:11px 26px;border-radius:20px;font-size:.92em;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-retry:hover{background:rgba(255,255,255,.12)}
+
+/* Confetti */
+.cf-wrap{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999}
+.cp{position:absolute;top:-18px;animation:fall linear forwards}
+@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+
+/* Water wave at bottom */
+.wave-bar{position:fixed;bottom:0;left:0;right:0;height:48px;background:linear-gradient(180deg,transparent,rgba(30,90,140,.5));pointer-events:none;z-index:0}
+.wave-bar::before{content:'';position:absolute;top:0;left:0;right:0;height:8px;background:repeating-linear-gradient(90deg,rgba(126,200,227,.3) 0px,rgba(126,200,227,.1) 20px,transparent 40px)}
+
+@media(max-width:480px){
+  .opts-grid{grid-template-columns:1fr}
+  .cpl-stats{grid-template-columns:1fr}
+  .map-title{font-size:1.5em}
+  .lv-grid{gap:8px}
+}
+</style>
+</head>
+<body>
+
+<div class="deco" style="top:3%;left:2%;animation-delay:0s">🏗️</div>
+<div class="deco" style="top:12%;right:3%;animation-delay:2s">⚡</div>
+<div class="deco" style="top:55%;left:1%;animation-delay:3.5s">💧</div>
+<div class="deco" style="top:72%;right:2%;animation-delay:1.5s">🔩</div>
+<div class="deco" style="top:38%;left:1%;animation-delay:4.8s">🏔️</div>
+
+<div class="cf-wrap" id="cfWrap"></div>
+<div class="wave-bar"></div>
+
+<div id="app">
+
+  <!-- ══ MAP SCREEN ══ -->
+  <div id="screen-map" class="screen active">
+    <div class="map-header">
+
+      <!-- Simplified dam SVG illustration -->
+      <svg class="dam-svg" viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg">
+        <!-- Sky -->
+        <rect width="340" height="90" fill="#3d7ab5" opacity=".7"/>
+        <!-- Canyon walls -->
+        <polygon points="0,90 55,30 110,65 0,90" fill="#5a3a1a"/>
+        <polygon points="340,90 285,25 230,60 340,90" fill="#5a3a1a"/>
+        <!-- Dam body (trapezoidal) -->
+        <polygon points="100,30 240,30 260,90 80,90" fill="#8a8a8a"/>
+        <!-- Dam surface lines (horizontal) -->
+        <line x1="100" y1="42" x2="240" y2="42" stroke="#9e9e9e" stroke-width="1.5"/>
+        <line x1="98" y1="54" x2="242" y2="54" stroke="#9e9e9e" stroke-width="1.5"/>
+        <line x1="95" y1="66" x2="245" y2="66" stroke="#9e9e9e" stroke-width="1.5"/>
+        <line x1="90" y1="78" x2="250" y2="78" stroke="#9e9e9e" stroke-width="1.5"/>
+        <!-- Dam top walkway -->
+        <rect x="94" y="25" width="152" height="8" fill="#aaaaaa"/>
+        <!-- Towers on top -->
+        <rect x="105" y="15" width="12" height="12" fill="#7a7a7a"/>
+        <rect x="223" y="15" width="12" height="12" fill="#7a7a7a"/>
+        <!-- Water below -->
+        <rect x="0" y="90" width="340" height="50" fill="#1a6090" opacity=".85"/>
+        <!-- Water shimmer -->
+        <ellipse cx="80" cy="108" rx="50" ry="5" fill="rgba(126,200,227,.2)"/>
+        <ellipse cx="260" cy="115" rx="40" ry="4" fill="rgba(126,200,227,.2)"/>
+        <!-- Water spray at dam base -->
+        <ellipse cx="170" cy="92" rx="30" ry="6" fill="rgba(200,230,255,.35)"/>
+      </svg>
+
+      <span class="map-dam">🌊</span>
+      <h1 class="map-title">The Amazing Hoover Dam</h1>
+      <div class="map-sub">Lesson 21 · Reading Highlight</div>
+      <p class="map-desc">You are a <strong style="color:#7ec8e3">Dam Engineer</strong>.<br>
+      Master the story of Hoover Dam — one sentence at a time.</p>
+    </div>
+
+    <!-- Student login panel -->
+    <div class="s-panel" id="sPanel">
+      <label>學號</label>
+      <input type="text" id="stuInput" placeholder="輸入學號…" maxlength="12">
+      <button class="btn-login" onclick="loginStu()">登入</button>
+    </div>
+
+    <!-- Overall progress bar -->
+    <div class="prog-wrap">
+      <div class="prog-label" id="progLabel">0 / 4 levels cleared</div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Level cards -->
+    <div class="lv-grid" id="lvGrid"></div>
+
+    <div class="map-foot">
+      <button class="btn-home" onclick="goHome()">⌂ Return to Index</button>
+      <span class="sync-msg" id="syncMsg"></span>
+      <button class="btn-sync" id="syncBtn" onclick="syncManual()">☁ Sync</button>
+    </div>
+  </div>
+
+  <!-- ══ GAME SCREEN ══ -->
+  <div id="screen-game" class="screen">
+    <div class="g-header">
+      <button class="btn-back" onclick="exitToMap()">← Map</button>
+      <span class="g-lv-name" id="gLvName">Level 1</span>
+      <span class="q-ctr" id="qCtr">Q 1 / 3</span>
+    </div>
+
+    <div class="g-card">
+      <div id="lvBadge" class="lv-badge bord">🔤 Word Order</div>
+      <div class="q-dots">
+        <div class="q-dot current" id="dot-0"></div>
+        <div class="q-dot"         id="dot-1"></div>
+        <div class="q-dot"         id="dot-2"></div>
+      </div>
+      <div id="qArea"></div>
+      <div id="fbBox" class="fb"></div>
+      <div class="btn-row">
+        <button class="btn btn-clear" id="clearBtn" onclick="clearAnswer()" style="display:none">↺ Clear</button>
+        <button class="btn btn-check" id="checkBtn" onclick="checkAnswer()">✔ Check</button>
+        <button class="btn btn-next"  id="nextBtn"  onclick="nextQ()">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ COMPLETE SCREEN ══ -->
+  <div id="screen-complete" class="screen">
+    <div class="cpl-screen">
+      <div class="cpl-icon"  id="cplIcon">🏗️</div>
+      <div class="cpl-title" id="cplTitle">Level Cleared!</div>
+      <div class="cpl-stars" id="cplStars">★★★</div>
+      <div class="cpl-score" id="cplScore">3 / 3</div>
+      <p   class="cpl-msg"   id="cplMsg"></p>
+      <div class="cpl-stats">
+        <div class="stat-box"><div class="slb">✅ Correct</div><div class="sval" id="stOk">0</div></div>
+        <div class="stat-box"><div class="slb">❌ Wrong</div>  <div class="sval" id="stBad">0</div></div>
+        <div class="stat-box"><div class="slb">📊 Accuracy</div><div class="sval" id="stPct">100%</div></div>
+      </div>
+      <div class="cpl-btns">
+        <button class="btn-retry"    onclick="retryLevel()">🔄 Try Again</button>
+        <button class="btn-back-map" id="btnBackMap" onclick="backToMap()">🗺 Back to Map</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const API_URL     = 'https://script.google.com/macros/s/AKfycbzrc4ugyD2PnfOyJ4wHJvFk38vgkCVXhjME9ZH5QhzihLalo4D9rmKf7ZndQMKO5472NQ/exec';
+const STORAGE_KEY = 'l21_progress';
+const STUDENT_KEY = 'hc_student';
+
+// ═══════════════════════════════════════
+// GAME DATA
+// ═══════════════════════════════════════
+const LEVELS = [
+  {
+    id:1, type:'order', title:'Level 1', name:'Boulder Canyon', icon:'🏔️',
+    questions:[
+      {
+        chunks:[
+          'Stretching 400 meters',
+          'across the width of Boulder Canyon,',
+          'on the border',
+          'between Nevada and Arizona,',
+          'is the Hoover Dam.'
+        ]
+      },
+      {
+        chunks:[
+          'This construction',
+          'is one of',
+          'the most significant',
+          'public works projects',
+          'in US history.'
+        ]
+      },
+      {
+        chunks:[
+          'It not only',
+          'generates electricity',
+          'using the Colorado River',
+          'but also helps ensure',
+          'a steady water supply',
+          'to California.'
+        ]
+      }
+    ]
+  },
+  {
+    id:2, type:'fill', title:'Level 2', name:'The Name Battle', icon:'📜',
+    questions:[
+      {
+        before: 'Hoover Dam was originally named Boulder Dam, after the',
+        blank:  'canyon',
+        after:  'in which it is located.',
+        options:['valley','river','canyon','mountain'],
+        correct: 2
+      },
+      {
+        before: 'President Herbert Hoover was in',
+        blank:  'office',
+        after:  'when the dam\'s construction began.',
+        options:['power','control','office','authority'],
+        correct: 2
+      },
+      {
+        before: 'In 1947, the US Congress finally passed a',
+        blank:  'bill',
+        after:  'to name the dam after the former president.',
+        options:['law','vote','bill','decision'],
+        correct: 2
+      }
+    ]
+  },
+  {
+    id:3, type:'order', title:'Level 3', name:'Building the Dam', icon:'🏗️',
+    questions:[
+      {
+        chunks:[
+          'The dam project',
+          'was ultimately successful,',
+          'but it was',
+          'difficult',
+          'from the beginning.'
+        ]
+      },
+      {
+        chunks:[
+          'The workers',
+          'who redirected',
+          'the Colorado River',
+          'erected the dam\'s frame',
+          'and poured the concrete.'
+        ]
+      },
+      {
+        chunks:[
+          'At least 112 people',
+          'lost their lives',
+          'due to',
+          'a variety of',
+          'construction accidents.'
+        ]
+      }
+    ]
+  },
+  {
+    id:4, type:'fill', title:'Level 4', name:'Water for California', icon:'💧',
+    questions:[
+      {
+        before: 'Those two states receive less than half of the power and water the dam makes',
+        blank:  'available',
+        after:  '.',
+        options:['possible','ready','useful','available'],
+        correct: 3
+      },
+      {
+        before: 'The',
+        blank:  'majority',
+        after:  'of those resources go to California.',
+        options:['minority','majority','quantity','number'],
+        correct: 1
+      },
+      {
+        before: 'If you enjoy California\'s agricultural products, you may',
+        blank:  'owe',
+        after:  'a word of thanks to the Hoover Dam.',
+        options:['send','give','owe','write'],
+        correct: 2
+      }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let progress = {};   // { levelId: stars }  stars 1–3
+let student  = null; // { id, name }
+let curLvId  = 0;
+let curQ     = 0;
+let qResults = [];
+let poolArr  = [];
+let ansArr   = [];
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  renderSPanel();
+  renderMap();
+});
+
+// ═══════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════
+function loadData() {
+  try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { progress = {}; }
+  try { student  = JSON.parse(localStorage.getItem(STUDENT_KEY) || 'null'); } catch { student = null; }
+}
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+}
+
+// ═══════════════════════════════════════
+// CLOUD SYNC (GAS)
+// ═══════════════════════════════════════
+async function syncToCloud() {
+  if (!student || !student.id) return false;
+  if (!API_URL || API_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return false;
+  try {
+    const p = new URLSearchParams({
+      action:'set', id:student.id, name:student.name||'',
+      l21: localStorage.getItem(STORAGE_KEY)||'{}', t:Date.now()
+    });
+    const r = await fetch(API_URL + '?' + p.toString());
+    return (await r.json()).ok;
+  } catch { return false; }
+}
+
+// ═══════════════════════════════════════
+// STUDENT PANEL
+// ═══════════════════════════════════════
+function renderSPanel() {
+  const el = document.getElementById('sPanel');
+  if (student && student.id) {
+    el.innerHTML = `
+      <span class="s-logged">👤 ${esc(student.id)}</span>
+      <button class="btn-change" onclick="logoutStu()">切換</button>`;
+  } else {
+    el.innerHTML = `
+      <label>學號</label>
+      <input type="text" id="stuInput" placeholder="輸入學號…" maxlength="12"
+             onkeydown="if(event.key==='Enter')loginStu()">
+      <button class="btn-login" onclick="loginStu()">登入</button>`;
+  }
+}
+
+function loginStu() {
+  const inp = document.getElementById('stuInput');
+  if (!inp) return;
+  const id = inp.value.trim();
+  if (!id) { inp.style.borderColor='#f44336'; return; }
+  student = { id, name:'' };
+  localStorage.setItem(STUDENT_KEY, JSON.stringify(student));
+  renderSPanel();
+  renderMap();
+}
+
+function logoutStu() {
+  student = null;
+  localStorage.removeItem(STUDENT_KEY);
+  renderSPanel();
+  renderMap();
+}
+
+async function syncManual() {
+  const btn = document.getElementById('syncBtn');
+  if (btn) { btn.textContent='⏳…'; btn.disabled=true; }
+  const ok = await syncToCloud();
+  document.getElementById('syncMsg').textContent = ok ? '✓ Synced to cloud' : '(Local mode — login to sync)';
+  if (btn) { btn.textContent='☁ Sync'; btn.disabled=false; }
+}
+
+// ═══════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════
+function isUnlocked(id) {
+  if (id === 1) return true;
+  return (progress[id-1] || 0) >= 2;   // ≥ 2 stars = 2/3 ≈ 67% ≥ 60%
+}
+function starHTML(n) {
+  if (!n) return `<span style="color:#2a3a2a">★★★</span>`;
+  const gold = `<span style="color:#7ec8e3">★</span>`;
+  const grey = `<span style="color:#2a3a4a">★</span>`;
+  return gold.repeat(n) + grey.repeat(3-n);
+}
+function renderMap() {
+  const done = LEVELS.filter(l => (progress[l.id]||0) >= 2).length;
+  document.getElementById('progLabel').textContent = `${done} / ${LEVELS.length} levels cleared`;
+  document.getElementById('progFill').style.width  = `${(done/LEVELS.length)*100}%`;
+
+  document.getElementById('lvGrid').innerHTML = LEVELS.map(lv => {
+    const ul  = isUnlocked(lv.id);
+    const st  = progress[lv.id] || 0;
+    const cls = !ul ? 'locked' : st===3 ? 'perfect' : st>=2 ? 'done' : '';
+    const tc  = lv.type==='order' ? 'tord' : 'tfil';
+    const tl  = lv.type==='order' ? '🔤 Word Order' : '✏️ Fill-in';
+    return `<div class="lv-card ${cls}" onclick="${ul?`startLevel(${lv.id})`:'void(0)'}">
+      <div class="lv-icon">${lv.icon}</div>
+      <div class="lv-num">${lv.title}</div>
+      <div class="lv-name">${lv.name}</div>
+      <div class="type-mini ${tc}">${tl}</div>
+      ${ul ? `<div class="lv-stars">${starHTML(st)}</div>` : '<div class="lv-lock">🔒</div>'}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// START LEVEL
+// ═══════════════════════════════════════
+function startLevel(id) {
+  curLvId  = id;
+  curQ     = 0;
+  qResults = [];
+  poolArr  = [];
+  ansArr   = [];
+  const lv = getLv();
+  document.getElementById('gLvName').textContent = `${lv.title} · ${lv.name}`;
+  const badge = document.getElementById('lvBadge');
+  if (lv.type==='order') {
+    badge.textContent='🔤 Word Order'; badge.className='lv-badge bord';
+  } else {
+    badge.textContent='✏️ Fill-in-the-Blanks'; badge.className='lv-badge bfil';
+  }
+  showScreen('screen-game');
+  renderQ();
+}
+
+// ═══════════════════════════════════════
+// RENDER QUESTION
+// ═══════════════════════════════════════
+function renderQ() {
+  document.getElementById('qCtr').textContent = `Q ${curQ+1} / 3`;
+  updateDots();
+  document.getElementById('fbBox').className = 'fb';
+  getLv().type==='order' ? renderOrder(getLv().questions[curQ]) : renderFill(getLv().questions[curQ]);
+}
+
+function renderOrder(q) {
+  poolArr = shuffle([...q.chunks]);
+  ansArr  = [];
+  document.getElementById('qArea').innerHTML = `
+    <p class="zone-lbl">Arrange the chunks to form a correct sentence:</p>
+    <div class="answer-zone" id="aZone"></div>
+    <p class="zone-lbl">Word bank:</p>
+    <div class="word-pool" id="wPool"></div>`;
+  document.getElementById('clearBtn').style.display = 'inline-block';
+  document.getElementById('checkBtn').style.display = 'inline-block';
+  document.getElementById('nextBtn').style.display  = 'none';
+  renderChips();
+}
+
+function renderChips() {
+  const pool = document.getElementById('wPool');
+  const zone = document.getElementById('aZone');
+  pool.innerHTML = poolArr.map((c,i) =>
+    `<button class="chip" onclick="toAns(${i})">${esc(c)}</button>`).join('');
+  zone.innerHTML = '';
+  if (!ansArr.length) {
+    zone.innerHTML = '<span class="z-placeholder">Click chunks below to build your sentence…</span>';
+  } else {
+    ansArr.forEach((c,i) => {
+      const b = document.createElement('button');
+      b.className = 'chip placed';
+      b.textContent = c;
+      b.onclick = () => toPool(i);
+      zone.appendChild(b);
+    });
+  }
+}
+
+function toAns(i)  { ansArr.push(poolArr.splice(i,1)[0]); renderChips(); }
+function toPool(i) { poolArr.push(ansArr.splice(i,1)[0]); renderChips(); }
+function clearAnswer() { poolArr = [...poolArr,...ansArr]; ansArr=[]; renderChips(); }
+
+function renderFill(q) {
+  const sent = `${esc(q.before)} <span class="blank" id="blk">_______</span> ${esc(q.after)}`;
+  document.getElementById('qArea').innerHTML = `
+    <p class="q-text">${sent}</p>
+    <div class="opts-grid">
+      ${'ABCD'.split('').map((L,i) =>
+        `<button class="opt-btn" onclick="selOpt(this,${i})"><span class="opt-l">${L}.</span> ${esc(q.options[i])}</button>`
+      ).join('')}
+    </div>`;
+  document.getElementById('clearBtn').style.display = 'none';
+  document.getElementById('checkBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display  = 'none';
+}
+
+let chosenOpt = -1;
+function selOpt(btn, i) {
+  const q = getLv().questions[curQ];
+  const allBtns = document.querySelectorAll('.opt-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  chosenOpt = i;
+  const correct = (i === q.correct);
+  qResults[curQ] = correct;
+
+  allBtns.forEach((b,idx) => {
+    if (idx === q.correct) b.classList.add('o-ok');
+    else if (idx === i && !correct) b.classList.add('o-bad');
+  });
+
+  document.getElementById('blk').textContent = q.blank;
+  document.getElementById('blk').className   = `blank ${correct?'bk-ok':'bk-bad'}`;
+
+  if (correct) {
+    showFb('ok','✅ Correct! Well done, Engineer!');
+  } else {
+    showFb('bad',`❌ The answer is <strong>${esc(q.blank)}</strong>.
+      <div class="ans-hint">💡 "${esc(q.before)} <strong>${esc(q.blank)}</strong> ${esc(q.after)}"</div>`);
+  }
+
+  updateDots();
+  document.getElementById('nextBtn').style.display = 'inline-block';
+}
+
+// ═══════════════════════════════════════
+// CHECK (ordering)
+// ═══════════════════════════════════════
+function checkAnswer() {
+  const q = getLv().questions[curQ];
+  const userSent = ansArr.join(' ');
+  const correct  = (userSent === q.chunks.join(' '));
+  qResults[curQ] = correct;
+
+  const zone = document.getElementById('aZone');
+  zone.className = `answer-zone ${correct?'oz-ok':'oz-bad'}`;
+
+  if (correct) {
+    showFb('ok','✅ Perfect! The sentence is correct!');
+  } else {
+    const ans = q.chunks.join(' ');
+    showFb('bad',`❌ Not quite.
+      <div class="ans-hint">✔ <em>${esc(ans)}</em></div>`);
+  }
+
+  updateDots();
+  document.getElementById('checkBtn').style.display = 'none';
+  document.getElementById('clearBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display  = 'inline-block';
+}
+
+// ═══════════════════════════════════════
+// NEXT Q / COMPLETE
+// ═══════════════════════════════════════
+function nextQ() {
+  curQ++;
+  if (curQ >= 3) { showComplete(); return; }
+  poolArr = []; ansArr = [];
+  renderQ();
+}
+
+function showComplete() {
+  const ok  = qResults.filter(Boolean).length;
+  const pct = ok / 3;
+  const st  = ok===3 ? 3 : ok===2 ? 2 : 1;
+  const old = progress[curLvId] || 0;
+  if (st > old) { progress[curLvId]=st; saveProgress(); }
+  if (pct >= 0.6) syncToCloud();
+
+  const icons  = ['🔧','🏗️','🏆'];
+  const titles = ['Keep Building!','Level Cleared!','Engineering Perfection!'];
+  const msgs   = [
+    'You need 2/3 correct to unlock the next level. Try again!',
+    curLvId < 4 ? 'Great work! The next level is now unlocked 🔓' : 'All levels complete! You mastered the Hoover Dam! 🎉',
+    curLvId < 4 ? 'Flawless! Full marks — next level unlocked! 🌟' : 'Perfect score on every level! You\'re a true Dam Expert! 🏆'
+  ];
+
+  document.getElementById('cplIcon').textContent  = icons[st-1];
+  document.getElementById('cplTitle').textContent = titles[st-1];
+  document.getElementById('cplStars').textContent = '★'.repeat(st) + '☆'.repeat(3-st);
+  document.getElementById('cplScore').textContent = `${ok} / 3`;
+  document.getElementById('cplMsg').textContent   = msgs[st-1];
+  document.getElementById('stOk').textContent     = ok;
+  document.getElementById('stBad').textContent    = 3-ok;
+  document.getElementById('stPct').textContent    = `${Math.round(pct*100)}%`;
+
+  if (ok===3) launchConfetti();
+  showScreen('screen-complete');
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function backToMap()  { syncToCloud(); renderMap(); showScreen('screen-map'); }
+function exitToMap()  { renderMap(); showScreen('screen-map'); }
+function retryLevel() { startLevel(curLvId); }
+
+async function goHome() {
+  const btn = document.querySelector('.btn-home');
+  if (btn) { btn.textContent='⏳ Syncing…'; btn.disabled=true; }
+  const ok = await syncToCloud();
+  document.getElementById('syncMsg').textContent = ok ? '✓ Synced' : '(Local mode)';
+  if (btn) { btn.textContent='⌂ Return to Index'; btn.disabled=false; }
+  setTimeout(() => window.location.href='index.html', 700);
+}
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showFb(type, html) {
+  const fb = document.getElementById('fbBox');
+  fb.innerHTML = html;
+  fb.className = `fb fb-${type}`;
+}
+function updateDots() {
+  for (let i=0;i<3;i++) {
+    const d = document.getElementById(`dot-${i}`);
+    if (!d) continue;
+    d.className='q-dot';
+    if (i < curQ) d.classList.add(qResults[i]?'ok':'bad');
+    else if (i===curQ) {
+      if      (qResults[i]===true)  d.classList.add('ok');
+      else if (qResults[i]===false) d.classList.add('bad');
+      else d.classList.add('current');
+    }
+  }
+}
+function getLv()    { return LEVELS.find(l => l.id===curLvId); }
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a; }
+function esc(t='')  { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function launchConfetti() {
+  const wrap = document.getElementById('cfWrap');
+  wrap.innerHTML = '';
+  const cols = ['#7ec8e3','#d4a870','#4caf50','#ff6b9d','#4dd0e1','#ffb74d','#aaaaaa'];
+  for (let i=0;i<65;i++) {
+    const cp = document.createElement('div');
+    cp.className = 'cp';
+    const size = Math.random()*10+6;
+    cp.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${size}px; height:${size*0.6}px;
+      background:${cols[Math.floor(Math.random()*cols.length)]};
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      animation-duration:${(Math.random()*2+1.5).toFixed(2)}s;
+      animation-delay:${(Math.random()*0.8).toFixed(2)}s;
+    `;
+    wrap.appendChild(cp);
+  }
+  setTimeout(() => wrap.innerHTML='', 4000);
+}
+</script>
+</body>
+</html>
